@@ -1,6 +1,6 @@
 // Live Visko Orbis wall. The only file that imports the Reactor SDK.
 import { Reactor, type ReactorError, type ReactorMessage, type ReactorStatus } from '@reactor-team/js-sdk';
-import { ORBIS_MODEL, SESSION_REFRESH_S, TOKEN_REFRESH_MARGIN_S, WORLD_MIN_INTERVAL_S } from '../config';
+import { ORBIS_BLANK_LUMA, ORBIS_MODEL, SESSION_REFRESH_S, TOKEN_REFRESH_MARGIN_S, WORLD_MIN_INTERVAL_S } from '../config';
 import type { World, WorldDef, WorldStatus } from './world';
 
 // ---- token: cached in memory, reused until shortly before expiry ----
@@ -14,7 +14,7 @@ export async function getToken(): Promise<string> {
   if (inflight) return inflight;
   inflight = (async () => {
     try {
-      const r = await fetch('/api/token', { method: 'POST', cache: 'no-store' });
+      const r = await fetch('/api/token', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: '{}' });
       if (r.status === 503) throw new NoKeyError('no Orbis key on the dev server');
       if (!r.ok) throw new Error(`token route ${r.status}: ${await r.text()}`);
       const { jwt, expires_at } = await r.json();
@@ -45,6 +45,9 @@ export class OrbisWorld implements World {
   private queueTimer = 0;
   private runStartedMs = 0;
   private started = false; // a run has been started on this session
+  private probeCtx: CanvasRenderingContext2D | null | undefined;
+  private awaitingGen = false; // after a reset: old frames, then black, until generation_started + a lit frame
+  private setupDone = false; // connect() finished (resolution, audio); setWorld may start a run
   private awaitingFrames = true;
   private framesAfterMs = 0;
   private availableRes: string[] = [];
@@ -68,12 +71,32 @@ export class OrbisWorld implements World {
     this.events.onStatus?.(s, detail);
   }
 
+  /** True while the video shows (near) black: Orbis streams black frames between a reset and the new world. */
+  private frameIsBlank(): boolean {
+    try {
+      if (this.probeCtx === undefined) {
+        const c = document.createElement('canvas') as HTMLCanvasElement;
+        c.width = 16;
+        c.height = 9;
+        this.probeCtx = typeof c.getContext === 'function' ? c.getContext('2d', { willReadFrequently: true }) : null;
+      }
+      if (!this.probeCtx) return false; // cannot measure: fall back to "frames are arriving"
+      this.probeCtx.drawImage(this.video, 0, 0, 16, 9);
+      const d = this.probeCtx.getImageData(0, 0, 16, 9).data;
+      let sum = 0;
+      for (let i = 0; i < d.length; i += 4) sum += d[i] + d[i + 1] + d[i + 2];
+      return sum / ((d.length / 4) * 3) < ORBIS_BLANK_LUMA;
+    } catch {
+      return false;
+    }
+  }
+
   private watchFrames() {
     const v = this.video as HTMLVideoElement & {
       requestVideoFrameCallback?: (cb: (now: number, meta: { mediaTime: number }) => void) => number;
     };
     const onFrame = () => {
-      if (this.awaitingFrames && performance.now() > this.framesAfterMs && this.rstatus === 'ready') {
+      if (this.reactor && this.awaitingFrames && !this.awaitingGen && performance.now() > this.framesAfterMs && this.rstatus === 'ready' && !this.frameIsBlank()) {
         this.awaitingFrames = false;
         this.set('live');
       }
@@ -146,6 +169,7 @@ export class OrbisWorld implements World {
     await Promise.race([stateSeen, new Promise((r) => setTimeout(r, 3000))]);
     if (this.availableRes.includes('1080p')) await reactor.sendCommand('set_resolution', { resolution: '1080p' });
     await reactor.sendCommand('set_audio_enabled', { audio_enabled: false });
+    this.setupDone = true;
     if (this.def) await this.startFresh(this.def);
   }
 
@@ -162,6 +186,7 @@ export class OrbisWorld implements World {
         if (Array.isArray(d.available_resolutions)) this.availableRes = d.available_resolutions as string[];
         break;
       case 'generation_started':
+        this.awaitingGen = false;
         this.runStartedMs = performance.now();
         log('generation_started', d.width, d.height, d.fps, d.resolution);
         break;
@@ -181,6 +206,7 @@ export class OrbisWorld implements World {
     const r = this.reactor;
     if (!r || this.rstatus !== 'ready') return;
     this.awaitingFrames = true;
+    this.awaitingGen = true; // measured: ~1.3 s of old-world frames, then ~4 s black, then the new world
     this.set('loading', 'starting world');
     await r.sendCommand('reset', {});
     await r.sendCommand('set_prompt', { prompt: def.prompt });
@@ -194,9 +220,18 @@ export class OrbisWorld implements World {
 
   async setWorld(def: WorldDef, mode: 'morph' | 'fresh' = 'morph'): Promise<void> {
     this.def = def;
-    if (!this.reactor || this.rstatus !== 'ready' || !this.started) return; // stored; used at connect
-    const now = performance.now();
-    const wait = this.lastSteerMs + WORLD_MIN_INTERVAL_S * 1000 - now;
+    if (!this.reactor || this.rstatus !== 'ready' || !this.setupDone) return; // stored; used at connect
+    if (!this.started) return this.startFresh(def); // connected with no world yet (factory, eval)
+    let now = performance.now();
+    let wait = this.lastSteerMs + WORLD_MIN_INTERVAL_S * 1000 - now;
+    if (wait > 0 && mode === 'fresh') {
+      // factory / eval: they record right after this returns, so wait out the interval instead of queueing
+      // (a queued switch would leave the old world live under the new world's label)
+      await new Promise((r) => window.setTimeout(r, wait));
+      if (!this.reactor || this.rstatus !== 'ready') return;
+      now = performance.now();
+      wait = 0;
+    }
     if (wait > 0) {
       // rapid presses: keep only the latest, send when the interval has passed
       this.queued = { def, mode };
@@ -256,6 +291,7 @@ export class OrbisWorld implements World {
     this.readyAtMs = 0;
     this.runStartedMs = 0;
     this.started = false;
+    this.setupDone = false;
     this.set('idle');
     if (r) await r.disconnect().catch(() => {});
   }

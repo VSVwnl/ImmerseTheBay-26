@@ -38,6 +38,15 @@ class FakeReactor {
 vi.mock('@reactor-team/js-sdk', () => ({ Reactor: FakeReactor }));
 
 let frameCb: (() => void) | null = null;
+let luma = 120; // brightness the fake canvas reports for the current video frame
+const fakeCanvas = {
+  width: 0,
+  height: 0,
+  getContext: () => ({
+    drawImage: () => {},
+    getImageData: (_x: number, _y: number, w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4).fill(luma) }),
+  }),
+};
 const fakeVideo = {
   muted: false,
   playsInline: false,
@@ -57,11 +66,15 @@ beforeEach(() => {
   sent.length = 0;
   fetches = 0;
   resolutions = ['720p', '1080p'];
-  vi.stubGlobal('document', { createElement: () => fakeVideo });
+  luma = 120;
+  vi.stubGlobal('document', { createElement: (tag: string) => (tag === 'canvas' ? fakeCanvas : fakeVideo) });
   vi.stubGlobal('window', { setTimeout, clearTimeout, setInterval, clearInterval });
   vi.stubGlobal('navigator', { sendBeacon: () => true });
-  vi.stubGlobal('fetch', async () => {
+  vi.stubGlobal('fetch', async (_url: string, init?: RequestInit) => {
     fetches++;
+    // the real /api/token refuses anything that is not JSON (server/plugin.ts checkSameOrigin)
+    const ct = String((init?.headers as Record<string, string> | undefined)?.['Content-Type'] ?? '');
+    if (!ct.startsWith('application/json')) return { ok: false, status: 403, text: async () => 'content-type must be application/json' };
     return { ok: true, status: 200, json: async () => ({ jwt: 'jwt-1', expires_at: Date.now() / 1000 + 21600 }) };
   });
 });
@@ -72,6 +85,7 @@ afterEach(() => {
 });
 
 const frame = () => frameCb?.();
+const gen = () => lastReactor!.emit('message', { type: 'generation_started', data: {} });
 const cmds = () => sent.map((s) => s.cmd);
 const def = (id: string) => ({ id, label: id, prompt: `prompt ${id}` });
 
@@ -95,6 +109,9 @@ describe('OrbisWorld', () => {
     frame(); // too early: frames from before the reset are ignored
     expect(o.status()).toBe('loading');
     vi.advanceTimersByTime(600);
+    frame(); // still the old run: no generation_started yet
+    expect(o.status()).toBe('loading');
+    gen();
     frame();
     expect(o.status()).toBe('live');
   });
@@ -128,6 +145,61 @@ describe('OrbisWorld', () => {
     vi.advanceTimersByTime(151_000);
     await o.setWorld(def('b'), 'morph');
     expect(cmds()).toEqual(['reset', 'set_prompt', 'start']);
+  });
+
+  it('a fresh switch inside the 4 s interval waits, then resets: status is loading when it returns (factory labels stay true)', async () => {
+    const o = await connected();
+    vi.advanceTimersByTime(600);
+    gen();
+    frame();
+    expect(o.status()).toBe('live');
+    sent.length = 0;
+    let done = false;
+    const p = o.setWorld(def('b'), 'fresh').then(() => (done = true));
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(done).toBe(false); // still waiting out the interval, nothing sent yet
+    expect(sent).toEqual([]);
+    await vi.advanceTimersByTimeAsync(4000);
+    await p;
+    expect(cmds()).toEqual(['reset', 'set_prompt', 'start']);
+    expect(sent[1].data).toEqual({ prompt: 'prompt b' });
+    expect(o.status()).toBe('loading');
+    vi.advanceTimersByTime(1000);
+    frame(); // old world still streaming (bright), before generation_started: must not count
+    expect(o.status()).toBe('loading');
+    gen();
+    frame();
+    expect(o.status()).toBe('live');
+  });
+
+  it('connected with no world (factory, eval): the first setWorld starts a run', async () => {
+    const { OrbisWorld } = await import('../src/world/orbis');
+    const o = new OrbisWorld();
+    await o.connect();
+    expect(cmds()).toEqual(['set_resolution', 'set_audio_enabled']);
+    await o.setWorld(def('lab'), 'fresh');
+    expect(cmds().slice(2)).toEqual(['reset', 'set_prompt', 'start']);
+    expect(o.status()).toBe('loading');
+    vi.advanceTimersByTime(600);
+    gen();
+    frame();
+    expect(o.status()).toBe('live');
+  });
+
+  it('black frames after a reset (new world not rendered yet) keep the wall loading', async () => {
+    const o = await connected();
+    vi.advanceTimersByTime(600);
+    gen();
+    luma = 0;
+    frame();
+    expect(o.status()).toBe('loading');
+    luma = 3;
+    vi.advanceTimersByTime(2000);
+    frame();
+    expect(o.status()).toBe('loading');
+    luma = 90;
+    frame();
+    expect(o.status()).toBe('live');
   });
 
   it('starts again on generation_complete', async () => {

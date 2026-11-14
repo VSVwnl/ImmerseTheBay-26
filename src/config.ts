@@ -85,6 +85,9 @@ export const WORLD_DEFAULT_MODE: 'morph' | 'fresh' = 'morph';
 export const WORLD_MIN_INTERVAL_S = 4;
 export const SESSION_REFRESH_S = 150;
 export const ORBIS_MODEL = 'reactor/visko-orbis-stable';
+// After a reset Orbis streams black frames until the new world renders. The wall counts as live only once a
+// 16x9 sample of the video has a mean brightness (0-255) above this.
+export const ORBIS_BLANK_LUMA = 12;
 export const TOKEN_REFRESH_MARGIN_S = 300;
 
 // ---- Polish ----

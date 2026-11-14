@@ -1,8 +1,8 @@
 # Status
 
-Updated: Sat Nov 14, 2:35 PM PST
+Updated: Sat Nov 14, 4:00 PM PST
 
-## Current milestone: M4 and M5 done on smoke data (stub walls). Real datasets, results and headset need the key + you
+## Current milestone: key in; live wall verified on desktop. Next: real datasets (needs your OK on Orbis minutes)
 
 ### Done
 - **M1** (desktop checks pass): deterministic env, closed-form IK, snap grasp, 30 Hz fixed-step loop + recorder,
@@ -55,8 +55,26 @@ Updated: Sat Nov 14, 2:35 PM PST
   policy port listens, so a plain `npm run dev` without the policy server shows no console errors.
 - MIT license; `/api/log` hardened (no dot/traversal ids, no overwrite, JSON + same-origin only).
 
+### Live Orbis (key added Sat 3:15 PM)
+- `node scripts/live-check.mjs`: connects, live in ~11 s, switches one world, disconnects. Works.
+- Stream is 2560x1440 at 18 fps ("2k"); our 1080p request is only sent when offered.
+- Live 30-episode factory trial (`data/datasets/trial-live`, 3 worlds): each world's episodes show that world.
+- Bugs found and fixed by the live tests (all were invisible on the stub and the fake Reactor):
+  1. Token request lacked the JSON content type the server requires, so the app fell back to the stub.
+  2. Connecting with no world chosen (factory, eval) never started a run; the wall stayed `loading`.
+  3. A fresh switch within 4 s of the last one was queued and returned at once, so the factory would have
+     recorded the old world under the new label. Fresh switches now wait out the interval.
+  4. After a reset Orbis keeps sending the old world for ~1.3 s, then black for ~4 s, then the new world
+     (measured with `scripts/orbis-probe.mjs`). `live` now needs `generation_started` and a non-black frame.
+  5. `run-factory.mjs` stops and disconnects if no episode is saved for 90 s, and always disconnects at the end.
+  6. The M1 e2e test opened the app without `?orbis=0`, which with a key would start a paid session per run.
+- A world switch costs ~7 s of streaming. Estimate: ~30 min of Orbis for `multi` (200 switches), ~12 min for
+  `single`, ~5 min for the eval. About 50 min in total.
+- "Human" demos: the 34 Place attempts in `data/sessions` were recorded by the Playwright tests, not a person.
+  Real datasets use `humans=0` unless you record real Place demos first (the smoke sets included the bot ones).
+
 ### Next
-- Waiting on the key: build real `single` and `multi` (2,000 episodes each), train, run the protocol, report.
+- Build real `single` and `multi` (2,000 episodes each, `humans=0`), train, run the protocol, report.
 - Waiting on you: headset checklist below.
 
 ### M4 debugging (honest record)
@@ -73,6 +91,8 @@ Updated: Sat Nov 14, 2:35 PM PST
 ### Test results
 - Vitest: 128/128 (count grows with saved attempts replayed; adds `/api/robot` probe)
 - pytest: 19/19 (adds model, overfit, checkpoint + serve websocket, report table, spatial softmax, avg compat)
+- After the live fixes: Vitest 152/152, typecheck clean, Playwright 7 passed + 1 skipped (the no-key test skips
+  with a key). The M5 test failed once in the full run and passed 3 times alone (intermittent, cause not found).
 - Playwright: 8/8 (adds M5: policy drives the arm, world + policy switch live, one episode completes, Take over,
   all three challenges after; no console errors). Earlier counts, M3:
 - Vitest: 111/111 (env, IK, grasp, determinism, replay of every saved attempt, hand logic with fake joints,
@@ -85,7 +105,9 @@ Updated: Sat Nov 14, 2:35 PM PST
   passed on rerun.
 
 ### Unverified / faked
-- **No Orbis key**: live stream, `live` status, morphs, 1080p, dashboard session end are all untested for real.
+- Live stream verified on desktop Chromium only. Not yet in the Quest Browser. Morph (button) switches are slow
+  to show: 10 s after a morph the lab was still visible; fresh switches take ~5.5 s to show the new world.
+- Dashboard session end not checked (you can see it on the Reactor dashboard).
 - Headset: nothing tested in a Quest yet.
 - Voice in Quest Browser: unknown whether speech recognition exists there.
 - **M3 real datasets not built**: `single` and `multi` need the live Orbis wall. Only `smoke-*` (stub walls) exist.
@@ -94,7 +116,8 @@ Updated: Sat Nov 14, 2:35 PM PST
 - Multiply in the headset not tried; dataset-camera render in XR (second pass at replay midpoints) unverified.
 
 ### Orbis minutes used
-- 0 (no key). Once live: `curl http://localhost:5173/api/usage`.
+- 9.5 min over 7 sessions (Sat 3:15-4:00 PM): live check, three factory trials, one switch probe, plus two stalled
+  trials before fixes 2 and 4 (about 7 min). `curl http://localhost:5173/api/usage` for the running total.
 
 ### Open questions for the developer
 1. Orbis key: put `REACTOR_API_KEY=rk_...` in `.env` (repo root). Default until then: stub; M3/M4 use a `smoke` dataset only.
