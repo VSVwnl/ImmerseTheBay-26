@@ -3,10 +3,36 @@
 //   POST /api/token    mints a short-lived Reactor session token (503 without a key)
 //   GET  /api/token    { available: boolean } without minting anything
 //   POST /api/usage    Orbis session heartbeat -> data/orbis-usage.json; GET returns the totals
+//   GET  /api/results  summary.json (?tag=smoke for summary-smoke.json)
+//   GET  /api/robot    { summary, tag, policyServer }: what Robot's turn needs, without browser console errors
 import { loadEnv, type Plugin } from 'vite';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import fs from 'node:fs';
+import net from 'node:net';
 import path from 'node:path';
+
+/** True if something accepts TCP connections on localhost:port (the policy server). Never throws. */
+export function portOpen(port: number, timeoutMs = 400): Promise<boolean> {
+  return new Promise((resolve) => {
+    const sock = net.connect({ host: '127.0.0.1', port });
+    const done = (ok: boolean) => {
+      sock.destroy();
+      resolve(ok);
+    };
+    sock.setTimeout(timeoutMs, () => done(false));
+    sock.once('connect', () => done(true));
+    sock.once('error', () => done(false));
+  });
+}
+
+/** Robot's turn probe: the newest summary (real first, then smoke) and whether the policy port is listening. */
+export async function robotProbe(dataDir: string, port: number) {
+  for (const tag of ['', 'smoke']) {
+    const f = path.join(dataDir, 'results', `summary${tag ? `-${tag}` : ''}.json`);
+    if (fs.existsSync(f)) return { summary: JSON.parse(fs.readFileSync(f, 'utf8')), tag, policyServer: await portOpen(port) };
+  }
+  return { summary: null, tag: '', policyServer: false };
+}
 
 // ids may contain dots but never start with one ('.', '..', hidden files)
 const SAFE = /^[A-Za-z0-9_-][A-Za-z0-9._-]{0,79}$/;
@@ -200,6 +226,11 @@ export function backlotServer(opts: { root?: string } = {}): Plugin {
             const f = path.join(dataDir, 'results', `summary${tag ? `-${tag}` : ''}.json`);
             if (!fs.existsSync(f)) return sendJson(res, 404, { ok: false, error: 'no summary yet (run py/report.py)' });
             return sendJson(res, 200, JSON.parse(fs.readFileSync(f, 'utf8')), { 'Cache-Control': 'no-store' });
+          }
+          if (url.pathname === '/api/robot' && req.method === 'GET') {
+            const port = Number(url.searchParams.get('port') ?? 8765);
+            if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('bad port');
+            return sendJson(res, 200, await robotProbe(dataDir, port), { 'Cache-Control': 'no-store' });
           }
           if (url.pathname === '/api/usage' && req.method === 'GET') {
             return sendJson(res, 200, usageSummary(readUsage()));

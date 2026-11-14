@@ -46,3 +46,22 @@ describe('eval results log', () => {
     expect(() => writeEval(dir, { kind: 'eval-start', tag: '../x', runId: 'r3' })).toThrow();
   });
 });
+
+describe('/api/robot probe', () => {
+  it('reports no summary, then smoke, then the real one first; and whether the policy port listens', async () => {
+    const { robotProbe } = await import('../server/plugin');
+    const net = await import('node:net');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'backlot-robot-'));
+    const srv = net.createServer().listen(0, '127.0.0.1');
+    await new Promise((r) => srv.once('listening', r));
+    const port = (srv.address() as { port: number }).port;
+    expect(await robotProbe(dir, port)).toEqual({ summary: null, tag: '', policyServer: false });
+    fs.mkdirSync(path.join(dir, 'results'));
+    fs.writeFileSync(path.join(dir, 'results', 'summary-smoke.json'), '{"tag":"smoke"}');
+    expect(await robotProbe(dir, port)).toEqual({ summary: { tag: 'smoke' }, tag: 'smoke', policyServer: true });
+    fs.writeFileSync(path.join(dir, 'results', 'summary.json'), '{"tag":""}');
+    srv.close();
+    await new Promise((r) => srv.once('close', r));
+    expect(await robotProbe(dir, port)).toEqual({ summary: { tag: '' }, tag: '', policyServer: false });
+  });
+});

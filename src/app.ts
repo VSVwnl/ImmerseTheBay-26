@@ -8,7 +8,9 @@ import { Challenges, CHALLENGES, type ChallengeResult } from './tasks/challenges
 import { newSessionId, type AttemptRecord, type InputKind } from './tasks/recorder';
 import { Panel, type PanelContent } from './ui/panels';
 import { sfx, unlockAudio } from './ui/sound';
-import { BUTTON_WORLDS, PROMPT_PREFIX, TRAINING_WORLDS, type WorldDef } from './world/world';
+import { BUTTON_WORLDS, HELD_OUT_WORLDS, PROMPT_PREFIX, TRAINING_WORLDS, type WorldDef } from './world/world';
+import { PolicyClient } from './policy/client';
+import { RobotTurn } from './policy/robot';
 import { Multiply } from './factory/multiply';
 import { DatasetCamera } from './factory/camera';
 import { ThumbWall } from './ui/thumbs';
@@ -130,6 +132,7 @@ export function startApp(core: Core) {
           void postLog(e.record);
           break;
         case 'results':
+          void probeRobot();
           break;
       }
     },
@@ -143,10 +146,19 @@ export function startApp(core: Core) {
     onGesture();
     if (panel === 'world') {
       if (id === 'voice') return speakWorld();
-      const def = BUTTON_WORLDS.find((w) => w.id === id);
+      const def = (robot ? ROBOT_WORLDS : BUTTON_WORLDS).find((w) => w.id === id);
       if (def) selectWorld(def);
+      if (def && robot) robot.reset(); // fresh seed in the new world
       return;
     }
+    if (id === 'robot') return startRobot();
+    if (id === 'takeover') return takeOver();
+    if (id === 'toggle' && robot) {
+      robot.setPolicy(robot.policy === 'multi' ? 'single' : 'multi');
+      return;
+    }
+    if (id === 'reseed' && robot) return robot.reset();
+    if (robot) return;
     if (id === 'multiply') return startMultiply();
     if (id === 'mstop') {
       multiply?.stop();
@@ -186,12 +198,74 @@ export function startApp(core: Core) {
   }
   const multiplying = () => !!multiply && multiply.phase !== 'done';
 
+  // ---------- Robot's turn (M5) ----------
+  const policyClient = new PolicyClient(`ws://localhost:${params.get('policyPort') ?? 8765}`);
+  let robot: RobotTurn | null = null;
+  let robotAvailable = false;
+  let summary: any = null;
+  let summaryTag = '';
+  const ROBOT_WORLDS = [...BUTTON_WORLDS, ...HELD_OUT_WORLDS];
+  panels.table = new Panel('table', PANELS.thumbs.w, 0.3, PANELS.thumbs.pos, onPress, hud);
+  scene.add(panels.table.mesh);
+  /** The button shows only when a results summary exists and the policy server answers. */
+  async function probeRobot() {
+    try {
+      // the dev server checks the files and the policy port, so a missing server leaves no console errors
+      const r = await fetch(`/api/robot?port=${params.get('policyPort') ?? 8765}`, { cache: 'no-store' });
+      const p = r.ok ? await r.json() : null;
+      summary = p?.summary ?? null;
+      summaryTag = p?.tag ?? '';
+      if (!summary || !p.policyServer) {
+        robotAvailable = false;
+        return;
+      }
+      await policyClient.connect();
+      robotAvailable = true;
+    } catch {
+      robotAvailable = false;
+    }
+  }
+  void probeRobot();
+  function startRobot() {
+    if (!robotAvailable || multiplying() || robot) return;
+    challenges.freePlay = false;
+    thumbs.visible = false;
+    const first = policyClient.policies.includes('multi') ? 'multi' : policyClient.defaultPolicy;
+    robot = new RobotTurn(
+      policyClient,
+      (st) => {
+        renderState(st, st, 1, 1);
+        return dcam.capture(renderer, scene);
+      },
+      () => Math.floor(Math.random() * 1e9),
+      first,
+    );
+  }
+  function takeOver() {
+    robot?.stop();
+    robot = null;
+    challenges.freePlay = true;
+    challenges.abort(); // back to the idle screen: Start runs the challenges again
+  }
+  const cell = (c: { success: number; episodes: number } | undefined) => (c && c.episodes ? `${c.success}/${c.episodes}` : '-');
+
   const fmt = (r: ChallengeResult) =>
     `${r.name.padEnd(6)} ${(r.timeS.toFixed(1) + 's').padStart(6)} ${r.success ? 'OK  ' : 'FAIL'} drops ${r.drops}  ${r.pathLengthM.toFixed(2)}m`;
 
   function updatePanels(now: number) {
     const st = world.status();
-    panels.world.set({
+    if (robot)
+      panels.world.set({
+        title: 'Pick a world',
+        lines: [{ text: `wall: ${st}   * = held out, never trained on`, size: 20, color: st === 'live' ? '#5fe08f' : '#c9d3dd' }],
+        buttons: ROBOT_WORLDS.map((w) => ({
+          id: w.id,
+          label: w.heldOut ? w.label.replace(' (held out)', ' *') : w.label,
+          active: w.id === world.current()?.id,
+        })),
+        cols: 3,
+      });
+    else panels.world.set({
       title: 'Worlds',
       lines: [{ text: `wall: ${st}${st === 'stub' && world.lastError ? ' (live failed)' : ''}`, size: 22, color: st === 'live' ? '#5fe08f' : st === 'loading' ? '#ffd34d' : '#c9d3dd' }],
       buttons: [
@@ -217,7 +291,8 @@ export function startApp(core: Core) {
       status = { flash: fl, lines: [{ text: 'All challenges done', size: 30, align: 'center' }, { text: 'Your data is recorded', size: 34, bold: true, align: 'center', color: '#5fe08f' }] };
     else status = { lines: [{ text: 'BACKLOT', size: 30, align: 'center', bold: true }, { text: 'Press Start to begin', size: 36, align: 'center' }] };
     status.lines = [...(status.lines ?? []), { text: `wall: ${st}`, size: 18, align: 'center', color: st === 'live' ? '#5fe08f' : '#9fb3c8' }];
-    panels.status.set(status);
+    // Multiply and Robot's turn set their own status below; setting it twice per frame would redraw every frame
+    if (!robot && !multiplying()) panels.status.set(status);
 
     let side: PanelContent;
     if (ph === 'results') {
@@ -269,7 +344,49 @@ export function startApp(core: Core) {
       };
       panels.status.set(status);
     }
+    if (ph === 'results' && robotAvailable && !multiplying() && side.buttons)
+      side.buttons = [{ id: 'robot', label: "Robot's turn", wide: true }, ...side.buttons];
+    if (robot) {
+      const r = robot;
+      side = {
+        title: "Robot's turn",
+        lines: [
+          { text: `policy: ${r.policy} (trained on ${r.policy === 'single' ? 'one world' : 'many worlds'})`, size: 20 },
+          { text: `this session: ${r.successes}/${r.tries} placed`, size: 22, bold: true },
+          {
+            text: r.phase === 'error' ? `error: ${r.lastError}` : `step ${r.steps} / 200`,
+            size: 18,
+            color: r.phase === 'error' ? '#ff7b6b' : '#9fb3c8',
+          },
+        ],
+        buttons: [
+          { id: 'toggle', label: `Switch to ${r.policy === 'multi' ? 'single' : 'multi'}`, wide: true, disabled: policyClient.policies.length < 2 },
+          { id: 'reseed', label: 'New scene', wide: true },
+          { id: 'takeover', label: 'Take over', wide: true },
+        ],
+      };
+      const word = r.phase === 'success' ? 'Placed it!' : r.phase === 'fail' ? 'Missed' : r.phase === 'error' ? 'Policy error' : 'The robot is working';
+      panels.status.set({
+        flash: r.phase === 'success' ? 'rgba(40,160,90,0.92)' : r.phase === 'fail' ? 'rgba(170,50,40,0.92)' : null,
+        lines: [
+          { text: `Robot's turn: ${world.current()?.label ?? ''}`, size: 26, align: 'center' },
+          { text: word, size: 40, bold: true, align: 'center' },
+          { text: `wall: ${st}`, size: 18, align: 'center', color: st === 'live' ? '#5fe08f' : '#9fb3c8' },
+        ],
+      });
+    }
     panels.side.set(side);
+    if (robot && summary?.table) {
+      const T = summary.table;
+      const cols = ['lab', 'subway', 'forest', 'desert', 'held_out_mean'];
+      const fmtRow = (r: string[]) => r[0].padEnd(7) + r.slice(1).map((x, i) => x.padStart(i === 4 ? 10 : 8)).join('');
+      const head = fmtRow(['', 'lab', 'subway', 'forest', 'desert', 'held-out']);
+      const rows = ['single', 'multi'].map((p) => fmtRow([p, ...cols.map((c) => cell(T[p]?.[c]))]));
+      panels.table.set({
+        title: `Measured: Place successes / episodes${summaryTag ? ' (SMOKE: stub walls)' : ''}`,
+        lines: [head, ...rows].map((t) => ({ text: t, mono: true, size: 26 })),
+      });
+    } else panels.table.set({ hidden: true });
     panels.counter.set(
       multiply
         ? {
@@ -334,14 +451,15 @@ export function startApp(core: Core) {
     const now = performance.now();
     if (xr.presenting) xr.update(dt);
     desktop.update(dt);
-    if (multiplying()) {
+    if (robot) robot.update(dt);
+    else if (multiplying()) {
       multiply!.update(dt);
       if (!multiplying()) challenges.freePlay = true;
     } else challenges.update(dt, currentAction);
     streamLight.update(dt);
 
-    const src = multiplying() ? multiply! : challenges;
-    const alpha = src.acc * 30;
+    const src = robot ?? (multiplying() ? multiply! : challenges);
+    const alpha = robot ? robot.alpha : src.acc * 30;
     renderState(src.prev, src.curr, Math.min(1, Math.max(0, alpha)), dt);
     if (pendingSnap) {
       dcam.capture(renderer, scene);
@@ -351,6 +469,7 @@ export function startApp(core: Core) {
 
     const a = xr.presenting ? xr.action() ?? desktop.action() : desktop.action();
     marker.position.set(...a.target);
+    marker.visible = !robot && !multiplying();
     const active = xr.presenting ? xr.active : desktop.engaged;
     (marker.material as THREE.MeshBasicMaterial).color.setHex(active ? 0xffb347 : 0x555b66);
     (marker.material as THREE.MeshBasicMaterial).opacity = active ? 0.95 : 0.5;
@@ -379,6 +498,11 @@ export function startApp(core: Core) {
       return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height };
     },
     state: () => challenges.env.snapshot(),
+    get robot() {
+      return robot;
+    },
+    probeRobot,
+    startRobot,
     get multiply() {
       return multiply;
     },
