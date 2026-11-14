@@ -68,3 +68,7 @@ npm run e2e          # Playwright end-to-end in headed Chromium
 - [docs/SPEC-M3-factory.md](docs/SPEC-M3-factory.md) — data factory
 - [docs/SPEC-M4-policy.md](docs/SPEC-M4-policy.md) — policy training, evaluation, live mode
 - [docs/STATUS.md](docs/STATUS.md) — current build status
+
+## License
+
+MIT. See [LICENSE](LICENSE).

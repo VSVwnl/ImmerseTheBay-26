@@ -1,6 +1,6 @@
 # Status
 
-Updated: Sat Nov 14, 10:50 AM PST
+Updated: Sat Nov 14, 10:25 AM PST
 
 ## Current milestone: M1 done (desktop); M2 (live Orbis wall) next
 
