@@ -25,6 +25,7 @@ export class StubWorld implements World {
   private timer = 0;
   private fade = 1;
   private prevPal: [string, string, string] | null = null;
+  private overlay = '';
 
   constructor(width = 1280, height = 720) {
     this.canvas = document.createElement('canvas');
@@ -65,6 +66,11 @@ export class StubWorld implements World {
   async disconnect(): Promise<void> {
     cancelAnimationFrame(this.raf);
     clearInterval(this.timer);
+  }
+
+  /** Text drawn over the stub, e.g. "Loading live world..." while Orbis connects. */
+  setOverlay(text: string): void {
+    this.overlay = text;
   }
 
   /** Expose the canvas so non-video paths (tests) can read it. */
@@ -112,6 +118,14 @@ export class StubWorld implements World {
     ctx.fillText(this.def?.label ?? 'Backlot', w / 2, h * 0.3);
     ctx.font = `${Math.round(h * 0.035)}px system-ui, sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.fillText('stub world (no Orbis key)', w / 2, h * 0.4);
+    ctx.fillText(this.overlay ? '' : 'stub world', w / 2, h * 0.4);
+    if (this.overlay) {
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillRect(0, h * 0.45, w, h * 0.12);
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${Math.round(h * 0.05)}px system-ui, sans-serif`;
+      const dots = '.'.repeat(1 + (Math.floor(t * 2) % 3));
+      ctx.fillText(this.overlay + dots, w / 2, h * 0.51);
+    }
   };
 }

@@ -11,8 +11,8 @@ import { Challenges, CHALLENGES, type ChallengeResult } from './tasks/challenges
 import { newSessionId, type AttemptRecord, type InputKind } from './tasks/recorder';
 import { Panel, type PanelContent } from './ui/panels';
 import { sfx, unlockAudio } from './ui/sound';
-import { BUTTON_WORLDS, type World, type WorldDef } from './world/world';
-import { StubWorld } from './world/stub';
+import { BUTTON_WORLDS, type WorldDef } from './world/world';
+import { WorldManager } from './world/manager';
 import type { Action, EnvState } from './env/env';
 
 // ---------- renderer / scene ----------
@@ -51,10 +51,15 @@ window.addEventListener('resize', () => {
 });
 
 // ---------- world ----------
-const world: World = new StubWorld();
+const params = new URLSearchParams(location.search);
+const world = new WorldManager();
 stage.setVideo(world.getVideo());
+world.onVideoChange = (v) => stage.setVideo(v);
 let worldDef: WorldDef = BUTTON_WORLDS[0];
 void world.setWorld(worldDef, 'fresh');
+// connect to Orbis on the first user gesture when a key exists (?orbis=0 disables)
+const autoConnect = params.get('orbis') !== '0';
+void world.probe().then(() => updateToolbar());
 
 function selectWorld(def: WorldDef) {
   worldDef = def;
@@ -67,6 +72,7 @@ function onGesture() {
   if (!gestured) {
     gestured = true;
     void world.getVideo().play().catch(() => {});
+    if (autoConnect) void world.connect().then(updateToolbar);
   }
 }
 window.addEventListener('pointerdown', onGesture);
@@ -178,7 +184,7 @@ function updatePanels(now: number) {
   const st = world.status();
   panels.world.set({
     title: 'Worlds',
-    lines: [{ text: `wall: ${st}`, size: 22, color: st === 'live' ? '#5fe08f' : st === 'error' ? '#ff7b6b' : '#c9d3dd' }],
+    lines: [{ text: `wall: ${st}${st === 'stub' && world.lastError ? ' (live failed)' : ''}`, size: 22, color: st === 'live' ? '#5fe08f' : st === 'loading' ? '#ffd34d' : '#c9d3dd' }],
     buttons: BUTTON_WORLDS.map((w, i) => ({ id: w.id, label: `${i + 1} ${w.label}`, active: w.id === world.current()?.id })),
     cols: 2,
   });
@@ -196,6 +202,7 @@ function updatePanels(now: number) {
   else if (ph === 'results')
     status = { flash: fl, lines: [{ text: 'All challenges done', size: 30, align: 'center' }, { text: 'Your data is recorded', size: 34, bold: true, align: 'center', color: '#5fe08f' }] };
   else status = { lines: [{ text: 'BACKLOT', size: 30, align: 'center', bold: true }, { text: 'Press Start to begin', size: 36, align: 'center' }] };
+  status.lines = [...(status.lines ?? []), { text: `wall: ${st}`, size: 18, align: 'center', color: st === 'live' ? '#5fe08f' : '#9fb3c8' }];
   panels.status.set(status);
 
   let side: PanelContent;
@@ -241,6 +248,23 @@ dl.addEventListener('click', () => {
   URL.revokeObjectURL(a.href);
 });
 toolbar.appendChild(dl);
+const conn = document.createElement('button');
+conn.id = 'orbis-toggle';
+conn.addEventListener('click', async (e) => {
+  e.stopPropagation();
+  if (world.connected) await world.disconnect();
+  else await world.connect();
+  updateToolbar();
+});
+toolbar.appendChild(conn);
+function updateToolbar() {
+  conn.style.display = world.liveCapable ? '' : 'none';
+  conn.textContent = world.connected ? 'Disconnect Orbis' : 'Connect Orbis';
+}
+updateToolbar();
+world.onStatusChange = () => updateToolbar();
+// end the paid session when the tab goes away
+window.addEventListener('pagehide', () => void world.disconnect());
 
 // ---------- XR session ----------
 document.body.appendChild(VRButton.createButton(renderer, { optionalFeatures: ['hand-tracking'] }));

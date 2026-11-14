@@ -73,7 +73,7 @@ export const POKE_DEPTH = 0.025; // m in front/behind panel surface that counts 
 export const PANEL_PX_PER_M = 900;
 export const PANELS = {
   world: { pos: [-0.62, 1.05, -0.3] as Vec3, w: 0.32, h: 0.4 },
-  status: { pos: [0, 1.62, -1.15] as Vec3, w: 0.6, h: 0.16 },
+  status: { pos: [0, 1.62, -1.15] as Vec3, w: 0.6, h: 0.19 },
   side: { pos: [0.62, 1.05, -0.3] as Vec3, w: 0.36, h: 0.44 },
 };
 export const PANEL_FACE_POINT: Vec3 = [0, 1.4, 0]; // panels turn to face this point
