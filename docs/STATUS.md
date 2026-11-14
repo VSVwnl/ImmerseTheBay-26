@@ -1,8 +1,8 @@
 # Status
 
-Updated: Sat Nov 14, 10:35 AM PST
+Updated: Sat Nov 14, 10:55 AM PST
 
-## Current milestone: M2 done on the stub (live stream unverified: no key); M3 next
+## Current milestone: M3 done on the stub (real datasets need the key); M4 next
 
 ### Done
 - **M1** (desktop checks pass): deterministic env, closed-form IK, snap grasp, 30 Hz fixed-step loop + recorder,
@@ -19,21 +19,40 @@ Updated: Sat Nov 14, 10:35 AM PST
   - Orbis usage heartbeat → `data/orbis-usage.json`; `GET /api/usage` returns `{sessions, minutes}`.
   - Polish done: scene light follows the wall video; a success sends one short follow-up prompt
     ("Golden confetti falls through the air." etc.); "Say a world" voice button when speech recognition exists.
+- **M3**:
+  - Part A, Multiply: after the results card, "Multiply my Place demo" replays the latest successful Place attempt
+    at 30 Hz in each of the 8 training worlds (morph, 4 s settle, replay). Counter panel "1 demo, N episodes";
+    dataset wall with one robot-camera thumbnail per replay, labeled by world; Stop button; challenges work after.
+  - Part B, factory (`/?mode=factory&dataset=multi&episodes=300`): dataset camera (spec start values; wall fills
+    ~40-45% of the image), scripted expert (100% success on 400 seeds, clean and with burst noise), human demo
+    replayer (resampled to 10 Hz, kept only if still successful: 22/22), factory loop (~160 steps/s), Python data
+    server writing `ep_00042.npz`, contact sheet `py/view_dataset.py`.
+  - Guards: held-out worlds never scheduled and refused by the server; frames from a non-live wall are refused for
+    any dataset not named `smoke*`; the factory stops with an error if asked for single/multi without a key.
+  - Smoke datasets built on the stub: `smoke-multi` and `smoke-single`, 322 episodes each (300 expert + 22 human).
+    These are for pipeline testing only. The real `single` and `multi` need the live wall.
 - MIT license; `/api/log` hardened (no dot/traversal ids, no overwrite, JSON + same-origin only).
 
 ### Next
-- M3: Multiply in the headset (Part A), then dataset camera, expert, replayer, factory loop, Python data server.
+- M4: `py/train.py` (5-episode overfit check first), `py/serve.py`, `/?mode=eval`, `py/report.py`, `/api/results`.
+  Without a key, everything runs on the smoke datasets and stub held-out worlds; results will be labeled smoke.
 
 ### Test results
-- Vitest: 73/73 (env, IK, grasp, determinism, replay of saved attempts, hand logic with fake joints,
-  server safety, Orbis client vs fake Reactor, bundle contains no key).
-- Playwright (headed Chromium): 4/4 — M1 mouse playthrough; M2 no-key stub; token route rejects cross-origin;
-  live-connect failure falls back to the stub and challenges still run.
+- Vitest: 111/111 (env, IK, grasp, determinism, replay of every saved attempt, hand logic with fake joints,
+  server safety, Orbis client vs fake Reactor, bundle has no key, expert >95% clean and noisy, obs format).
+- pytest: 10/10 (npz schema, discard failures, held-out refusal, stub-only-into-smoke, bad input, websocket
+  roundtrip, no overwrite, step cap, foreign browser origin refused).
+- Playwright (headed Chromium): 7/7 — M1 playthrough; M2 stub/no-key, cross-origin token refusal, live failure
+  fallback; M3 Multiply (8 episodes, 8 thumbnails, challenges after); factory 10 smoke episodes → 10 npz;
+  factory refuses `multi` on the stub. One intermittent failure in the mouse-driving test helper (not the app);
+  passed on rerun.
 
 ### Unverified / faked
 - **No Orbis key**: live stream, `live` status, morphs, 1080p, dashboard session end are all untested for real.
 - Headset: nothing tested in a Quest yet.
 - Voice in Quest Browser: unknown whether speech recognition exists there.
+- **M3 real datasets not built**: `single` and `multi` need the live Orbis wall. Only `smoke-*` (stub walls) exist.
+- Multiply in the headset not tried; dataset-camera render in XR (second pass at replay midpoints) unverified.
 
 ### Orbis minutes used
 - 0 (no key). Once live: `curl http://localhost:5173/api/usage`.
@@ -58,9 +77,20 @@ M2 (needs the key):
 - [ ] Close the tab; the session ends on the Reactor dashboard.
 - [ ] Does "Say a world" appear in Quest Browser? If so, say a place.
 
+M3:
+- [ ] After the results card, poke "Multiply my Place demo": the arm replays your Place in 8 worlds, the counter
+      climbs to "1 demo, 8 episodes", thumbnails appear up-right; frame rate holds; challenges work afterwards.
+
+### How to build the real datasets (needs the key; each run uses one Orbis session)
+1. `npm run dev` and `.venv\Scripts\python py\data_server.py`
+2. `node scripts/run-factory.mjs "dataset=multi&episodes=300"` and `node scripts/run-factory.mjs "dataset=single&episodes=300"`
+   (or open `/?mode=factory&dataset=multi&episodes=300` and press Start). Run 10 first and check the contact sheet.
+3. `.venv\Scripts\python pyiew_dataset.py data/datasets/multi`
+
 ### Installed
 - npm: three, vite, typescript, @types/three, @types/node, vitest, @playwright/test; Playwright Chromium.
 - npm: @reactor-team/js-sdk 3.4.0 (imports react as a peer; it is only in the lazy Orbis chunk).
+- Python: `.venv` (with system site packages for the CUDA PyTorch 2.13 build) + websockets 17.4, pytest.
 - `C:\Personal\orbis-test`: Reactor stock template (create-reactor-app), outside the repo, for the headset stream test.
 
 ### Notes
