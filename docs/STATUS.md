@@ -1,8 +1,8 @@
 # Status
 
-Updated: Sat Nov 14, ~10:40 AM PST
+Updated: Sat Nov 14, 10:50 AM PST
 
-## Current milestone: M1 (app with stub wall), in progress
+## Current milestone: M1 done (desktop); M2 (live Orbis wall) next
 
 ### Done
 - Repo setup: CLAUDE.md, .gitignore, .env.example at root; docs pushed.
@@ -11,12 +11,16 @@ Updated: Sat Nov 14, ~10:40 AM PST
   in-world poke panels with HTML mirror, challenges with countdown, timer, sounds, results card.
 - `/api/log` dev-server route writes `data/sessions/<sessionId>/<attemptId>.json`.
 
+- M1 desktop acceptance checks pass: dev server with no .env, all three challenges by mouse,
+  JSON per attempt under data/sessions/, keys 1-6 change the stub wall, saved attempts replay to the same result.
+
 ### Next
-- Finish M1 checks, commit code, then M2 (live Orbis wall).
+- M2: /api/token route, Orbis client (src/world/orbis.ts, loaded lazily), status + fallback to stub.
 
 ### Test results
-- Vitest: 16/16 passing (env, IK, grasp, determinism, replay, hand logic).
-- Playwright: M1 mouse playthrough (all three challenges, records saved, world keys) passing; flakiness check running.
+- Vitest: 47/47 passing (env, IK, grasp, determinism, replay incl. 31 real saved attempts, hand logic with fake joints).
+- Playwright (headed Chromium): M1 mouse playthrough passing; 7 of 8 runs green. The one failure was in the
+  test's mouse helper (async wheel timing), since fixed; app behaviour was correct.
 
 ### Unverified / faked
 - No Orbis key yet: wall is the stub world.
@@ -39,3 +43,12 @@ Updated: Sat Nov 14, ~10:40 AM PST
 
 ### Installed
 - npm: three, vite, typescript, @types/three, @types/node, vitest, @playwright/test; Playwright Chromium.
+- npm: @reactor-team/js-sdk 3.4.0 (pulls react as a peer import; loaded lazily so the stub path has no React).
+
+### Notes
+- The env runs at a fixed 30 Hz in the human app and the recorder samples once per step, so a record replays exactly.
+- Panels use canvas textures and show in the headset only; desktop shows the HTML mirror.
+- The dataset camera will use layer 6 (scene content only). Layers 1/2 are avoided: three's XR uses them per eye.
+- EnvState extends the spec's type with layout, seed, reachTargets, reachIndex, drops, wrongBin, success, steps.
+  Records add `hz: 30`. Cubes absent from a layout are omitted.
+- Challenge start opens the desktop gripper.
