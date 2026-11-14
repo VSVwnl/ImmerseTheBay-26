@@ -93,3 +93,42 @@ def test_websocket_roundtrip(tmp_path):
     reply = asyncio.run(run())
     assert reply["type"] == "saved" and reply["steps"] == 3
     assert (tmp_path / "smoke" / "ep_00003.npz").exists()
+
+
+def test_no_overwrite_and_step_cap(tmp_path):
+    for expect in ["saved", "discarded"]:
+        w = EpisodeWriter(tmp_path)
+        w.begin("smoke", 7, meta())
+        w.step(img(), [0] * 4, [0] * 4)
+        assert w.end(True)["type"] == expect
+    import data_server
+
+    w = EpisodeWriter(tmp_path)
+    w.begin("smoke", 8, meta())
+    with pytest.raises(ValueError):
+        for _ in range(data_server.MAX_STEPS_PER_EPISODE + 1):
+            w.step(img(), [0] * 4, [0] * 4)
+
+
+def test_rejects_foreign_browser_origin(tmp_path):
+    import websockets
+
+    async def run():
+        ready, stop = asyncio.Event(), asyncio.Event()
+        task = asyncio.create_task(serve(18766, tmp_path, ready, stop))
+        await ready.wait()
+        refused = False
+        try:
+            async with websockets.connect("ws://localhost:18766", origin="https://evil.example"):
+                pass
+        except Exception:
+            refused = True
+        async with websockets.connect("ws://localhost:18766", origin="http://localhost:5173") as ws:
+            await ws.send(json.dumps({"type": "ping"}))
+            ok = json.loads(await ws.recv())["type"] == "pong"
+        stop.set()
+        await task
+        return refused, ok
+
+    refused, ok = asyncio.run(run())
+    assert refused and ok

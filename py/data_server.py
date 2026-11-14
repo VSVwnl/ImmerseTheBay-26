@@ -27,6 +27,10 @@ import numpy as np
 IMG = 96
 HELD_OUT = {"subway", "forest", "desert"}
 SAFE = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}$")
+MAX_STEPS_PER_EPISODE = 1000
+# Browsers always send Origin: only the dev server's pages may connect. None = non-browser clients (tests, scripts),
+# which a web page cannot impersonate.
+ALLOWED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173", None]
 
 
 def is_smoke(dataset: str) -> bool:
@@ -67,6 +71,8 @@ class EpisodeWriter:
             raise ValueError("step before begin")
         if self.reject:
             return
+        if len(self.images) >= MAX_STEPS_PER_EPISODE:
+            raise ValueError(f"episode longer than {MAX_STEPS_PER_EPISODE} steps")
         raw = base64.b64decode(image_b64)
         if len(raw) != IMG * IMG * 3:
             raise ValueError(f"image has {len(raw)} bytes, expected {IMG * IMG * 3}")
@@ -90,6 +96,8 @@ class EpisodeWriter:
             out = self.root / ds
             out.mkdir(parents=True, exist_ok=True)
             path = out / f"ep_{ep:05d}.npz"
+            if path.exists():
+                return {"type": "discarded", "episode": ep, "reason": f"{path.name} already exists (delete the dataset folder to rebuild)"}
             meta = {**self.meta, "success": True, "steps": len(self.images)}
             np.savez_compressed(
                 path,
@@ -132,7 +140,9 @@ def writer_dataset(msg: dict, reply: dict) -> str:
 async def serve(port: int, root: Path, ready: asyncio.Event | None = None, stop: asyncio.Event | None = None):
     import websockets
 
-    async with websockets.serve(lambda ws: handle(ws, root), "localhost", port, max_size=8 * 1024 * 1024):
+    async with websockets.serve(
+        lambda ws: handle(ws, root), "localhost", port, max_size=8 * 1024 * 1024, origins=ALLOWED_ORIGINS
+    ):
         print(f"[data] listening on ws://localhost:{port}, writing to {root}", flush=True)
         if ready:
             ready.set()
