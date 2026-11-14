@@ -53,11 +53,52 @@ Open `http://localhost:5173` in Quest Browser and press Enter VR. The right hand
 (pinch to grip); poke the panels with a fingertip. Controllers work as a fallback (grip pose +
 trigger). The headset still needs internet for the Orbis stream.
 
+### Multiply, data factory, training, evaluation
+
+Python setup (one time). PyTorch must support your GPU; RTX 50-series needs a CUDA 12.8+ build:
+
+```bash
+python -m venv --system-site-packages .venv
+.venv/Scripts/python -m pip install websockets pytest
+```
+
+1. **Multiply** (in the app): finish the challenges, then press *Multiply my Place demo*. Your Place
+   demo replays in all eight training worlds while a counter and a thumbnail wall fill.
+2. **Build datasets** (laptop browser, needs the live wall for `single` and `multi`):
+
+   ```bash
+   .venv/Scripts/python py/data_server.py
+   node scripts/run-factory.mjs "dataset=multi&episodes=2000"
+   node scripts/run-factory.mjs "dataset=single&episodes=2000"
+   .venv/Scripts/python py/view_dataset.py data/datasets/multi     # contact sheet
+   ```
+
+   Without a key, use `dataset=smoke-multi&schedule=multi` (stub walls, pipeline testing only).
+   On the smoke data, 300 episodes per dataset was too few for the policies to learn the task; 2,000 worked.
+3. **Train** (same code and settings for both, 15 minutes each; run the overfit check first). The image head
+   is a spatial-softmax keypoint layer by default; `--pool avg` gives the spec's global-average-pooling model:
+
+   ```bash
+   .venv/Scripts/python py/train.py --data data/datasets/multi --overfit 5
+   .venv/Scripts/python py/train.py --data data/datasets/multi  --out data/ckpt/multi.pt
+   .venv/Scripts/python py/train.py --data data/datasets/single --out data/ckpt/single.pt
+   ```
+4. **Evaluate** (stop the data server first; both use port 8765):
+
+   ```bash
+   .venv/Scripts/python py/serve.py --ckpt multi=data/ckpt/multi.pt --ckpt single=data/ckpt/single.pt
+   node scripts/run-eval.mjs            # or open /?mode=eval and press Run
+   .venv/Scripts/python py/report.py
+   ```
+5. **Robot's turn** (M5): with `serve.py` running and a summary present, the results card shows
+   *Robot's turn*. In the headset also run `adb reverse tcp:8765 tcp:8765`.
+
 ### Tests
 
 ```bash
-npm test             # unit tests (env, IK, grasp, determinism, replay, hand logic)
-npm run e2e          # Playwright end-to-end in headed Chromium
+npm test                                   # unit tests
+npm run e2e                                # Playwright end-to-end in headed Chromium
+.venv/Scripts/python -m pytest py/tests    # data server, training, serving, report
 ```
 
 ## Docs

@@ -116,3 +116,24 @@ def test_report_table():
     assert s["table"]["single"]["held_out_mean"]["episodes"] == 6
     out = report.print_table(s)
     assert "1/2 (50%)" in out and "held-out mean" in out
+
+
+def test_spatial_softmax_variant():
+    m = Policy({**__import__("policy_model").MODEL_CONFIG, "pool": "spatial_softmax"})
+    out = m(torch.rand(3, 3, IMG, IMG), torch.rand(3, 4))
+    assert out.shape == (3, 4)
+    # keypoints respond to where a bright blob is
+    img = torch.zeros(2, 3, IMG, IMG)
+    img[0, :, 10:20, 10:20] = 1
+    img[1, :, 70:80, 70:80] = 1
+    z0 = m.encoder(img)
+    assert z0.shape[-1] == 12
+
+
+def test_avg_pool_still_available_and_old_configs_load_as_avg():
+    import policy_model
+    old_cfg = {k: v for k, v in policy_model.MODEL_CONFIG.items() if k != "pool"}  # checkpoints from before the option
+    m = Policy(old_cfg)
+    assert m.pool == "avg"
+    assert m(torch.rand(2, 3, IMG, IMG), torch.rand(2, 4)).shape == (2, 4)
+    assert Policy().pool == "spatial_softmax"

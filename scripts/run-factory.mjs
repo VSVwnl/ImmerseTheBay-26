@@ -4,7 +4,7 @@
 import { chromium } from 'playwright';
 
 const query = process.argv[2] ?? 'dataset=smoke&episodes=10';
-const browser = await chromium.launch({ headless: false, args: ['--use-angle=d3d11', '--autoplay-policy=no-user-gesture-required'] });
+const browser = await chromium.launch({ headless: false, args: ['--use-angle=d3d11', '--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--disable-features=IntensiveWakeUpThrottling,CalculateNativeWinOcclusion'] });
 const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
 page.on('console', (m) => m.text().startsWith('[factory]') && console.log(m.text()));
 await page.goto(`http://localhost:5173/?mode=factory&${query}`);

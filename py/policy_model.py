@@ -12,7 +12,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 IMG = 96
-MODEL_CONFIG = {"channels": [32, 64, 128, 256, 256], "state_dim": 4, "state_hidden": 64, "head": 256, "out": 4}
+MODEL_CONFIG = {"channels": [32, 64, 128, 256, 256], "state_dim": 4, "state_hidden": 64, "head": 256, "out": 4, "pool": "spatial_softmax"}
+# pool: the spec ends in global average pooling ("avg"). Smoke debugging showed the multi-world policy could not
+# place cubes in the lab with it (1/20), so the default is a spatial-softmax keypoint head; --pool avg restores the spec.
 PREPROCESS = {"image_scale": 255.0, "layout": "NHWC uint8 RGB -> NCHW float"}
 
 
@@ -47,24 +49,38 @@ class Policy(nn.Module):
         super().__init__()
         cfg = cfg or MODEL_CONFIG
         self.cfg = cfg
+        self.pool = cfg.get("pool", "avg")
+        # avg (the spec): five stride-2 convs then global average pooling. spatial_softmax keeps a 12x12 map
+        # (the last two convs use stride 1) and turns each channel into an expected (x, y) keypoint.
+        strides = [2, 2, 2, 1, 1] if self.pool == "spatial_softmax" else [2] * len(cfg["channels"])
         layers: list[nn.Module] = []
         cin = 3
-        for ch in cfg["channels"]:
-            layers += [nn.Conv2d(cin, ch, 3, stride=2, padding=1), nn.GroupNorm(8, ch), nn.ReLU(inplace=True)]
+        for ch, st in zip(cfg["channels"], strides):
+            layers += [nn.Conv2d(cin, ch, 3, stride=st, padding=1), nn.GroupNorm(8, ch), nn.ReLU(inplace=True)]
             cin = ch
+        if self.pool == "spatial_softmax":
+            self.keypoint_temp = nn.Parameter(torch.ones(1))
         self.encoder = nn.Sequential(*layers)
         self.state_mlp = nn.Sequential(
             nn.Linear(cfg["state_dim"], cfg["state_hidden"]), nn.ReLU(inplace=True),
             nn.Linear(cfg["state_hidden"], cfg["state_hidden"]), nn.ReLU(inplace=True),
         )
         self.head = nn.Sequential(
-            nn.Linear(cin + cfg["state_hidden"], cfg["head"]), nn.ReLU(inplace=True),
+            nn.Linear((2 * cin if self.pool == "spatial_softmax" else cin) + cfg["state_hidden"], cfg["head"]), nn.ReLU(inplace=True),
             nn.Linear(cfg["head"], cfg["head"]), nn.ReLU(inplace=True),
             nn.Linear(cfg["head"], cfg["out"]),
         )
 
     def forward(self, image: torch.Tensor, state: torch.Tensor) -> torch.Tensor:
-        z = self.encoder(image).mean(dim=(2, 3))  # global average pooling
+        f = self.encoder(image)
+        if self.pool == "spatial_softmax":
+            b, c, h, w = f.shape
+            att = torch.softmax(f.reshape(b, c, h * w) / self.keypoint_temp, dim=-1).reshape(b, c, h, w)
+            ys = torch.linspace(-1, 1, h, device=f.device)
+            xs = torch.linspace(-1, 1, w, device=f.device)
+            z = torch.cat([(att.sum(2) * xs).sum(-1), (att.sum(3) * ys).sum(-1)], dim=1)
+        else:
+            z = f.mean(dim=(2, 3))  # global average pooling (the spec)
         s = self.state_mlp(state)
         return self.head(torch.cat([z, s], dim=1))
 

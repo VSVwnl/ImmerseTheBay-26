@@ -29,7 +29,17 @@ export function startEval(core: Core): void {
   const { renderer, scene, camera, world, streamLight, renderState } = core;
   const params = new URLSearchParams(location.search);
   const tag = params.get('tag') ?? '';
-  const isSmoke = tag.startsWith('smoke');
+  const isDev = tag.startsWith('dev');
+  const isSmoke = tag.startsWith('smoke') || isDev;
+  // Development checks use other seeds and only the worlds asked for; the official protocol stays frozen.
+  const P = isDev
+    ? {
+        ...EVAL_PROTOCOL,
+        seeds: Array.from({ length: Number(params.get('n') ?? 20) }, (_, i) => 5000 + i),
+        worlds: (params.get('worlds') ?? 'lab').split(','),
+        policies: (params.get('policies') ?? 'single,multi').split(','),
+      }
+    : EVAL_PROTOCOL;
   document.getElementById('help')!.style.display = 'none';
   const dcam = new DatasetCamera();
   const client = new PolicyClient(`ws://localhost:${params.get('port') ?? 8765}`);
@@ -68,11 +78,11 @@ export function startEval(core: Core): void {
       `policy   ${stats.policy}   seed ${stats.seed}`,
       stats.error ? `error    ${stats.error}` : '',
     ].join('\n');
-    const lines = [`${''.padEnd(8)}${EVAL_PROTOCOL.worlds.map((w) => w.padStart(10)).join('')}`];
-    for (const p of EVAL_PROTOCOL.policies)
+    const lines = [`${''.padEnd(8)}${P.worlds.map((w) => w.padStart(10)).join('')}`];
+    for (const p of P.policies)
       lines.push(
         p.padEnd(8) +
-          EVAL_PROTOCOL.worlds
+          P.worlds
             .map((w) => {
               const c = tally.get(`${p}/${w}`);
               return (c ? `${c.s}/${c.n}` : '-').padStart(10);
@@ -101,21 +111,21 @@ export function startEval(core: Core): void {
   async function run() {
     stats.phase = 'connecting';
     await client.connect();
-    for (const p of EVAL_PROTOCOL.policies)
+    for (const p of P.policies)
       if (!client.policies.includes(p)) throw new Error(`policy server has no "${p}" policy (has ${client.policies.join(', ')})`);
     await world.probe();
     if (world.liveCapable && params.get('orbis') !== '0') await world.connect();
     stats.runId = `${new Date().toISOString().replace(/[:.]/g, '-')}`;
-    await post({ kind: 'eval-start', tag, runId: stats.runId, protocol: EVAL_PROTOCOL });
-    stats.total = EVAL_PROTOCOL.worlds.length * EVAL_PROTOCOL.policies.length * EVAL_PROTOCOL.seeds.length;
+    await post({ kind: 'eval-start', tag, runId: stats.runId, protocol: P });
+    stats.total = P.worlds.length * P.policies.length * P.seeds.length;
     const env = new TaskEnv(0, 'place');
-    for (const wid of EVAL_PROTOCOL.worlds) {
+    for (const wid of P.worlds) {
       const def = worldById(wid)!;
       stats.world = def.label;
       await world.setWorld(def, 'fresh');
       await sleep(world.status() === 'stub' ? 1700 : 300);
-      for (const seed of EVAL_PROTOCOL.seeds)
-        for (const policy of EVAL_PROTOCOL.policies) {
+      for (const seed of P.seeds)
+        for (const policy of P.policies) {
           await waitForWall();
           stats.phase = 'running';
           stats.policy = policy;
@@ -123,7 +133,7 @@ export function startEval(core: Core): void {
           env.reset(seed, 'place');
           let steps = 0;
           const wall = world.status();
-          while (steps < EVAL_PROTOCOL.maxSteps && !env.state().success) {
+          while (steps < P.maxSteps && !env.state().success) {
             const s = env.state();
             renderState(s, s, 1, 1);
             const rgb = dcam.capture(renderer, scene);

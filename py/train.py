@@ -58,8 +58,12 @@ def stack(eps, which):
     )
 
 
+def _log(*a):
+    print(*a, flush=True)
+
+
 def train(data: str, out: str | None, minutes: float, overfit: int | None, seed: int, max_epochs: int | None = None,
-          log=print, device: str | None = None):
+          log=_log, device: str | None = None, pool: str | None = None):
     torch.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
@@ -83,7 +87,9 @@ def train(data: str, out: str | None, minutes: float, overfit: int | None, seed:
         vs = preprocess_states(torch.from_numpy(Vs)).to(device)
         va = torch.from_numpy(Va).float().to(device)
 
-    model = Policy(MODEL_CONFIG).to(device)
+    cfg = {**MODEL_CONFIG, "pool": pool or MODEL_CONFIG["pool"]}
+    log(f"model: {cfg}")
+    model = Policy(cfg).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=HPARAMS["lr"], weight_decay=HPARAMS["weight_decay"])
     budget = minutes * 60
     t0 = time.time()
@@ -119,7 +125,7 @@ def train(data: str, out: str | None, minutes: float, overfit: int | None, seed:
             opt.zero_grad(set_to_none=True)
             loss.backward()
             opt.step()
-            tl += float(loss) * len(j)
+            tl += float(loss.detach()) * len(j)
             tc += len(j)
         train_loss = tl / tc
         val_loss = evaluate(vi, vs, va) if va_idx else train_loss
@@ -138,7 +144,7 @@ def save(out, model, data, eps, tr_idx, va_idx, history, best, seed, minutes):
     Path(out).parent.mkdir(parents=True, exist_ok=True)
     torch.save({
         "state_dict": model.state_dict(),
-        "model_config": MODEL_CONFIG,
+        "model_config": model.cfg,
         "preprocess": PREPROCESS,
         "obs": {"image": [96, 96, 3], "state": "tip xyz scaled to [-1,1] over workspace + grip",
                 "action": "target xyz same scaling + grip logit", "workspace": {"min": [-0.4, 0.76, -0.9], "max": [0.4, 1.2, -0.45]}},
@@ -159,8 +165,9 @@ def main():
     ap.add_argument("--epochs", type=int, help="stop after N epochs (in addition to the time budget)")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", help="cuda, mps or cpu (default: best available)")
+    ap.add_argument("--pool", choices=["avg", "spatial_softmax"], help="image feature pooling (default spatial_softmax; avg is the spec model)")
     a = ap.parse_args()
-    r = train(a.data, a.out, a.minutes, a.overfit, a.seed, a.epochs, device=a.device)
+    r = train(a.data, a.out, a.minutes, a.overfit, a.seed, a.epochs, device=a.device, pool=a.pool)
     if a.overfit:
         ok = r["final_train"] is not None and r["final_train"] < 0.01
         print(f"OVERFIT CHECK {'PASS' if ok else 'FAIL'}: final train loss {r['final_train']:.5f} (want < 0.01)")
