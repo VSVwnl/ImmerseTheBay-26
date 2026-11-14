@@ -44,6 +44,7 @@ export class OrbisWorld implements World {
   private queued: { def: WorldDef; mode: 'morph' | 'fresh' } | null = null;
   private queueTimer = 0;
   private runStartedMs = 0;
+  private started = false; // a run has been started on this session
   private awaitingFrames = true;
   private framesAfterMs = 0;
   private availableRes: string[] = [];
@@ -184,6 +185,8 @@ export class OrbisWorld implements World {
     await r.sendCommand('reset', {});
     await r.sendCommand('set_prompt', { prompt: def.prompt });
     await r.sendCommand('start', {});
+    this.started = true;
+    this.lastSteerMs = performance.now();
     // frames from before the reset may still be in flight; ignore the first ~0.5 s
     this.framesAfterMs = performance.now() + 500;
     this.runStartedMs = performance.now();
@@ -191,7 +194,7 @@ export class OrbisWorld implements World {
 
   async setWorld(def: WorldDef, mode: 'morph' | 'fresh' = 'morph'): Promise<void> {
     this.def = def;
-    if (!this.reactor || this.rstatus !== 'ready' || !this.runStartedMs) return; // used at connect
+    if (!this.reactor || this.rstatus !== 'ready' || !this.started) return; // stored; used at connect
     const now = performance.now();
     const wait = this.lastSteerMs + WORLD_MIN_INTERVAL_S * 1000 - now;
     if (wait > 0) {
@@ -252,6 +255,7 @@ export class OrbisWorld implements World {
     }
     this.readyAtMs = 0;
     this.runStartedMs = 0;
+    this.started = false;
     this.set('idle');
     if (r) await r.disconnect().catch(() => {});
   }

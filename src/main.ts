@@ -1,7 +1,7 @@
 // Renderer, scene, loop, mode switch (app / factory / eval).
 import * as THREE from 'three';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
-import { DESKTOP_CAMERA, PANELS, WORLD_DEFAULT_MODE, type Vec3 } from './config';
+import { DESKTOP_CAMERA, PANELS, SUCCESS_NUDGES, WORLD_DEFAULT_MODE, type Vec3 } from './config';
 import { createStage, markDataset } from './scene/stage';
 import { ArmModel } from './arm/arm';
 import { solveIK } from './arm/ik';
@@ -11,7 +11,9 @@ import { Challenges, CHALLENGES, type ChallengeResult } from './tasks/challenges
 import { newSessionId, type AttemptRecord, type InputKind } from './tasks/recorder';
 import { Panel, type PanelContent } from './ui/panels';
 import { sfx, unlockAudio } from './ui/sound';
-import { BUTTON_WORLDS, type WorldDef } from './world/world';
+import { BUTTON_WORLDS, PROMPT_PREFIX, type WorldDef } from './world/world';
+import { StreamLight } from './scene/streamlight';
+import { listenOnce, voiceSupported } from './ui/voice';
 import { WorldManager } from './world/manager';
 import type { Action, EnvState } from './env/env';
 
@@ -55,6 +57,19 @@ const params = new URLSearchParams(location.search);
 const world = new WorldManager();
 stage.setVideo(world.getVideo());
 world.onVideoChange = (v) => stage.setVideo(v);
+const streamLight = new StreamLight(stage.hemi, stage.sun, () => world.getVideo());
+let listening = false;
+function speakWorld() {
+  listenOnce(
+    (text) => {
+      const label = text.length > 22 ? text.slice(0, 21) + '…' : text;
+      selectWorld({ id: 'custom', label, prompt: `${PROMPT_PREFIX} ${text}` });
+    },
+    (on) => {
+      listening = on;
+    },
+  );
+}
 let worldDef: WorldDef = BUTTON_WORLDS[0];
 void world.setWorld(worldDef, 'fresh');
 // connect to Orbis on the first user gesture when a key exists (?orbis=0 disables)
@@ -141,6 +156,7 @@ const challenges = new Challenges({
       case 'success':
         sfx.success();
         lastResult = e.result;
+        void world.nudge(SUCCESS_NUDGES[Math.floor(Math.random() * SUCCESS_NUDGES.length)]);
         flash = { color: 'rgba(40,160,90,0.92)', until: performance.now() + 900 };
         break;
       case 'fail':
@@ -165,6 +181,7 @@ function onPress(panel: string, id: string) {
   sfx.click();
   onGesture();
   if (panel === 'world') {
+    if (id === 'voice') return speakWorld();
     const def = BUTTON_WORLDS.find((w) => w.id === id);
     if (def) selectWorld(def);
     return;
@@ -185,7 +202,12 @@ function updatePanels(now: number) {
   panels.world.set({
     title: 'Worlds',
     lines: [{ text: `wall: ${st}${st === 'stub' && world.lastError ? ' (live failed)' : ''}`, size: 22, color: st === 'live' ? '#5fe08f' : st === 'loading' ? '#ffd34d' : '#c9d3dd' }],
-    buttons: BUTTON_WORLDS.map((w, i) => ({ id: w.id, label: `${i + 1} ${w.label}`, active: w.id === world.current()?.id })),
+    buttons: [
+      ...BUTTON_WORLDS.map((w, i) => ({ id: w.id, label: `${i + 1} ${w.label}`, active: w.id === world.current()?.id })),
+      ...(voiceSupported
+        ? [{ id: 'voice', label: listening ? 'Listening…' : world.current()?.id === 'custom' ? `Say a world (${world.current()!.label})` : 'Say a world', wide: true, active: listening }]
+        : []),
+    ],
     cols: 2,
   });
 
@@ -311,6 +333,7 @@ renderer.setAnimationLoop(() => {
   if (xr.presenting) xr.update(dt);
   desktop.update(dt);
   challenges.update(dt, currentAction);
+  streamLight.update(dt);
 
   const alpha = challenges.acc / (1 / 30);
   renderState(challenges.prev, challenges.curr, Math.min(1, Math.max(0, alpha)), dt);
