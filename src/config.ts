@@ -75,6 +75,8 @@ export const PANELS = {
   world: { pos: [-0.62, 1.05, -0.3] as Vec3, w: 0.32, h: 0.46 },
   status: { pos: [0, 1.62, -1.15] as Vec3, w: 0.6, h: 0.19 },
   side: { pos: [0.62, 1.05, -0.3] as Vec3, w: 0.36, h: 0.44 },
+  counter: { pos: [0.62, 1.36, -0.3] as Vec3, w: 0.36, h: 0.09 },
+  thumbs: { pos: [0.95, 1.55, -0.95] as Vec3, w: 0.72, h: 0 },
 };
 export const PANEL_FACE_POINT: Vec3 = [0, 1.4, 0]; // panels turn to face this point
 
@@ -93,3 +95,12 @@ export const SUCCESS_NUDGES = [
   'Warm golden light washes over the scene.',
   'Colorful balloons float up into the air.',
 ];
+
+// ---- Dataset camera (M3) ----
+export const DATASET_CAMERA = { pos: [0, 1.35, 0.15] as Vec3, lookAt: [0, 0.85, -0.8] as Vec3, fov: 60 };
+
+// ---- Multiply (M3 Part A) ----
+export const MULTIPLY_SETTLE_S = 4;
+
+// ---- Factory (M3 Part B) ----
+export const FACTORY = { seedBase: 1000, worldEvery: 10, stubSettleMs: 1700 };

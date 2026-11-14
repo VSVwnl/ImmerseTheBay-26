@@ -74,4 +74,25 @@ export async function pickAndPlace(page: Page, cube: V3, bin: V3) {
   await moveTo(page, [cube[0], 0.95, cube[2]]);
   await moveTo(page, [bin[0], 0.95, bin[2]]);
   await toggleGrip(page);
+  const r = await state(page);
+  if (r.held) throw new Error(`release failed: ${JSON.stringify(r)}`);
+}
+
+/** Play all three challenges with the mouse from the idle screen. */
+export async function playAll(page: Page) {
+  await page.locator('.panel-side button[data-id="start"], .panel-side button[data-id="again"]').first().click();
+  await waitPhase(page, 'running');
+  let s = await state(page);
+  for (const t of s.reachTargets) await moveTo(page, t, 0.038);
+  await waitPhase(page, 'between');
+  await waitPhase(page, 'running');
+  s = await state(page);
+  await pickAndPlace(page, s.cubes.red!, BIN.red);
+  await waitPhase(page, 'between');
+  await waitPhase(page, 'running');
+  s = await state(page);
+  await pickAndPlace(page, s.cubes.red!, BIN.red);
+  s = await state(page);
+  await pickAndPlace(page, s.cubes.blue!, BIN.blue);
+  await waitPhase(page, 'results', 10000);
 }

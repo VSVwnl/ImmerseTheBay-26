@@ -64,6 +64,29 @@ export function writeAttempt(dataDir: string, rec: { sessionId?: unknown; attemp
   return file;
 }
 
+/** Saved attempt records, optionally filtered (used by the factory to load human demos). */
+export function listAttempts(dataDir: string, challenge: string | null, successOnly: boolean): unknown[] {
+  const base = path.join(dataDir, 'sessions');
+  const out: unknown[] = [];
+  if (!fs.existsSync(base)) return out;
+  for (const sid of fs.readdirSync(base).sort()) {
+    const dir = path.join(base, sid);
+    if (!fs.statSync(dir).isDirectory()) continue;
+    for (const f of fs.readdirSync(dir).sort()) {
+      if (!f.endsWith('.json')) continue;
+      try {
+        const r = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+        if (challenge && r.challenge !== challenge) continue;
+        if (successOnly && !r.success) continue;
+        out.push(r);
+      } catch {
+        // skip unreadable files
+      }
+    }
+  }
+  return out;
+}
+
 const LOCAL_HOST = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/;
 
 export const TOKEN_BODY = {
@@ -144,6 +167,9 @@ export function backlotServer(opts: { root?: string } = {}): Plugin {
             fs.mkdirSync(dataDir, { recursive: true });
             fs.writeFileSync(usageFile, JSON.stringify(u, null, 1));
             return sendJson(res, 200, { ok: true });
+          }
+          if (url.pathname === '/api/sessions' && req.method === 'GET') {
+            return sendJson(res, 200, listAttempts(dataDir, url.searchParams.get('challenge'), url.searchParams.get('success') === '1'));
           }
           if (url.pathname === '/api/usage' && req.method === 'GET') {
             return sendJson(res, 200, usageSummary(readUsage()));

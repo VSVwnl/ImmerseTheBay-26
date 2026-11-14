@@ -14,7 +14,12 @@
       #hud .panel-world { left: 12px; top: 12px; width: 220px; }
       #hud .panel-status { left: 50%; transform: translateX(-50%); top: 12px; min-width: 280px; text-align: center; }
       #hud .panel-side { right: 12px; top: 12px; width: 330px; }
-      #hud .panel-counter { right: 12px; bottom: 12px; width: 330px; }
+      #hud .panel-counter { right: 12px; top: 200px; width: 330px; text-align: center; }
+      #hud .panel-thumbs { right: 12px; bottom: 60px; width: 330px; }
+      #hud .thumb-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+      #hud .thumb-grid figure { margin: 0; }
+      #hud .thumb-grid canvas { width: 100%; image-rendering: auto; border-radius: 4px; display: block; }
+      #hud .thumb-grid figcaption { font-size: 10px; color: #c9d3dd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       #hud .panel-title { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #9fb3c8; margin-bottom: 6px; font-weight: 700; }
       #hud .panel-line { line-height: 1.35; white-space: pre; }
       #hud .panel-line.mono { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
@@ -24,6 +29,10 @@
       #hud button:hover { background: #3a4d6b; }
       #hud button.active { background: #f28a1e; }
       #hud button:disabled { background: #444; color: #888; cursor: default; }
+      #hud .factory-panel { left: 12px; top: 12px; width: 420px; }
+      #hud .factory-row { display: flex; gap: 10px; align-items: flex-start; margin-top: 6px; }
+      #hud #f-preview { width: 192px; height: 192px; image-rendering: pixelated; border-radius: 4px; background: #000; }
+      #hud .f-log { max-height: 140px; overflow: auto; color: #9fb3c8; margin-top: 8px; white-space: pre-wrap; }
       #toolbar { position: fixed; left: 12px; bottom: 12px; display: flex; gap: 6px; pointer-events: auto; }
       #toolbar button { background: #20242c; color: #cfd6de; border: 1px solid #3a404c; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
       #help { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); color: #8c96a3; font-size: 12px; pointer-events: none; text-align: center; }
