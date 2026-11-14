@@ -64,6 +64,29 @@ export function writeAttempt(dataDir: string, rec: { sessionId?: unknown; attemp
   return file;
 }
 
+/** Evaluation results: eval-start archives any previous run file and starts a new one; eval appends an episode. */
+export function writeEval(dataDir: string, body: Record<string, unknown>): string {
+  const tag = String(body.tag ?? '');
+  if (tag && !SAFE.test(tag)) throw new Error('bad tag');
+  const dir = path.join(dataDir, 'results');
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, `eval${tag ? `-${tag}` : ''}.json`);
+  if (body.kind === 'eval-start') {
+    if (fs.existsSync(file)) {
+      const old = JSON.parse(fs.readFileSync(file, 'utf8'));
+      fs.renameSync(file, path.join(dir, `eval${tag ? `-${tag}` : ''}.${String(old.runId ?? Date.now()).replace(/[^A-Za-z0-9-]/g, '')}.json`));
+    }
+    fs.writeFileSync(file, JSON.stringify({ runId: body.runId, tag, protocol: body.protocol, startedAt: new Date().toISOString(), episodes: [] }, null, 1));
+    return file;
+  }
+  const run = JSON.parse(fs.readFileSync(file, 'utf8'));
+  if (run.runId !== body.runId) throw new Error('eval episode for a different run');
+  const { world, policy, seed, success, steps, wall } = body;
+  run.episodes.push({ world, policy, seed, success: !!success, steps, wall });
+  fs.writeFileSync(file, JSON.stringify(run, null, 1));
+  return file;
+}
+
 /** Saved attempt records, optionally filtered (used by the factory to load human demos). */
 export function listAttempts(dataDir: string, challenge: string | null, successOnly: boolean): unknown[] {
   const base = path.join(dataDir, 'sessions');
@@ -171,6 +194,13 @@ export function backlotServer(opts: { root?: string } = {}): Plugin {
           if (url.pathname === '/api/sessions' && req.method === 'GET') {
             return sendJson(res, 200, listAttempts(dataDir, url.searchParams.get('challenge'), url.searchParams.get('success') === '1'));
           }
+          if (url.pathname === '/api/results' && req.method === 'GET') {
+            const tag = url.searchParams.get('tag') ?? '';
+            if (tag && !SAFE.test(tag)) throw new Error('bad tag');
+            const f = path.join(dataDir, 'results', `summary${tag ? `-${tag}` : ''}.json`);
+            if (!fs.existsSync(f)) return sendJson(res, 404, { ok: false, error: 'no summary yet (run py/report.py)' });
+            return sendJson(res, 200, JSON.parse(fs.readFileSync(f, 'utf8')), { 'Cache-Control': 'no-store' });
+          }
           if (url.pathname === '/api/usage' && req.method === 'GET') {
             return sendJson(res, 200, usageSummary(readUsage()));
           }
@@ -178,6 +208,10 @@ export function backlotServer(opts: { root?: string } = {}): Plugin {
             const bad = checkSameOrigin(req);
             if (bad) return sendJson(res, 403, { ok: false, error: bad });
             const body = JSON.parse(await readBody(req));
+            if (body.kind === 'eval-start' || body.kind === 'eval') {
+              const file = writeEval(dataDir, body);
+              return sendJson(res, 200, { ok: true, file: path.relative(root, file) });
+            }
             const file = writeAttempt(dataDir, body);
             return sendJson(res, 200, { ok: true, file: path.relative(root, file) });
           }

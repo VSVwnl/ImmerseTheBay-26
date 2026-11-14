@@ -29,3 +29,20 @@ describe('/api/log safety', () => {
     expect(checkSameOrigin(req({ 'content-type': 'text/plain' }))).not.toBe(null);
   });
 });
+
+import { writeEval } from '../server/plugin';
+
+describe('eval results log', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'backlot-eval-'));
+  it('starts a run, appends episodes, archives the previous run', () => {
+    writeEval(dir, { kind: 'eval-start', tag: 'smoke', runId: 'r1', protocol: { seeds: [1] } });
+    writeEval(dir, { kind: 'eval', tag: 'smoke', runId: 'r1', world: 'lab', policy: 'multi', seed: 1, success: true, steps: 30, wall: 'stub' });
+    const f = path.join(dir, 'results', 'eval-smoke.json');
+    expect(JSON.parse(fs.readFileSync(f, 'utf8')).episodes).toHaveLength(1);
+    expect(() => writeEval(dir, { kind: 'eval', tag: 'smoke', runId: 'other', world: 'lab' })).toThrow();
+    writeEval(dir, { kind: 'eval-start', tag: 'smoke', runId: 'r2', protocol: {} });
+    expect(JSON.parse(fs.readFileSync(f, 'utf8')).episodes).toHaveLength(0);
+    expect(fs.existsSync(path.join(dir, 'results', 'eval-smoke.r1.json'))).toBe(true);
+    expect(() => writeEval(dir, { kind: 'eval-start', tag: '../x', runId: 'r3' })).toThrow();
+  });
+});

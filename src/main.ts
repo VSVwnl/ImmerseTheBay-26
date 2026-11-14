@@ -12,6 +12,8 @@ const core = createCore();
 
 if (mode === 'factory') {
   void import('./factory/factory').then((m) => m.startFactory(core));
+} else if (mode === 'eval') {
+  void import('./policy/eval').then((m) => m.startEval(core));
 } else {
   void import('./app').then((m) => m.startApp(core));
 }
