@@ -63,7 +63,6 @@ export class HoloLink {
   hover = false;
   private wasClosed = false;
   private startPoint: Vec3 = [0, 0, 0]; // hologram-space pinch point at grab
-  private startTarget: Vec3 = [0, 0, 0];
   private prevLocal: Vec3 = [0, 0, 0]; // real-space image of the pinch point last frame
   private heldS = 0;
 
@@ -91,7 +90,6 @@ export class HoloLink {
       this.dragging = false;
       this.heldS = 0;
       this.startPoint = [...g.point];
-      this.startTarget = [...this.store.target];
       this.prevLocal = fromHolo(g.point, a);
       return 'grab';
     }
