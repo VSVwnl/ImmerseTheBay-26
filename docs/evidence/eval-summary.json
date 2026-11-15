@@ -1,0 +1,99 @@
+{
+ "runId": "2026-11-15T00-39-44-104Z",
+ "tag": "",
+ "startedAt": "2026-11-15T00:39:44.107Z",
+ "protocol": {
+  "task": "place",
+  "maxSteps": 200,
+  "seeds": [
+   9000,
+   9001,
+   9002,
+   9003,
+   9004,
+   9005,
+   9006,
+   9007,
+   9008,
+   9009,
+   9010,
+   9011,
+   9012,
+   9013,
+   9014,
+   9015,
+   9016,
+   9017,
+   9018,
+   9019
+  ],
+  "worlds": [
+   "lab",
+   "subway",
+   "forest",
+   "desert"
+  ],
+  "policies": [
+   "single",
+   "multi"
+  ],
+  "dt": 0.1
+ },
+ "complete": true,
+ "table": {
+  "single": {
+   "lab": {
+    "success": 8,
+    "episodes": 20,
+    "rate": 0.4
+   },
+   "subway": {
+    "success": 7,
+    "episodes": 20,
+    "rate": 0.35
+   },
+   "forest": {
+    "success": 8,
+    "episodes": 20,
+    "rate": 0.4
+   },
+   "desert": {
+    "success": 0,
+    "episodes": 20,
+    "rate": 0.0
+   },
+   "held_out_mean": {
+    "success": 15,
+    "episodes": 60,
+    "rate": 0.25
+   }
+  },
+  "multi": {
+   "lab": {
+    "success": 10,
+    "episodes": 20,
+    "rate": 0.5
+   },
+   "subway": {
+    "success": 9,
+    "episodes": 20,
+    "rate": 0.45
+   },
+   "forest": {
+    "success": 10,
+    "episodes": 20,
+    "rate": 0.5
+   },
+   "desert": {
+    "success": 8,
+    "episodes": 20,
+    "rate": 0.4
+   },
+   "held_out_mean": {
+    "success": 27,
+    "episodes": 60,
+    "rate": 0.45
+   }
+  }
+ }
+}

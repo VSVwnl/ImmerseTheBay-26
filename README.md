@@ -34,7 +34,8 @@ Two policies with the same code and training budget, evaluated on live Orbis wal
 | Trained on 8 generated worlds | 10/20 (50%) | **27/60 (45%)** |
 
 Same seed and world compared, the many-world policy alone succeeded 20 times and the one-world policy alone 8
-(exact McNemar p = 0.036). Neither policy is reliable even in the lab; the arm is simulated. Details and limits:
+(exact McNemar p = 0.036). The datasets, attempt records and per-episode results are shown in
+[docs/DATA.md](docs/DATA.md). Neither policy is reliable even in the lab; the arm is simulated. Details and limits:
 [docs/STATUS.md](docs/STATUS.md#real-result-m4-live-orbis-walls-run-2026-11-15t00-39-44-104z-datasummaryjson).
 
 ## Run it
@@ -158,6 +159,7 @@ rerun; Shelf's test carried the jar under the desktop side panel and was fixed a
 - [docs/SPEC-M2-orbis.md](docs/SPEC-M2-orbis.md) — live Orbis wall
 - [docs/SPEC-M3-factory.md](docs/SPEC-M3-factory.md) — data factory
 - [docs/SPEC-M4-policy.md](docs/SPEC-M4-policy.md) — policy training, evaluation, live mode
+- [docs/DATA.md](docs/DATA.md) — what has been collected: attempts, image datasets, evaluation, real samples
 - [docs/WORKSHOP.md](docs/WORKSHOP.md) — Robot Workshop: parts, challenges, switches, headset checks
 - [docs/AUTONOMOUS.md](docs/AUTONOMOUS.md) — rules for the autonomous Workshop run
 - [docs/STATUS.md](docs/STATUS.md) — current build status, measured results, Orbis minutes

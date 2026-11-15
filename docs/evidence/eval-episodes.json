@@ -1,0 +1,1324 @@
+{
+ "runId": "2026-11-15T00-39-44-104Z",
+ "tag": "",
+ "protocol": {
+  "task": "place",
+  "maxSteps": 200,
+  "seeds": [
+   9000,
+   9001,
+   9002,
+   9003,
+   9004,
+   9005,
+   9006,
+   9007,
+   9008,
+   9009,
+   9010,
+   9011,
+   9012,
+   9013,
+   9014,
+   9015,
+   9016,
+   9017,
+   9018,
+   9019
+  ],
+  "worlds": [
+   "lab",
+   "subway",
+   "forest",
+   "desert"
+  ],
+  "policies": [
+   "single",
+   "multi"
+  ],
+  "dt": 0.1
+ },
+ "startedAt": "2026-11-15T00:39:44.107Z",
+ "episodes": [
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9000,
+   "success": true,
+   "steps": 22,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9000,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9001,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9001,
+   "success": true,
+   "steps": 30,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9002,
+   "success": true,
+   "steps": 49,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9002,
+   "success": true,
+   "steps": 26,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9003,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9003,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9004,
+   "success": true,
+   "steps": 42,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9004,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9005,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9005,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9006,
+   "success": true,
+   "steps": 21,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9006,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9007,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9007,
+   "success": true,
+   "steps": 25,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9008,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9008,
+   "success": true,
+   "steps": 43,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9009,
+   "success": true,
+   "steps": 23,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9009,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9010,
+   "success": true,
+   "steps": 35,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9010,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9011,
+   "success": true,
+   "steps": 31,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9011,
+   "success": true,
+   "steps": 36,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9012,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9012,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9013,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9013,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9014,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9014,
+   "success": true,
+   "steps": 20,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9015,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9015,
+   "success": true,
+   "steps": 37,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9016,
+   "success": true,
+   "steps": 21,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9016,
+   "success": true,
+   "steps": 25,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9017,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9017,
+   "success": true,
+   "steps": 25,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9018,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9018,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "single",
+   "seed": 9019,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "lab",
+   "policy": "multi",
+   "seed": 9019,
+   "success": true,
+   "steps": 84,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9000,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9000,
+   "success": true,
+   "steps": 26,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9001,
+   "success": true,
+   "steps": 33,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9001,
+   "success": true,
+   "steps": 181,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9002,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9002,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9003,
+   "success": true,
+   "steps": 36,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9003,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9004,
+   "success": true,
+   "steps": 22,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9004,
+   "success": true,
+   "steps": 190,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9005,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9005,
+   "success": true,
+   "steps": 129,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9006,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9006,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9007,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9007,
+   "success": true,
+   "steps": 68,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9008,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9008,
+   "success": true,
+   "steps": 93,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9009,
+   "success": true,
+   "steps": 23,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9009,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9010,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9010,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9011,
+   "success": true,
+   "steps": 161,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9011,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9012,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9012,
+   "success": true,
+   "steps": 23,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9013,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9013,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9014,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9014,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9015,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9015,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9016,
+   "success": true,
+   "steps": 73,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9016,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9017,
+   "success": true,
+   "steps": 73,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9017,
+   "success": true,
+   "steps": 25,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9018,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9018,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "single",
+   "seed": 9019,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "subway",
+   "policy": "multi",
+   "seed": 9019,
+   "success": true,
+   "steps": 28,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9000,
+   "success": true,
+   "steps": 67,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9000,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9001,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9001,
+   "success": true,
+   "steps": 59,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9002,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9002,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9003,
+   "success": true,
+   "steps": 35,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9003,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9004,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9004,
+   "success": true,
+   "steps": 26,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9005,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9005,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9006,
+   "success": true,
+   "steps": 27,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9006,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9007,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9007,
+   "success": true,
+   "steps": 24,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9008,
+   "success": true,
+   "steps": 40,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9008,
+   "success": true,
+   "steps": 130,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9009,
+   "success": true,
+   "steps": 38,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9009,
+   "success": true,
+   "steps": 26,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9010,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9010,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9011,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9011,
+   "success": true,
+   "steps": 37,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9012,
+   "success": true,
+   "steps": 28,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9012,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9013,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9013,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9014,
+   "success": true,
+   "steps": 27,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9014,
+   "success": true,
+   "steps": 22,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9015,
+   "success": true,
+   "steps": 30,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9015,
+   "success": true,
+   "steps": 67,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9016,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9016,
+   "success": true,
+   "steps": 29,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9017,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9017,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9018,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9018,
+   "success": true,
+   "steps": 26,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "single",
+   "seed": 9019,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "forest",
+   "policy": "multi",
+   "seed": 9019,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9000,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9000,
+   "success": true,
+   "steps": 21,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9001,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9001,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9002,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9002,
+   "success": true,
+   "steps": 26,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9003,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9003,
+   "success": true,
+   "steps": 38,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9004,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9004,
+   "success": true,
+   "steps": 28,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9005,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9005,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9006,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9006,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9007,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9007,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9008,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9008,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9009,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9009,
+   "success": true,
+   "steps": 42,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9010,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9010,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9011,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9011,
+   "success": true,
+   "steps": 36,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9012,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9012,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9013,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9013,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9014,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9014,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9015,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9015,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9016,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9016,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9017,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9017,
+   "success": true,
+   "steps": 25,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9018,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9018,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "single",
+   "seed": 9019,
+   "success": false,
+   "steps": 200,
+   "wall": "live"
+  },
+  {
+   "world": "desert",
+   "policy": "multi",
+   "seed": 9019,
+   "success": true,
+   "steps": 32,
+   "wall": "live"
+  }
+ ]
+}
