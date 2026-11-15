@@ -122,7 +122,8 @@ const clampTo = (ws: { min: V3; max: V3 }, p: V3) => [0, 1, 2].map((i) => Math.m
 async function pickPlace(page: Page, obj: V3, goal: V3) {
   const ws = await workspace(page);
   const grab = clampTo(ws, [obj[0], Math.max(0.775, obj[1] - 0.01), obj[2]]);
-  const carryY = Math.min(ws.max[1], Math.max(0.95, obj[1] + 0.05));
+  // carry no higher than 1.15 m: higher points can land under the desktop side panel on screen
+  const carryY = Math.min(ws.max[1], Math.max(0.95, Math.min(obj[1] + 0.05, 1.15)));
   await moveTo(page, [grab[0], Math.min(ws.max[1], grab[1] + 0.1), grab[2]]);
   await moveTo(page, grab);
   await toggleGrip(page);
