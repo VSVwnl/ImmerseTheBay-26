@@ -46,7 +46,7 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Cart | challenge | 386319d | Extra-long + Gripper, Suction or Soft gripper | Extra-long+Gripper, Extra-long+Suction, Extra-long+Soft |
 | Soft gripper | part (tool) | 07d57c2 | | |
 | Egg | challenge | 2e4927d | Soft gripper + any arm that reaches the table | Compact+Soft, Long+Soft, Heavy-duty+Soft, Extra-long+Soft |
-| Scrap (2 steps, one robot) | challenge | SCRAP_COMMIT | Long + Magnet | Long+Magnet |
+| Scrap (2 steps, one robot) | challenge | ef6c4ca | Long + Magnet | Long+Magnet |
 | Dinner (2 steps, swap) | challenge | 03d29e7 | Suction, then Gripper or Magnet on Compact/Heavy-duty | no single robot; step 1: Compact/Long/Heavy-duty+Suction, then step 2: Compact/Heavy-duty+Gripper/Magnet |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
@@ -113,6 +113,16 @@ Additions:
    because it's the counterpart to Dinner: the washer needs the magnet and the can needs the Long arm's reach, so
    the player has to combine two parts' strengths in one robot. Only Long + Magnet. (Also fixed: an object over
    its own goal now always counts even if another step's goal overlaps it.)
+
+Live Orbis check of the Workshop (Sun ~03:55 PST, `scripts/workshop-live-check.mjs`, 2 sessions, 0.6 min):
+- First try stayed on the stub: the dev server's pre-bundled Orbis SDK was stale ("reactor-wasm failed to load:
+  Failed to fetch dynamically imported module .../node_modules/.vite/deps/reactor_wasm-...js"). Restarting the dev
+  server fixed it. **Before the demo, restart `npm run dev` once and check the wall says `live`.**
+- After the restart: connected in ~12 s; each Workshop attempt switched the wall to a new random world (lab ->
+  greenhouse -> lunar base; lab -> kitchen), status stayed `live`, always disconnected.
+- The new world is a morph: it becomes visible 8-12 s after the switch, i.e. 5-9 s into the 60 s attempt (the
+  first seconds still show the previous world). The attempt file records the world that was requested.
+  Not changed: switching at the end of the previous attempt would cut off the success "confetti" nudge.
 
 Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base checks in `docs/WORKSHOP.md`):
 - [ ] 1 Groundwork (NOT YET TESTED ON HEADSET): in the Workshop, each countdown switches the wall to a different
@@ -302,7 +312,7 @@ both policies on the same seeds; all 160 episodes ran on a live wall. Run once; 
 - Multiply in the headset not tried; dataset-camera render in XR (second pass at replay midpoints) unverified.
 
 ### Orbis minutes used
-- **48.5 min over 12 sessions** (Sat 3:15-6:00 PM; +2.5 min from the accidental `?Orbis=0` headset tab), by our own log (`curl http://localhost:5173/api/usage`):
+- **49.1 min over 14 sessions** (+0.6 min, 2 sessions: Workshop live check, Sun ~03:55 PST). Before that: **48.5 min over 12 sessions** (Sat 3:15-6:00 PM; +2.5 min from the accidental `?Orbis=0` headset tab), by our own log (`curl http://localhost:5173/api/usage`):
   testing and debugging ~12 min (live check, trials, probe, two stalled trials ~7 min, one aborted multi build
   2.2 min), `multi` dataset ~25 min, `single` ~7 min, evaluation 3 min. The Reactor dashboard is authoritative.
 
