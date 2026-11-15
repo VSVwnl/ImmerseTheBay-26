@@ -12,7 +12,7 @@ standard robot. Not merged.
 - Every attempt switches the wall to a random world (never the one already showing). With live Orbis the new world
   fades in 5-9 s into the attempt (morph).
 - Changing a part rebuilds the arm at once and restarts the current challenge, except in swap challenges
-  (Dinner, Restock), where parts change mid-run (not while holding something).
+  (Dinner, Restock, Cleanup), where parts change mid-run (not while holding something).
 - A failed grab: the tool wobbles, a short buzz, and a floating label says why.
 - Attempt files: `arm`, `tool`, `success`, `grabFails`, `world`, and `swaps` in swap challenges. Replays rebuild the
   recorded robot, including swaps.
@@ -52,6 +52,7 @@ standard robot. Not merged.
 | Restock | parcel from the cart, then the anvil (swap arms) | Extra-long, then Heavy-duty |
 | Dinner | plate -> rack, then pot -> zone (swap tools) | Suction, then Gripper / Magnet on Compact / Heavy-duty |
 | Bucket | pail of sand with a handle (weight 2) -> sandy zone | Hook + Compact / Heavy-duty |
+| Cleanup | washer -> tray, marbles -> bowl, egg -> carton (swap tools twice) | Magnet, then Scoop, then Soft gripper |
 
 ## Switches and testing
 
