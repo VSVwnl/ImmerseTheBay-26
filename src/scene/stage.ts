@@ -43,7 +43,7 @@ function makeWallGeometry(): THREE.BufferGeometry {
   return g;
 }
 
-function makeBin(color: number): THREE.Group {
+export function makeBin(color: number): THREE.Group {
   const g = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.05 });
   const floor = new THREE.Mesh(new THREE.BoxGeometry(BIN.w, 0.004, BIN.d), mat);
@@ -155,7 +155,7 @@ export function createStage(): Stage {
         if (p) cubes[c].position.set(p[0], p[1], p[2]);
       }
       bins.blue.visible = s.layout === 'sort';
-      bins.red.visible = s.layout !== 'reach';
+      bins.red.visible = s.layout === 'place' || s.layout === 'sort'; // not in reach or the Workshop layouts
       reachTargets.forEach((m, i) => {
         const t = s.reachTargets[i];
         m.visible = s.layout === 'reach' && !!t;

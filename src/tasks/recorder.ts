@@ -1,10 +1,10 @@
 // Per-attempt log and trajectory. Samples are taken once per fixed sim step (SIM_HZ, 30 Hz),
 // so a record replays exactly: reset(seed, layout) then step(sample.target/grip, 1/hz) per sample.
 import { SIM_HZ, type Vec3 } from '../config';
-import type { Action, Cubes, EnvState, Layout } from '../env/env';
+import type { Action, Cubes, EnvState, HeldId, Items, Layout } from '../env/env';
 import { TaskEnv } from '../env/env';
 import type { Joints } from '../arm/ik';
-import type { CubeColor } from '../arm/grasp';
+import { partsOf, STANDARD_ROBOT, type ArmKind, type ToolKind } from '../arm/parts';
 
 export type InputKind = 'mouse' | 'hand' | 'controller' | 'replay' | 'policy';
 
@@ -14,8 +14,10 @@ export interface Sample {
   grip: 0 | 1;
   tip: Vec3;
   joints: Joints;
-  held: CubeColor | null;
+  held: HeldId | null;
   cubes: Cubes;
+  /** Workshop objects; absent in the standard challenges */
+  items?: Items;
 }
 
 export interface AttemptRecord {
@@ -24,12 +26,17 @@ export interface AttemptRecord {
   challenge: Layout;
   seed: number;
   hz: number;
+  /** robot parts; replays rebuild this robot. Files without them were made with Compact + Gripper. */
+  arm: ArmKind;
+  tool: ToolKind;
   world: { id: string; prompt: string } | null;
   startedAt: string;
   durationMs: number;
   success: boolean;
   drops: number;
   wrongBin: number;
+  /** failed grab attempts (wrong tool, too heavy, out of reach) */
+  grabFails: number;
   pathLengthM: number;
   input: InputKind;
   samples: Sample[];
@@ -56,6 +63,8 @@ export class Recorder {
     world: { id: string; prompt: string } | null;
     input: InputKind;
     startedAt?: Date;
+    arm?: ArmKind;
+    tool?: ToolKind;
   }): void {
     this.rec = {
       sessionId: opts.sessionId,
@@ -63,12 +72,15 @@ export class Recorder {
       challenge: opts.challenge,
       seed: opts.seed,
       hz: SIM_HZ,
+      arm: opts.arm ?? STANDARD_ROBOT.arm,
+      tool: opts.tool ?? STANDARD_ROBOT.tool,
       world: opts.world,
       startedAt: (opts.startedAt ?? new Date()).toISOString(),
       durationMs: 0,
       success: false,
       drops: 0,
       wrongBin: 0,
+      grabFails: 0,
       pathLengthM: 0,
       input: opts.input,
       samples: [],
@@ -97,6 +109,9 @@ export class Recorder {
       joints: state.joints.map(r4) as Joints,
       held: state.held,
       cubes: Object.fromEntries(Object.entries(state.cubes).map(([k, v]) => [k, v4(v!)])) as Cubes,
+      ...(Object.keys(state.items ?? {}).length
+        ? { items: Object.fromEntries(Object.entries(state.items).map(([k, v]) => [k, v4(v!)])) as Items }
+        : {}),
     });
     if (this.lastTip) {
       this.rec.pathLengthM += Math.hypot(
@@ -120,6 +135,7 @@ export class Recorder {
     rec.success = final.success;
     rec.drops = final.drops;
     rec.wrongBin = final.wrongBin;
+    rec.grabFails = final.grabFails ?? 0;
     this.rec = null;
     return rec;
   }
@@ -129,9 +145,9 @@ export class Recorder {
   }
 }
 
-/** Replay a record's actions through a fresh env from the same seed. */
-export function replayRecord(rec: Pick<AttemptRecord, 'seed' | 'challenge' | 'samples' | 'hz'>): EnvState {
-  const env = new TaskEnv(rec.seed, rec.challenge);
+/** Replay a record's actions through a fresh env from the same seed, with the same robot parts. */
+export function replayRecord(rec: Pick<AttemptRecord, 'seed' | 'challenge' | 'samples' | 'hz'> & { arm?: string; tool?: string }): EnvState {
+  const env = new TaskEnv(rec.seed, rec.challenge, partsOf(rec));
   const dt = 1 / (rec.hz || SIM_HZ);
   for (const s of rec.samples) env.step({ target: s.target, grip: s.grip }, dt);
   return env.snapshot();

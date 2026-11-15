@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { HOME_TIP, KEY_RAISE_SPEED, WHEEL_STEP, WORKSPACE, type Vec3 } from '../config';
 import type { Action } from '../env/env';
+import type { Workspace } from '../arm/parts';
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
@@ -16,6 +17,8 @@ export class DesktopInput {
   private plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private hit = new THREE.Vector3();
   enabled = true;
+  /** where the target may go; the Workshop's Long arm widens it */
+  workspace: Workspace = WORKSPACE;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -38,8 +41,8 @@ export class DesktopInput {
     this.ray.setFromCamera(this.ndc, this.camera);
     this.plane.constant = -this.target[1];
     if (this.ray.ray.intersectPlane(this.plane, this.hit)) {
-      this.target[0] = clamp(this.hit.x, WORKSPACE.min[0], WORKSPACE.max[0]);
-      this.target[2] = clamp(this.hit.z, WORKSPACE.min[2], WORKSPACE.max[2]);
+      this.target[0] = clamp(this.hit.x, this.workspace.min[0], this.workspace.max[0]);
+      this.target[2] = clamp(this.hit.z, this.workspace.min[2], this.workspace.max[2]);
       this.engaged = true;
     }
   };
@@ -76,7 +79,12 @@ export class DesktopInput {
   }
 
   raise(dy: number): void {
-    this.target[1] = clamp(this.target[1] + dy, WORKSPACE.min[1], WORKSPACE.max[1]);
+    this.target[1] = clamp(this.target[1] + dy, this.workspace.min[1], this.workspace.max[1]);
+  }
+
+  setWorkspace(ws: Workspace): void {
+    this.workspace = ws;
+    for (let i = 0; i < 3; i++) this.target[i] = clamp(this.target[i], ws.min[i], ws.max[i]);
   }
 
   /** per-frame update for held keys */

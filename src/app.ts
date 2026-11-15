@@ -4,7 +4,9 @@ import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { PANELS, SUCCESS_NUDGES, WORLD_DEFAULT_MODE, type Vec3 } from './config';
 import { DesktopInput } from './input/desktop';
 import { XRInput } from './input/xr';
-import { Challenges, CHALLENGES, type ChallengeResult } from './tasks/challenges';
+import { Challenges, WORKSHOP_HINT, type ChallengeResult } from './tasks/challenges';
+import { ARM_KINDS, ARM_LABEL, payloadOf, TOOL_KINDS, TOOL_LABEL, workspaceFor, type ArmKind, type ToolKind } from './arm/parts';
+import { failText } from './arm/items';
 import { newSessionId, type AttemptRecord, type InputKind } from './tasks/recorder';
 import { Panel, type PanelContent } from './ui/panels';
 import { sfx, unlockAudio } from './ui/sound';
@@ -20,6 +22,7 @@ import type { Core } from './core';
 
 export function startApp(core: Core) {
   const { canvas, renderer, scene, camera, marker, world, streamLight, renderState } = core;
+  const WORKSHOP_OFF = 'standard robot only, off in Workshop';
   const params = new URLSearchParams(location.search);
   let listening = false;
   function speakWorld() {
@@ -134,6 +137,16 @@ export function startApp(core: Core) {
         case 'results':
           void probeRobot();
           break;
+        case 'grabfail':
+          sfx.slip();
+          core.arm.slip();
+          core.workshop.showFail(failText(e.fail.reason, e.fail.item), e.fail.at);
+          break;
+        case 'parts':
+          desktop.setWorkspace(workspaceFor(e.robot.arm));
+          desktop.grip = 0;
+          core.setRobot(e.robot); // rebuild at once, before the next frame
+          break;
       }
     },
   });
@@ -159,6 +172,18 @@ export function startApp(core: Core) {
     }
     if (id === 'reseed' && robot) return robot.reset();
     if (robot) return;
+    if (panel === 'workshop') {
+      const [slot, kind] = id.split(':');
+      if (slot === 'arm') challenges.setParts({ arm: kind as ArmKind });
+      if (slot === 'tool') challenges.setParts({ tool: kind as ToolKind });
+      return;
+    }
+    if (id === 'workshop' || id === 'standard') {
+      if (multiplying()) return;
+      challenges.setWorkshop(id === 'workshop');
+      return;
+    }
+    if (challenges.workshop && (id === 'multiply' || id === 'robot')) return; // standard robot only
     if (id === 'multiply') return startMultiply();
     if (id === 'mstop') {
       multiply?.stop();
@@ -172,6 +197,7 @@ export function startApp(core: Core) {
   panels.status = new Panel('status', PANELS.status.w, PANELS.status.h, PANELS.status.pos, onPress, hud);
   panels.side = new Panel('side', PANELS.side.w, PANELS.side.h, PANELS.side.pos, onPress, hud);
   panels.counter = new Panel('counter', PANELS.counter.w, PANELS.counter.h, PANELS.counter.pos, onPress, hud);
+  panels.workshop = new Panel('workshop', PANELS.workshop.w, PANELS.workshop.h, PANELS.workshop.pos, onPress, hud);
   for (const p of Object.values(panels)) scene.add(p.mesh);
 
   // ---------- Multiply (M3 Part A) ----------
@@ -183,6 +209,7 @@ export function startApp(core: Core) {
   const bestPlace = () =>
     [...records].reverse().find((r) => r.challenge === 'place' && r.success) ?? null;
   function startMultiply() {
+    if (challenges.workshop) return; // the expert, datasets and replays use the standard robot
     const demo = bestPlace();
     if (!demo || (multiply && multiply.phase !== 'done')) return;
     challenges.freePlay = false;
@@ -227,7 +254,7 @@ export function startApp(core: Core) {
   }
   void probeRobot();
   function startRobot() {
-    if (!robotAvailable || multiplying() || robot) return;
+    if (!robotAvailable || multiplying() || robot || challenges.workshop) return;
     challenges.freePlay = false;
     thumbs.visible = false;
     const first = policyClient.policies.includes('multi') ? 'multi' : policyClient.defaultPolicy;
@@ -281,14 +308,23 @@ export function startApp(core: Core) {
     const ch = challenges.current;
     const fl = flash && now < flash.until ? flash.color : null;
     let status: PanelContent;
+    const ws = challenges.workshop;
     if (ph === 'countdown')
-      status = { lines: [{ text: `${ch.name}: ${ch.hint}`, size: 26, align: 'center' }, { text: String(Math.ceil(challenges.countdownLeft)), size: 56, bold: true, align: 'center', color: '#ffd34d' }] };
+      status = {
+        lines: [
+          ...(ws ? [{ text: WORKSHOP_HINT, size: 22, align: 'center' as const, color: '#ffb347' }] : []),
+          { text: `${ch.name}: ${ch.hint}`, size: 26, align: 'center' },
+          { text: String(Math.ceil(challenges.countdownLeft)), size: 56, bold: true, align: 'center', color: '#ffd34d' },
+        ],
+      };
     else if (ph === 'running')
       status = { lines: [{ text: `${ch.name}: ${ch.hint}`, size: 26, align: 'center' }, { text: `${challenges.elapsedS.toFixed(1)} s / 60`, size: 48, bold: true, align: 'center', mono: true }] };
     else if (ph === 'between')
       status = { flash: fl, lines: [{ text: ch.name, size: 26, align: 'center' }, { text: lastResult?.success ? `Done in ${lastResult.timeS.toFixed(1)} s` : 'Time up', size: 48, bold: true, align: 'center' }] };
     else if (ph === 'results')
       status = { flash: fl, lines: [{ text: 'All challenges done', size: 30, align: 'center' }, { text: 'Your data is recorded', size: 34, bold: true, align: 'center', color: '#5fe08f' }] };
+    else if (ws)
+      status = { lines: [{ text: 'ROBOT WORKSHOP', size: 30, align: 'center', bold: true }, { text: WORKSHOP_HINT, size: 32, align: 'center', color: '#ffb347' }] };
     else status = { lines: [{ text: 'BACKLOT', size: 30, align: 'center', bold: true }, { text: 'Press Start to begin', size: 36, align: 'center' }] };
     status.lines = [...(status.lines ?? []), { text: `wall: ${st}`, size: 18, align: 'center', color: st === 'live' ? '#5fe08f' : '#9fb3c8' }];
     // Multiply and Robot's turn set their own status below; setting it twice per frame would redraw every frame
@@ -302,21 +338,40 @@ export function startApp(core: Core) {
           ...challenges.results.map((r) => ({ text: fmt(r), size: 19, mono: true, color: r.success ? '#e8f5ec' : '#ffb3a8' })),
           { text: `${challenges.results.length} attempts saved`, size: 20, color: '#9fb3c8' },
         ],
-        buttons: [
-          ...(bestPlace() ? [{ id: 'multiply', label: 'Multiply my Place demo', wide: true }] : []),
-          { id: 'again', label: 'Run again', wide: true },
-        ],
+        buttons: ws
+          ? [
+              { id: 'multiply', label: `Multiply: ${WORKSHOP_OFF}`, wide: true, disabled: true },
+              { id: 'robot', label: `Robot's turn: ${WORKSHOP_OFF}`, wide: true, disabled: true },
+              { id: 'again', label: 'Run again', wide: true },
+              { id: 'standard', label: 'Back to the standard robot', wide: true },
+            ]
+          : [
+              ...(bestPlace() ? [{ id: 'multiply', label: 'Multiply my Place demo', wide: true }] : []),
+              { id: 'again', label: 'Run again', wide: true },
+              { id: 'workshop', label: 'Robot Workshop', wide: true },
+            ],
       };
     } else if (ph === 'idle') {
       side = {
-        title: 'Challenges',
-        lines: CHALLENGES.map((c, i) => ({ text: `${i + 1}. ${c.name}: ${c.hint}`, size: 20 })),
-        buttons: [{ id: 'start', label: 'Start', wide: true }],
+        title: ws ? 'Robot Workshop' : 'Challenges',
+        lines: [
+          ...(ws ? [{ text: `${WORKSHOP_HINT}: see Workshop parts`, size: 18, color: '#ffb347' }] : []),
+          ...challenges.list.map((c, i) => ({ text: `${i + 1}. ${c.name}: ${c.hint}`, size: 20 })),
+        ],
+        buttons: ws
+          ? [
+              { id: 'start', label: 'Start', wide: true },
+              { id: 'standard', label: 'Back to the standard robot', wide: true },
+            ]
+          : [
+              { id: 'start', label: 'Start', wide: true },
+              { id: 'workshop', label: 'Robot Workshop', wide: true },
+            ],
       };
     } else {
       side = {
-        title: 'Challenges',
-        lines: CHALLENGES.map((c, i) => {
+        title: ws ? 'Robot Workshop' : 'Challenges',
+        lines: challenges.list.map((c, i) => {
           const r = challenges.results[i];
           const mark = r ? (r.success ? 'OK  ' : 'FAIL') : i === challenges.index ? '>>  ' : '    ';
           return { text: `${mark} ${c.name}${r ? `  ${r.timeS.toFixed(1)}s` : ''}`, size: 22, mono: true, color: i === challenges.index ? '#ffd34d' : undefined };
@@ -344,7 +399,7 @@ export function startApp(core: Core) {
       };
       panels.status.set(status);
     }
-    if (ph === 'results' && robotAvailable && !multiplying() && side.buttons)
+    if (ph === 'results' && robotAvailable && !multiplying() && side.buttons && !ws)
       side.buttons = [{ id: 'robot', label: "Robot's turn", wide: true }, ...side.buttons];
     if (robot) {
       const r = robot;
@@ -376,6 +431,22 @@ export function startApp(core: Core) {
       });
     }
     panels.side.set(side);
+    if (ws && !robot) {
+      const r = challenges.robot;
+      panels.workshop.set({
+        title: 'Workshop: parts',
+        lines: [
+          { text: `Arm: ${ARM_LABEL[r.arm]} (payload ${payloadOf(r.arm)})`, size: 22, bold: true },
+          { text: `Tool: ${TOOL_LABEL[r.tool]}`, size: 22, bold: true },
+          { text: 'Changing a part restarts the challenge', size: 17, color: '#9fb3c8' },
+        ],
+        buttons: [
+          ...ARM_KINDS.map((a) => ({ id: `arm:${a}`, label: `${ARM_LABEL[a]} arm`, active: r.arm === a })),
+          ...TOOL_KINDS.map((t) => ({ id: `tool:${t}`, label: TOOL_LABEL[t], active: r.tool === t })),
+        ],
+        cols: 2,
+      });
+    } else panels.workshop.set({ hidden: true });
     if (robot && summary?.table) {
       const T = summary.table;
       const cols = ['lab', 'subway', 'forest', 'desert', 'held_out_mean'];
@@ -498,6 +569,7 @@ export function startApp(core: Core) {
       return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height };
     },
     state: () => challenges.env.snapshot(),
+    core,
     get robot() {
       return robot;
     },

@@ -79,6 +79,8 @@ export const PANELS = {
   side: { pos: [0.72, 1.55, -0.4] as Vec3, w: 0.36, h: 0.44 },
   counter: { pos: [0.72, 1.24, -0.4] as Vec3, w: 0.36, h: 0.09 }, // no buttons, so it may sit lower
   thumbs: { pos: [0.95, 1.55, -0.95] as Vec3, w: 0.72, h: 0 },
+  // Robot Workshop parts: to the user's left, beside the World panel, above the hand zone
+  workshop: { pos: [-0.8, 1.5, 0.0] as Vec3, w: 0.34, h: 0.4 },
 };
 export const PANEL_FACE_POINT: Vec3 = [0, 1.4, 0]; // panels turn to face this point
 
@@ -112,3 +114,21 @@ export const MULTIPLY_SETTLE_S = 4;
 // ---- Factory (M3 Part B) ----
 // worldEvery: spec start value 10; 20 halves the live world switches (~8-27 s of Orbis each) to fit the time budget.
 export const FACTORY = { seedBase: 1000, worldEvery: 20, stubSettleMs: 1700 };
+
+// ---- Robot Workshop (additive; the standard robot is Compact + Gripper and uses the values above) ----
+export const WORKSHOP = {
+  longScale: 1.35, // Long arm links are this much longer than L1/L2
+  payload: { compact: 2, long: 1 },
+  // the Long arm may command the tip further out than WORKSPACE; Compact keeps WORKSPACE exactly
+  longWorkspace: { min: [-0.56, 0.76, -0.95] as Vec3, max: [0.56, 1.3, -0.45] as Vec3 },
+  // a grab attempt that misses an object outside the arm's workspace by up to this (m, horizontal) says "Out of reach"
+  reachHintRadius: 0.2,
+  slipS: 0.45, // tool wobble after a failed grab
+  labelS: 1.8, // floating reason label lifetime
+  plate: { radius: 0.06, thick: 0.012, spawnX: [-0.1, 0.1] as [number, number], spawnZ: [-0.85, -0.75] as [number, number] },
+  can: { radius: 0.03, height: 0.11, x: 0.51, spawnZ: [-0.8, -0.62] as [number, number] },
+  pot: { radius: 0.055, height: 0.08, spawnX: [-0.12, 0.12] as [number, number], spawnZ: [-0.85, -0.75] as [number, number] },
+  rack: { pos: [0.3, 0.75, -0.56] as Vec3, w: 0.18, d: 0.18, h: 0.03 },
+  canBin: { pos: [-0.3, 0.75, -0.56] as Vec3 }, // same box size as BIN
+  zone: { pos: [0.3, 0.75, -0.56] as Vec3, size: 0.18 },
+};

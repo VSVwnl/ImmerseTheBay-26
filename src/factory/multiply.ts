@@ -3,6 +3,7 @@
 import { MULTIPLY_SETTLE_S, SIM_HZ } from '../config';
 import { TaskEnv, type EnvState } from '../env/env';
 import type { AttemptRecord } from '../tasks/recorder';
+import { partsOf } from '../arm/parts';
 import type { WorldDef } from '../world/world';
 
 export type MultiplyPhase = 'settle' | 'replay' | 'done';
@@ -35,7 +36,7 @@ export class Multiply {
   ) {
     this.hz = demo.hz || SIM_HZ;
     this.dt = 1 / this.hz;
-    this.env = new TaskEnv(demo.seed, demo.challenge);
+    this.env = new TaskEnv(demo.seed, demo.challenge, partsOf(demo)); // same robot as the demo
     this.prev = this.env.snapshot();
     this.curr = this.prev;
     this.beginWorld();
@@ -48,7 +49,7 @@ export class Multiply {
   private beginWorld() {
     this.phase = 'settle';
     this.t = 0;
-    this.env.reset(this.demo.seed, this.demo.challenge);
+    this.env.reset(this.demo.seed, this.demo.challenge, partsOf(this.demo));
     this.prev = this.env.snapshot();
     this.curr = this.prev;
     this.acc = 0;

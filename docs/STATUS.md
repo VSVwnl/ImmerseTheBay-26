@@ -4,6 +4,16 @@ Updated: Sat Nov 14, 4:45 PM PST
 
 ## Current milestone: M1-M5 done with real Orbis data and a real evaluation. Remaining: headset checks (you)
 
+### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
+- Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with
+  slip + buzz + floating reason label; Plate / Far / Heavy challenges; arm + tool + grabFails in every attempt
+  file; replays rebuild the recorded robot. Expert, datasets, training, Multiply and Robot's turn stay on the
+  standard robot and are disabled with a label in Workshop mode. Details and headset checks: `docs/WORKSHOP.md`.
+- Desktop verified: `e2e/workshop.spec.ts` plays all three with the mouse, wrong parts first (each fails with
+  its label), then the right parts; files on disk carry the parts. Vitest 343 (adds `tests/workshop.test.ts`:
+  IK for both arms incl. full-stretch clamping, grab rules for every object x robot, every challenge solvable
+  only with the right parts, replay keeps the robot). Headset: not tested yet.
+
 ### Done
 - **M1** (desktop checks pass): deterministic env, closed-form IK, snap grasp, 30 Hz fixed-step loop + recorder,
   three challenges with countdown/timer/sounds/results card, `/api/log` → `data/sessions/<sessionId>/<attemptId>.json`,

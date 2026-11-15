@@ -41,4 +41,9 @@ export const sfx = {
     tone(247, 0.2, 0.4, 0.12, 'triangle');
   },
   click: () => tone(1800, 0, 0.04, 0.06, 'square'),
+  /** a failed grab: the tool slips */
+  slip: () => {
+    tone(420, 0, 0.07, 0.1, 'sawtooth');
+    tone(250, 0.06, 0.16, 0.1, 'sawtooth');
+  },
 };

@@ -4,6 +4,10 @@ import { DESKTOP_CAMERA, type Vec3 } from './config';
 import { createStage, markDataset } from './scene/stage';
 import { ArmModel } from './arm/arm';
 import { solveIK } from './arm/ik';
+import { linksFor, sameParts, type RobotParts } from './arm/parts';
+import { ITEM_IDS, type ItemId } from './arm/items';
+import { WorkshopProps } from './scene/workshop';
+import { WORKSHOP } from './config';
 import { StreamLight } from './scene/streamlight';
 import { WorldManager } from './world/manager';
 import type { EnvState } from './env/env';
@@ -28,9 +32,22 @@ export function createCore() {
 
   const stage = createStage();
   scene.add(stage.root);
-  const arm = new ArmModel();
+  let arm = new ArmModel();
   markDataset(arm.root);
   scene.add(arm.root);
+  /** Robot Workshop: replace the arm model when the parts change (the standard robot is built above). */
+  function setRobot(parts: RobotParts) {
+    if (sameParts(parts, arm.parts)) return;
+    scene.remove(arm.root);
+    arm.root.traverse((o) => {
+      if (o instanceof THREE.Mesh) o.geometry.dispose();
+    });
+    arm = new ArmModel(parts);
+    markDataset(arm.root);
+    scene.add(arm.root);
+  }
+  const workshop = new WorkshopProps();
+  scene.add(workshop.root);
 
   const marker = new THREE.Mesh(
     new THREE.SphereGeometry(0.012, 16, 12),
@@ -55,7 +72,8 @@ export function createCore() {
 
   function renderState(prev: EnvState, curr: EnvState, alpha: number, dt: number) {
     const tip = lerp3(prev.tip, curr.tip, alpha);
-    arm.setJoints(solveIK(tip).joints);
+    if (curr.robot) setRobot(curr.robot);
+    arm.setJoints(solveIK(tip, linksFor(arm.parts.arm)).joints);
     arm.updateGrip(curr.grip === 1, dt);
     const cubes: Partial<Record<'red' | 'blue', Vec3>> = {};
     for (const c of ['red', 'blue'] as const) {
@@ -75,7 +93,41 @@ export function createCore() {
       cubes[c] = p;
     }
     stage.update(curr, cubes);
+    const items: Partial<Record<ItemId, Vec3>> = {};
+    for (const id of ITEM_IDS) {
+      const b = curr.items?.[id];
+      if (!b) continue;
+      let p: Vec3 = b;
+      const d = disp[id];
+      if (curr.held === id) {
+        p = lerp3(prev.items?.[id] ?? b, b, alpha);
+        disp[id] = { y: p[1], v: 0 };
+        // a plate hangs under the suction pad instead of being centered on it
+        if (id === 'plate') p = [p[0], p[1] - WORKSHOP.plate.thick / 2, p[2]];
+      } else if (d && d.y > b[1]) {
+        d.v += 9.8 * dt;
+        d.y = Math.max(b[1], d.y - d.v * dt);
+        p = [b[0], d.y, b[2]];
+      } else disp[id] = { y: b[1], v: 0 };
+      items[id] = p;
+    }
+    workshop.update(curr, items, dt);
   }
 
-  return { canvas, renderer, scene, camera, stage, arm, marker, world, streamLight, renderState };
+  return {
+    canvas,
+    renderer,
+    scene,
+    camera,
+    stage,
+    get arm() {
+      return arm;
+    },
+    setRobot,
+    workshop,
+    marker,
+    world,
+    streamLight,
+    renderState,
+  };
 }

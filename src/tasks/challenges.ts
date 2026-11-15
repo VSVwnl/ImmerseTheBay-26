@@ -1,14 +1,29 @@
 // The three challenges in order, with countdown, timer, success checks and recording.
 // Owns the fixed-step env loop for the human app: env.step(action, 1/SIM_HZ) per tick.
 import { CHALLENGE_LIMIT_S, COUNTDOWN_S, SIM_DT, SIM_HZ } from '../config';
-import { TaskEnv, type Action, type EnvState, type Layout } from '../env/env';
+import { TaskEnv, type Action, type EnvState, type GrabFail, type Layout } from '../env/env';
+import { sameParts, STANDARD_ROBOT, type RobotParts } from '../arm/parts';
 import { Recorder, type AttemptRecord, type InputKind } from './recorder';
 
-export const CHALLENGES: { layout: Layout; name: string; hint: string }[] = [
+export interface ChallengeDef {
+  layout: Layout;
+  name: string;
+  hint: string;
+}
+
+export const CHALLENGES: ChallengeDef[] = [
   { layout: 'reach', name: 'Reach', hint: 'Touch the glowing targets in order' },
   { layout: 'place', name: 'Place', hint: 'Put the red cube in the red bin' },
   { layout: 'sort', name: 'Sort', hint: 'Each cube into its own-colored bin' },
 ];
+
+/** Robot Workshop: each challenge needs particular parts (see WORKSHOP_NEEDS). */
+export const WORKSHOP_CHALLENGES: ChallengeDef[] = [
+  { layout: 'plate', name: 'Plate', hint: 'Put the plate on the rack' },
+  { layout: 'far', name: 'Far', hint: 'Put the can in the green bin' },
+  { layout: 'heavy', name: 'Heavy', hint: 'Put the pot on the glowing zone' },
+];
+export const WORKSHOP_HINT = 'Pick the right parts for the job';
 
 export type Phase = 'idle' | 'countdown' | 'running' | 'between' | 'results';
 
@@ -29,6 +44,8 @@ export type ChallengeEvent =
   | { type: 'success'; result: ChallengeResult }
   | { type: 'fail'; result: ChallengeResult }
   | { type: 'results'; results: ChallengeResult[] }
+  | { type: 'grabfail'; fail: GrabFail }
+  | { type: 'parts'; robot: RobotParts } // the robot was rebuilt
   | { type: 'attempt'; record: AttemptRecord };
 
 export interface ChallengeDeps {
@@ -56,14 +73,58 @@ export class Challenges {
   private attemptN = 0;
   /** when false, the env does not step in idle/results (e.g. during Multiply) */
   freePlay = true;
+  /** Robot Workshop mode: the workshop challenges, with parts the user picks */
+  workshop = false;
+  robot: RobotParts = { ...STANDARD_ROBOT };
 
   constructor(private deps: ChallengeDeps) {
     this.env.reset(deps.seed(), 'place');
     this.syncSnapshots();
   }
 
-  get current() {
-    return CHALLENGES[this.index];
+  get list(): ChallengeDef[] {
+    return this.workshop ? WORKSHOP_CHALLENGES : CHALLENGES;
+  }
+
+  get current(): ChallengeDef {
+    return this.list[this.index] ?? this.list[0];
+  }
+
+  /** Enter or leave Workshop mode. Leaving always puts the standard robot back. Goes to the idle screen. */
+  setWorkshop(on: boolean): void {
+    if (on === this.workshop) return;
+    this.recorder.abort();
+    this.workshop = on;
+    this.robot = { ...STANDARD_ROBOT };
+    this.phase = 'idle';
+    this.index = 0;
+    this.results = [];
+    this.env.reset(this.deps.seed(), on ? WORKSHOP_CHALLENGES[0].layout : 'place', this.robot);
+    this.syncSnapshots();
+    this.deps.onEvent({ type: 'parts', robot: { ...this.robot } });
+  }
+
+  /** Change robot parts (Workshop mode only). Rebuilds at once and resets the challenge in progress:
+   *  a running attempt is discarded and the same challenge starts again from its countdown. */
+  setParts(parts: Partial<RobotParts>): void {
+    if (!this.workshop) return;
+    const next: RobotParts = { arm: parts.arm ?? this.robot.arm, tool: parts.tool ?? this.robot.tool };
+    if (sameParts(next, this.robot)) return;
+    this.robot = next;
+    this.deps.onEvent({ type: 'parts', robot: { ...next } });
+    if (this.phase === 'countdown' || this.phase === 'running') {
+      this.recorder.abort();
+      this.beginCountdown();
+    } else if (this.phase === 'between') {
+      this.nextChallenge(); // skip the pause so the new robot shows at once
+      if ((this.phase as Phase) === 'results') {
+        this.env.reset(this.deps.seed(), this.env.state().layout, this.robot);
+        this.syncSnapshots();
+      }
+    } else {
+      this.env.reset(this.deps.seed(), this.env.state().layout, this.robot);
+      this.syncSnapshots();
+    }
   }
 
   /** seconds into the running challenge (sim time) */
@@ -90,7 +151,7 @@ export class Challenges {
     this.phase = 'countdown';
     this.phaseT = 0;
     this.lastCount = 0;
-    this.env.reset(this.deps.seed(), this.current.layout);
+    this.env.reset(this.deps.seed(), this.current.layout, this.robot);
     this.syncSnapshots();
   }
 
@@ -122,6 +183,8 @@ export class Challenges {
             seed: this.env.state().seed,
             world: this.deps.world(),
             input: this.deps.input(),
+            arm: this.robot.arm,
+            tool: this.robot.tool,
           });
           this.deps.onEvent({ type: 'go' });
         }
@@ -131,19 +194,21 @@ export class Challenges {
         this.fixedSteps(dt, action, true);
         return;
       case 'between':
-        if (this.phaseT >= BETWEEN_S) {
-          this.index++;
-          if (this.index >= CHALLENGES.length) {
-            this.phase = 'results';
-            this.deps.onEvent({ type: 'results', results: this.results });
-          } else this.beginCountdown();
-        }
+        if (this.phaseT >= BETWEEN_S) this.nextChallenge();
         return;
       case 'idle':
       case 'results':
         if (this.freePlay) this.fixedSteps(dt, action, false);
         return;
     }
+  }
+
+  private nextChallenge(): void {
+    this.index++;
+    if (this.index >= this.list.length) {
+      this.phase = 'results';
+      this.deps.onEvent({ type: 'results', results: this.results });
+    } else this.beginCountdown();
   }
 
   private fixedSteps(dt: number, action: () => Action, record: boolean): void {
@@ -153,6 +218,7 @@ export class Challenges {
       const a = action();
       const before = this.env.state();
       const reachBefore = before.reachIndex;
+      const failsBefore = before.grabFails;
       if (record) {
         this.recorder.setInput(this.deps.input());
         this.recorder.sample(before, a);
@@ -160,8 +226,9 @@ export class Challenges {
       this.prev = this.curr;
       this.env.step(a, SIM_DT);
       this.curr = this.env.snapshot();
-      if (!record) continue;
       const s = this.env.state();
+      if (s.grabFails > failsBefore && s.grabFail) this.deps.onEvent({ type: 'grabfail', fail: { ...s.grabFail } });
+      if (!record) continue;
       if (s.reachIndex > reachBefore && !s.success) this.deps.onEvent({ type: 'progress' });
       const timeout = s.steps >= CHALLENGE_LIMIT_S * SIM_HZ;
       if (s.success || timeout) {

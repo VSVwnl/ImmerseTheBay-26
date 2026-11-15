@@ -2,6 +2,8 @@
 // Deterministic: same seed + same actions + same dt values => same result. No Math.random, no clocks.
 import { solveIK, type Joints } from '../arm/ik';
 import { COLORS, findGrab, restsIn, settle, type CubeColor } from '../arm/grasp';
+import { findItem, grabRule, inGoal, isItem, ITEMS, outOfReachItem, settleItem, type GrabFailReason, type ItemId } from '../arm/items';
+import { linksFor, STANDARD_ROBOT, workspaceFor, type RobotParts, type Workspace } from '../arm/parts';
 import {
   CUBE_SIZE,
   CUBE_SPAWN,
@@ -10,12 +12,26 @@ import {
   REACH_HEIGHT,
   REACH_SUCCESS_DIST,
   TABLE,
+  WORKSHOP,
   WORKSPACE,
   type Vec3,
 } from '../config';
 import { mulberry32, type Rng } from './rng';
 
-export type Layout = 'reach' | 'place' | 'sort';
+export type StandardLayout = 'reach' | 'place' | 'sort';
+/** Robot Workshop challenges: each needs particular parts. */
+export type WorkshopLayout = 'plate' | 'far' | 'heavy';
+export type Layout = StandardLayout | WorkshopLayout;
+export const WORKSHOP_LAYOUTS: WorkshopLayout[] = ['plate', 'far', 'heavy'];
+export const isWorkshopLayout = (l: string): l is WorkshopLayout => (WORKSHOP_LAYOUTS as string[]).includes(l);
+export type HeldId = CubeColor | ItemId;
+export type Items = Partial<Record<ItemId, Vec3>>;
+export interface GrabFail {
+  reason: GrabFailReason;
+  item: ItemId | null;
+  at: Vec3;
+  step: number;
+}
 export type Action = { target: Vec3; grip: 0 | 1 };
 export type Cubes = Partial<Record<CubeColor, Vec3>>;
 
@@ -25,8 +41,15 @@ export type EnvState = {
   tip: Vec3;
   joints: Joints;
   grip: 0 | 1;
-  held: null | CubeColor;
+  held: null | HeldId;
   cubes: Cubes;
+  /** Workshop objects (empty in the standard challenges) */
+  items: Items;
+  itemSpawn: Items;
+  robot: RobotParts;
+  /** the most recent failed grab attempt, and how many there were */
+  grabFail: GrabFail | null;
+  grabFails: number;
   reachTargets: Vec3[];
   reachIndex: number; // how many reach targets are done
   drops: number;
@@ -36,7 +59,7 @@ export type EnvState = {
 };
 
 export interface Env {
-  reset(seed: number, layout: Layout): void;
+  reset(seed: number, layout: Layout, robot?: RobotParts): void;
   step(action: Action, dt: number): void;
   state(): EnvState;
 }
@@ -45,12 +68,17 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 const dist = (a: Vec3, b: Vec3) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 const CUBE_REST_Y = TABLE.top + CUBE_SIZE / 2;
 
-export function clampToWorkspace(t: Vec3): Vec3 {
-  return [
-    clamp(t[0], WORKSPACE.min[0], WORKSPACE.max[0]),
-    clamp(t[1], WORKSPACE.min[1], WORKSPACE.max[1]),
-    clamp(t[2], WORKSPACE.min[2], WORKSPACE.max[2]),
-  ];
+export function clampToWorkspace(t: Vec3, ws: Workspace = WORKSPACE): Vec3 {
+  return [clamp(t[0], ws.min[0], ws.max[0]), clamp(t[1], ws.min[1], ws.max[1]), clamp(t[2], ws.min[2], ws.max[2])];
+}
+
+const between = (rng: Rng, [lo, hi]: [number, number]) => lo + rng() * (hi - lo);
+
+function workshopItems(rng: Rng, layout: WorkshopLayout): Items {
+  const W = WORKSHOP;
+  if (layout === 'plate') return { plate: [between(rng, W.plate.spawnX), ITEMS.plate.restY, between(rng, W.plate.spawnZ)] };
+  if (layout === 'far') return { can: [W.can.x, ITEMS.can.restY, between(rng, W.can.spawnZ)] };
+  return { pot: [between(rng, W.pot.spawnX), ITEMS.pot.restY, between(rng, W.pot.spawnZ)] };
 }
 
 function spawnCube(rng: Rng, others: Vec3[]): Vec3 {
@@ -79,7 +107,9 @@ function reachTargets(rng: Rng): Vec3[] {
   return cols.map(([lo, hi]) => [lo + rng() * (hi - lo), TABLE.top + REACH_HEIGHT, -0.85 + rng() * 0.33] as Vec3);
 }
 
-export function successOf(s: Pick<EnvState, 'layout' | 'cubes' | 'held' | 'reachIndex' | 'reachTargets'>): boolean {
+const itemDone = (s: Pick<EnvState, 'items' | 'held'>, id: ItemId) => !!s.items[id] && s.held !== id && inGoal(id, s.items[id]!);
+
+export function successOf(s: Pick<EnvState, 'layout' | 'cubes' | 'held' | 'reachIndex' | 'reachTargets' | 'items'>): boolean {
   switch (s.layout) {
     case 'reach':
       return s.reachIndex >= s.reachTargets.length;
@@ -87,6 +117,12 @@ export function successOf(s: Pick<EnvState, 'layout' | 'cubes' | 'held' | 'reach
       return !!s.cubes.red && restsIn(s.cubes.red, 'red', s.held === 'red');
     case 'sort':
       return COLORS.every((c) => !!s.cubes[c] && restsIn(s.cubes[c]!, c, s.held === c));
+    case 'plate':
+      return itemDone(s, 'plate');
+    case 'far':
+      return itemDone(s, 'can');
+    case 'heavy':
+      return itemDone(s, 'pot');
   }
 }
 
@@ -94,11 +130,15 @@ export class TaskEnv implements Env {
   private s!: EnvState;
   private rng: Rng = mulberry32(0);
 
-  constructor(seed = 0, layout: Layout = 'place') {
-    this.reset(seed, layout);
+  private robot: RobotParts = { ...STANDARD_ROBOT };
+
+  constructor(seed = 0, layout: Layout = 'place', robot: RobotParts = STANDARD_ROBOT) {
+    this.reset(seed, layout, robot);
   }
 
-  reset(seed: number, layout: Layout): void {
+  /** `robot` defaults to the parts of the previous reset (the standard robot unless changed). */
+  reset(seed: number, layout: Layout, robot: RobotParts = this.robot): void {
+    this.robot = { arm: robot.arm, tool: robot.tool };
     this.rng = mulberry32(seed);
     const cubes: Cubes = {};
     let targets: Vec3[] = [];
@@ -108,7 +148,8 @@ export class TaskEnv implements Env {
       cubes.red = spawnCube(this.rng, []);
       cubes.blue = spawnCube(this.rng, [cubes.red]);
     }
-    const ik = solveIK(HOME_TIP);
+    const items = isWorkshopLayout(layout) ? workshopItems(this.rng, layout) : {};
+    const ik = solveIK(HOME_TIP, linksFor(this.robot.arm));
     this.s = {
       layout,
       seed,
@@ -117,6 +158,11 @@ export class TaskEnv implements Env {
       grip: 0,
       held: null,
       cubes,
+      items,
+      itemSpawn: JSON.parse(JSON.stringify(items)),
+      robot: { ...this.robot },
+      grabFail: null,
+      grabFails: 0,
       reachTargets: targets,
       reachIndex: 0,
       drops: 0,
@@ -128,8 +174,10 @@ export class TaskEnv implements Env {
 
   step(action: Action, dt: number): void {
     const s = this.s;
-    const tgt = clampToWorkspace(action.target);
-    if (s.held) tgt[1] = Math.max(tgt[1], CUBE_REST_Y); // a held cube never goes into the table
+    const ws = workspaceFor(s.robot.arm);
+    const tgt = clampToWorkspace(action.target, ws);
+    // a held object never goes into the table
+    if (s.held) tgt[1] = Math.max(tgt[1], isItem(s.held) ? ITEMS[s.held].restY : CUBE_REST_Y);
 
     // move toward target, speed-limited
     const dx = tgt[0] - s.tip[0];
@@ -139,16 +187,22 @@ export class TaskEnv implements Env {
     const maxStep = MAX_TIP_SPEED * dt;
     const k = d > maxStep ? maxStep / d : 1;
     const want: Vec3 = [s.tip[0] + dx * k, s.tip[1] + dy * k, s.tip[2] + dz * k];
-    const ik = solveIK(want);
+    const ik = solveIK(want, linksFor(s.robot.arm));
     s.tip = ik.tip;
     s.joints = ik.joints;
 
     // grasp rules on grip edges
     const g = action.grip;
     if (g === 1 && s.grip === 0 && !s.held) {
-      s.held = findGrab(s.tip, s.cubes);
+      s.held = findGrab(s.tip, s.cubes) ?? this.tryGrabItem(ws);
+    } else if (g === 0 && s.grip === 1 && isItem(s.held)) {
+      const id = s.held;
+      s.held = null;
+      const rest = settleItem(id, s.tip);
+      s.items[id] = rest.offTable ? [...s.itemSpawn[id]!] : rest.pos;
+      if (!rest.goal) s.drops++;
     } else if (g === 0 && s.grip === 1 && s.held) {
-      const c = s.held;
+      const c = s.held as CubeColor; // items were handled above
       s.held = null;
       const rest = settle(s.tip);
       if (rest.offTable) {
@@ -160,7 +214,8 @@ export class TaskEnv implements Env {
       if (rest.bin && rest.bin !== c) s.wrongBin++;
     }
     s.grip = g;
-    if (s.held) s.cubes[s.held] = [s.tip[0], s.tip[1], s.tip[2]];
+    if (isItem(s.held)) s.items[s.held] = [s.tip[0], s.tip[1], s.tip[2]];
+    else if (s.held) s.cubes[s.held] = [s.tip[0], s.tip[1], s.tip[2]];
 
     // reach progress
     if (s.layout === 'reach' && s.reachIndex < s.reachTargets.length) {
@@ -168,6 +223,23 @@ export class TaskEnv implements Env {
     }
     s.success = successOf(s);
     s.steps++;
+  }
+
+  /** Grab rules for Workshop objects: returns the item now held, or null (recording why in grabFail). */
+  private tryGrabItem(ws: Workspace): ItemId | null {
+    const s = this.s;
+    const id = findItem(s.tip, s.items);
+    let reason: GrabFailReason | null = null;
+    let item: ItemId | null = id;
+    if (id) reason = grabRule(ITEMS[id], s.robot);
+    else {
+      item = outOfReachItem(s.tip, s.items, ws);
+      if (item) reason = 'reach';
+    }
+    if (!reason) return id;
+    s.grabFail = { reason, item, at: [s.tip[0], s.tip[1], s.tip[2]], step: s.steps };
+    s.grabFails++;
+    return null;
   }
 
   state(): EnvState {
