@@ -21,7 +21,7 @@ function makeParcel(): THREE.Group {
 }
 
 /** A small wheeled cart, its top level with the table top. */
-function makeCart(): THREE.Group {
+export function makeCart(): THREE.Group {
   const g = new THREE.Group();
   const c = W.cart;
   const top = new THREE.MeshStandardMaterial({ color: 0x8b8f96, roughness: 0.7, metalness: 0.1 });

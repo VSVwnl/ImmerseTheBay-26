@@ -47,6 +47,7 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Soft gripper | part (tool) | 07d57c2 | | |
 | Egg | challenge | 2e4927d | Soft gripper + any arm that reaches the table | Compact+Soft, Long+Soft, Heavy-duty+Soft, Extra-long+Soft |
 | Scrap (2 steps, one robot) | challenge | ef6c4ca | Long + Magnet | Long+Magnet |
+| Restock (2 steps, swap arms) | challenge | RESTOCK_COMMIT | Extra-long, then Heavy-duty | no single robot; step 1: Extra-long+Gripper/Suction/Soft, then step 2: Heavy-duty+Gripper/Magnet |
 | Dinner (2 steps, swap) | challenge | 03d29e7 | Suction, then Gripper or Magnet on Compact/Heavy-duty | no single robot; step 1: Compact/Long/Heavy-duty+Suction, then step 2: Compact/Heavy-duty+Gripper/Magnet |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
@@ -113,6 +114,10 @@ Additions:
    because it's the counterpart to Dinner: the washer needs the magnet and the can needs the Long arm's reach, so
    the player has to combine two parts' strengths in one robot. Only Long + Magnet. (Also fixed: an object over
    its own goal now always counts even if another step's goal overlaps it.)
+14. ADD challenge: restock (`src/workshop/challenges/restock.ts`): two steps with an ARM swap: the light parcel
+   from the side cart -> outbox (only the Extra-long reaches it), then the anvil -> red zone (only the Heavy-duty
+   lifts it). Interesting because the two extremes of the reach/strength trade are needed back to back. The
+   generic swap tests now run for every swap challenge (each step's robots, every pair solves it with one swap).
 
 Live Orbis check of the Workshop (Sun ~03:55 PST, `scripts/workshop-live-check.mjs`, 2 sessions, 0.6 min):
 - First try stayed on the stub: the dev server's pre-bundled Orbis SDK was stale ("reactor-wasm failed to load:
@@ -160,6 +165,9 @@ Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base check
       the egg"; with the Soft gripper it goes into the carton. Is the egg big enough to aim at?
 - [ ] 13 Scrap (NOT YET TESTED ON HEADSET): with Compact + Magnet the washer goes in but the can says "Out of reach";
       changing parts restarts the run; Long + Magnet does both. Is the "one robot" idea clear from the hint?
+- [ ] 14 Restock (NOT YET TESTED ON HEADSET): start with Extra-long + Gripper, bring the parcel from the side cart
+      to the outbox, poke Heavy-duty (the arm rebuilds, the timer keeps running), move the anvil to the red zone.
+      Does the arm rebuild mid-run feel OK (the tip may jump to the new arm's reach)?
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with

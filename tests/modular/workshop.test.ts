@@ -75,6 +75,10 @@ const EXPECT: Record<WorkshopLayout, Record<string, 'ok' | 'tool' | 'heavy' | 'r
   scrap: {
     'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'reach', 'compact+wide': 'tool', 'compact+scoop': 'tool', 'compact+soft': 'tool', 'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'reach', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'tool', 'heavyduty+soft': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'ok', 'long+wide': 'tool', 'long+scoop': 'tool', 'long+soft': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'tall+soft': 'reach', 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'heavy', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'xlong+soft': 'tool',
   },
+  // two steps, swap arms: the parcel needs the Extra-long, the anvil the Heavy-duty
+  restock: {
+    'compact+gripper': 'reach', 'compact+suction': 'reach', 'compact+magnet': 'reach', 'compact+wide': 'reach', 'compact+scoop': 'reach', 'compact+soft': 'reach', 'long+gripper': 'reach', 'long+suction': 'reach', 'long+magnet': 'reach', 'long+wide': 'reach', 'long+scoop': 'reach', 'long+soft': 'reach', 'heavyduty+gripper': 'reach', 'heavyduty+suction': 'reach', 'heavyduty+magnet': 'reach', 'heavyduty+wide': 'reach', 'heavyduty+scoop': 'reach', 'heavyduty+soft': 'reach', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'tall+soft': 'reach', 'xlong+gripper': 'heavy', 'xlong+suction': 'tool', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'xlong+soft': 'tool',
+  },
 };
 
 function grid(ws: { min: Vec3; max: Vec3 }, n: number): Vec3[] {
@@ -401,19 +405,20 @@ describe('one-robot multi-step challenges (scrap)', () => {
   });
 });
 
-describe('swap challenges (dinner): parts change mid-challenge', () => {
-  const task = WORKSHOP_TASKS.dinner;
-  it('is a two-step swap challenge with no single-robot solution', () => {
-    expect(task.swap).toBe(true);
-    expect(task.steps.length).toBe(2);
-    expect(task.solutions).toEqual([]);
-  });
+for (const layout of WORKSHOP_LAYOUTS.filter((l) => WORKSHOP_TASKS[l].swap)) {
+  describe(`swap challenge ${layout}: every step has its robots, one swap between steps solves it`, () => {
+    const task = WORKSHOP_TASKS[layout];
+    it('is a multi-step swap challenge with no single-robot solution', () => {
+      expect(task.steps.length).toBeGreaterThan(1);
+      expect(task.solutions).toEqual([]);
+      expect(task.stepSolutions!.length).toBe(task.steps.length);
+    });
 
   it("each step's declared robots are exactly the ones that can do that step", () => {
     task.steps.forEach((st, i) => {
       const can: string[] = [];
       for (const r of ROBOTS) {
-        const env = new TaskEnv(5, 'dinner', r);
+        const env = new TaskEnv(5, layout, r);
         pickPlace(env, env.state().items[st.item]!, st.goal.pos);
         const s = env.state();
         if (s.held !== st.item && s.grabFails === 0 && near(s.items[st.item]!, s.items[st.item]!, 1) && onGoalCheck(st, s.items[st.item]!)) can.push(key(r));
@@ -426,16 +431,21 @@ describe('swap challenges (dinner): parts change mid-challenge', () => {
     for (const r1 of task.stepSolutions![0])
       for (const r2 of task.stepSolutions![1])
         for (const seed of [2, 31]) {
-          const env = new TaskEnv(seed, 'dinner', r1);
-          pickPlace(env, env.state().items.plate!, task.steps[0].goal.pos);
+          const env = new TaskEnv(seed, layout, r1);
+          pickPlace(env, env.state().items[task.steps[0].item]!, task.steps[0].goal.pos);
           expect(env.state().success).toBe(false);
           expect(env.setRobot(r2)).toBe(true);
-          pickPlace(env, env.state().items.pot!, task.steps[1].goal.pos);
+          pickPlace(env, env.state().items[task.steps[1].item]!, task.steps[1].goal.pos);
           expect(env.state().success).toBe(true);
           expect(env.state().grabFails).toBe(0);
         }
   });
 
+  });
+}
+
+describe('swap challenges (dinner): parts change mid-challenge', () => {
+  const task = WORKSHOP_TASKS.dinner;
   it('parts cannot be swapped while holding something', () => {
     const env = new TaskEnv(2, 'dinner', { arm: 'compact', tool: 'suction' });
     const p = env.state().items.plate!;

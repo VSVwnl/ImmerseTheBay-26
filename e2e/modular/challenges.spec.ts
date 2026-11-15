@@ -14,7 +14,7 @@ interface Case {
   /** the object the wrong-parts attempt reaches for (default: item) */
   wrongItem?: string;
   /** more steps after the first, done with the same robot */
-  more?: { item: string; goal: V3 }[];
+  more?: { item: string; goal: V3; arm?: string; tool?: string }[];
 }
 const CASES: Case[] = [
   {
@@ -74,6 +74,14 @@ const CASES: Case[] = [
     wrongItem: 'can',
     wrong: { arm: 'compact', tool: 'magnet', label: 'Out of reach' },
     right: { arm: 'long', tool: 'magnet' },
+  },
+  {
+    layout: 'restock',
+    item: 'parcel',
+    goal: [-0.05, 0.75, -0.55],
+    more: [{ item: 'anvil', goal: [-0.24, 0.75, -0.66], arm: 'heavyduty', tool: 'gripper' }],
+    wrong: { arm: 'heavyduty', tool: 'gripper', label: 'Out of reach' },
+    right: { arm: 'xlong', tool: 'gripper' },
   },
 ];
 const only = process.env.CASE;
@@ -136,13 +144,23 @@ for (const c of CASES.filter((k) => !only || k.layout === only)) {
     await setParts(page, c.right.arm, c.right.tool);
     await waitPhase(page, 'running');
     await pickPlace(page, (await items(page))[c.item], c.goal);
-    for (const m of c.more ?? []) await pickPlace(page, (await items(page))[m.item], m.goal);
+    for (const m of c.more ?? []) {
+      if (m.arm && m.tool) {
+        await setParts(page, m.arm, m.tool); // swap challenges: no restart
+        expect(await page.evaluate(() => (window as any).__backlot.challenges.phase)).toBe('running');
+      }
+      await pickPlace(page, (await items(page))[m.item], m.goal);
+    }
     await page.waitForTimeout(150);
     await page.screenshot({ path: `e2e-shots/ch-${c.layout}-done.png` });
     await waitPhase(page, 'results', 10000);
     const recs: any[] = await page.evaluate(() => (window as any).__backlot.records);
     const last = recs[recs.length - 1];
-    expect([last.challenge, last.arm, last.tool, last.success]).toEqual([c.layout, c.right.arm, c.right.tool, true]);
+    // swap challenges keep the attempt running across part changes: it starts with the wrong parts, swaps are listed
+    const swapCase = (c.more ?? []).some((m) => m.arm);
+    const start = swapCase ? c.wrong : c.right;
+    expect([last.challenge, last.arm, last.tool, last.success]).toEqual([c.layout, start.arm, start.tool, true]);
+    if (swapCase) expect(last.swaps.map((w: any) => `${w.arm}+${w.tool}`)).toEqual([`${c.right.arm}+${c.right.tool}`, ...c.more!.filter((m) => m.arm).map((m) => `${m.arm}+${m.tool}`)]);
     expect(typeof last.world?.id).toBe('string');
     expect(errors).toEqual([]);
   });
