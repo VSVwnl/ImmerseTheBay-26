@@ -1,7 +1,7 @@
 // The human app: challenges, panels, inputs, Multiply. Runs on the shared core.
 import * as THREE from 'three';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
-import { PANELS, SUCCESS_NUDGES, WORLD_DEFAULT_MODE, type Vec3 } from './config';
+import { ENABLED_CHALLENGES, PANELS, SUCCESS_NUDGES, WORLD_DEFAULT_MODE, type Vec3 } from './config';
 import { DesktopInput } from './input/desktop';
 import { XRInput } from './input/xr';
 import { Challenges, WORKSHOP_HINT, workshopChallenges, type ChallengeResult } from './tasks/challenges';
@@ -24,6 +24,9 @@ export function startApp(core: Core) {
   const { canvas, renderer, scene, camera, marker, world, streamLight, renderState } = core;
   const WORKSHOP_OFF = 'standard robot only, off in Workshop';
   const params = new URLSearchParams(location.search);
+  // ?challenges=washer,heavy keeps only those Workshop challenges (for testing one quickly); unknown names are ignored
+  const only = params.get('challenges')?.split(',').filter((c) => ENABLED_CHALLENGES.includes(c));
+  if (only?.length) ENABLED_CHALLENGES.splice(0, ENABLED_CHALLENGES.length, ...only);
   let listening = false;
   function speakWorld() {
     listenOnce(
@@ -441,8 +444,10 @@ export function startApp(core: Core) {
       panels.workshop.set({
         title: 'Workshop: parts',
         lines: [
-          { text: `Arm: ${ARMS[r.arm].label} (payload ${payloadOf(r.arm)}): ${ARMS[r.arm].blurb}`, size: 18, bold: true },
-          { text: `Tool: ${TOOLS[r.tool].label}: ${TOOLS[r.tool].blurb}`, size: 18, bold: true },
+          { text: `Arm: ${ARMS[r.arm].label}, payload ${payloadOf(r.arm)}`, size: 21, bold: true },
+          { text: `   ${ARMS[r.arm].blurb}`, size: 17, color: '#c9d3dd' },
+          { text: `Tool: ${TOOLS[r.tool].label}`, size: 21, bold: true },
+          { text: `   ${TOOLS[r.tool].blurb}`, size: 17, color: '#c9d3dd' },
           { text: 'Changing a part restarts the challenge', size: 16, color: '#9fb3c8' },
         ],
         buttons: [

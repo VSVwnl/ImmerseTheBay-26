@@ -24,11 +24,20 @@ Additions:
 1. Groundwork: switches, part/challenge registries, random world per attempt, modular test folders.
    Interesting because every later part or challenge is one data entry plus one row of expected outcomes, and
    the tests check every robot against every challenge automatically.
+2. Magnet tool + Washer challenge (steel washer -> blue tray). Interesting because the washer defeats both
+   original tools for different reasons (gripper: flat; suction: air leaks through the hole) and the magnet,
+   which can't lift anything non-metal, is the only answer; the magnet also turns out to solve Far (Long +
+   Magnet) and Heavy (Compact + Magnet), so the old one-answer challenges now have two.
+   Also: `?challenges=washer` limits the Workshop to the listed challenges for quick testing;
+   `scripts/panel-shot.mjs` renders a headset panel to a PNG; the parts panel is taller/wider in the headset.
 
 Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base checks in `docs/WORKSHOP.md`):
 - [ ] 1 Groundwork (NOT YET TESTED ON HEADSET): in the Workshop, each countdown switches the wall to a different
       world; with the live key the new world shows within a few seconds; the parts panel lines (part + strength /
       weakness) are readable.
+- [ ] 2 Magnet + Washer (NOT YET TESTED ON HEADSET): the parts panel (left) shows Magnet; with Suction, pinching the
+      washer says "Air leaks through the hole"; with Magnet the washer sticks under the red puck and drops into the
+      blue tray; the magnet refuses the plate ("Magnet only lifts metal"). The washer is small: is it easy to see?
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with

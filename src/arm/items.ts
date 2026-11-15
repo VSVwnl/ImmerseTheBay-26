@@ -5,7 +5,7 @@
 import { GRAB_RADIUS, TABLE, WORKSHOP, type Vec3 } from '../config';
 import { payloadOf, type RobotParts, type ToolKind, type Workspace } from './parts';
 
-export type ItemId = 'plate' | 'can' | 'pot';
+export type ItemId = 'plate' | 'can' | 'pot' | 'washer';
 export type Material = 'ceramic' | 'metal' | 'wood' | 'glass' | 'plastic';
 /** flat: no sides to grip; cylinder/box/pot: has sides; ring: flat with a hole; loose: many small bits */
 export type Shape = 'flat' | 'cylinder' | 'box' | 'pot' | 'ring' | 'loose';
@@ -43,6 +43,10 @@ export const ITEMS: Record<ItemId, ItemSpec> = {
     id: 'pot', name: 'pot', material: 'metal', shape: 'pot', size: 'normal', weight: 2,
     restY: TABLE.top + WORKSHOP.pot.height / 2, radius: WORKSHOP.pot.radius,
   },
+  washer: {
+    id: 'washer', name: 'washer', material: 'metal', shape: 'ring', size: 'small', weight: 1,
+    restY: TABLE.top + WORKSHOP.washer.thick / 2, radius: WORKSHOP.washer.radius, holdDrop: WORKSHOP.washer.thick / 2,
+  },
 };
 export const ITEM_IDS = Object.keys(ITEMS) as ItemId[];
 
@@ -63,6 +67,7 @@ export const TOOL_RULES: Record<ToolKind, (it: ItemSpec) => string | null> = {
     if (it.shape === 'cylinder') return `Suction can't seal on a ${it.name}`;
     return `Suction can't hold a ${it.name}`;
   },
+  magnet: (it) => (it.material === 'metal' ? null : 'Magnet only lifts metal'),
 };
 
 /** Why this robot can't hold this object: tool first, then weight. Null when it can. */

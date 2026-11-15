@@ -80,7 +80,8 @@ export const PANELS = {
   counter: { pos: [0.72, 1.24, -0.4] as Vec3, w: 0.36, h: 0.09 }, // no buttons, so it may sit lower
   thumbs: { pos: [0.95, 1.55, -0.95] as Vec3, w: 0.72, h: 0 },
   // Robot Workshop parts: to the user's left, beside the World panel, above the hand zone
-  workshop: { pos: [-0.8, 1.5, 0.0] as Vec3, w: 0.34, h: 0.4 },
+  // tall enough for 6 rows of part buttons; bottom edge at ~1.27 m, just above the hand zone
+  workshop: { pos: [-0.8, 1.56, 0.0] as Vec3, w: 0.42, h: 0.58 },
 };
 export const PANEL_FACE_POINT: Vec3 = [0, 1.4, 0]; // panels turn to face this point
 
@@ -118,8 +119,8 @@ export const FACTORY = { seedBase: 1000, worldEvery: 20, stubSettleMs: 1700 };
 // ---- Switches: delete one word to turn a Workshop part or challenge off ----
 // The standard robot (compact + gripper) and Reach/Place/Sort always exist outside the Workshop: the expert,
 // datasets, training and Robot's turn depend on them. Turning compact or gripper off only hides them here.
-export const ENABLED_PARTS: string[] = ['compact', 'long', 'gripper', 'suction'];
-export const ENABLED_CHALLENGES: string[] = ['plate', 'far', 'heavy'];
+export const ENABLED_PARTS: string[] = ['compact', 'long', 'gripper', 'suction', 'magnet'];
+export const ENABLED_CHALLENGES: string[] = ['plate', 'far', 'heavy', 'washer'];
 
 // ---- Robot Workshop (additive; the standard robot is Compact + Gripper and uses the values above) ----
 export const WORKSHOP = {
@@ -137,4 +138,6 @@ export const WORKSHOP = {
   rack: { pos: [0.3, 0.75, -0.56] as Vec3, w: 0.18, d: 0.18, h: 0.03 },
   canBin: { pos: [-0.3, 0.75, -0.56] as Vec3 }, // same box size as BIN
   zone: { pos: [0.3, 0.75, -0.56] as Vec3, size: 0.18 },
+  washer: { radius: 0.03, thick: 0.007, spawnX: [-0.12, 0.12] as [number, number], spawnZ: [-0.85, -0.75] as [number, number] },
+  tray: { pos: [0.3, 0.75, -0.56] as Vec3 }, // parts tray (bin-sized)
 };

@@ -5,7 +5,7 @@ import { BIN, ENABLED_CHALLENGES, TABLE, WORKSHOP, type Vec3 } from '../config';
 import { ITEMS, type ItemId } from '../arm/items';
 import type { Rng } from './rng';
 
-export type WorkshopLayout = 'plate' | 'far' | 'heavy';
+export type WorkshopLayout = 'plate' | 'far' | 'heavy' | 'washer';
 
 export type GoalKind = 'rack' | 'bin' | 'zone';
 export interface Goal {
@@ -38,6 +38,7 @@ export const GOALS = {
   rack: { kind: 'rack', pos: W.rack.pos, w: W.rack.w, d: W.rack.d, h: W.rack.h, color: 0xb8bcc2 } as Goal,
   greenBin: { kind: 'bin', pos: W.canBin.pos, w: BIN.w, d: BIN.d, h: BIN.h, color: 0x2f9e5b } as Goal,
   zone: { kind: 'zone', pos: W.zone.pos, w: W.zone.size, d: W.zone.size, h: 0, color: 0xffd34d } as Goal,
+  tray: { kind: 'bin', pos: W.tray.pos, w: BIN.w, d: BIN.d, h: BIN.h, color: 0x4a6f96 } as Goal,
 };
 
 export const WORKSHOP_TASKS: Record<WorkshopLayout, WorkshopTask> = {
@@ -61,6 +62,13 @@ export const WORKSHOP_TASKS: Record<WorkshopLayout, WorkshopTask> = {
     hint: 'Put the pot on the glowing zone',
     solvedBy: 'Compact + Gripper',
     steps: [{ item: 'pot', goal: GOALS.zone, spawn: (r) => [between(r, W.pot.spawnX), ITEMS.pot.restY, between(r, W.pot.spawnZ)] }],
+  },
+  washer: {
+    layout: 'washer',
+    name: 'Washer',
+    hint: 'Put the steel washer in the blue tray',
+    solvedBy: 'Magnet, any arm',
+    steps: [{ item: 'washer', goal: GOALS.tray, spawn: (r) => [between(r, W.washer.spawnX), ITEMS.washer.restY, between(r, W.washer.spawnZ)] }],
   },
 };
 

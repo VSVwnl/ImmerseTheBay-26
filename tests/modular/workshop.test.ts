@@ -30,9 +30,10 @@ const key = (r: RobotParts) => `${r.arm}+${r.tool}`;
 /** Expected outcome of each Workshop challenge for each robot: 'ok' or the failure reason.
  *  Robots not listed must fail (any reason). */
 const EXPECT: Record<WorkshopLayout, Record<string, 'ok' | 'tool' | 'heavy' | 'reach'>> = {
-  plate: { 'compact+gripper': 'tool', 'compact+suction': 'ok', 'long+gripper': 'tool', 'long+suction': 'ok' },
-  far: { 'compact+gripper': 'reach', 'compact+suction': 'reach', 'long+gripper': 'ok', 'long+suction': 'tool' },
-  heavy: { 'compact+gripper': 'ok', 'compact+suction': 'tool', 'long+gripper': 'heavy', 'long+suction': 'tool' },
+  plate: { 'compact+gripper': 'tool', 'compact+suction': 'ok', 'long+gripper': 'tool', 'long+suction': 'ok', 'compact+magnet': 'tool', 'long+magnet': 'tool' },
+  far: { 'compact+gripper': 'reach', 'compact+suction': 'reach', 'long+gripper': 'ok', 'long+suction': 'tool', 'compact+magnet': 'reach', 'long+magnet': 'ok' },
+  heavy: { 'compact+gripper': 'ok', 'compact+suction': 'tool', 'long+gripper': 'heavy', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'heavy' },
+  washer: { 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'ok' },
 };
 
 function grid(ws: { min: Vec3; max: Vec3 }, n: number): Vec3[] {
@@ -125,6 +126,13 @@ describe('grab rules', () => {
   it('every tool has a rule, every object has tags', () => {
     for (const t of TOOL_KINDS) expect(typeof TOOL_RULES[t]).toBe('function');
     for (const id of ITEM_IDS) expect(ITEMS[id].weight).toBeGreaterThan(0);
+  });
+
+  it('magnet: metal only; washer: only the magnet', () => {
+    expect(grabCheck(ITEMS.plate, { arm: 'compact', tool: 'magnet' })?.text).toBe('Magnet only lifts metal');
+    expect(grabCheck(ITEMS.washer, { arm: 'compact', tool: 'gripper' })?.text).toBe("Can't grip a flat washer");
+    expect(grabCheck(ITEMS.washer, { arm: 'compact', tool: 'suction' })?.text).toBe('Air leaks through the hole');
+    expect(grabCheck(ITEMS.washer, { arm: 'long', tool: 'magnet' })).toBeNull();
   });
 
   it('original labels', () => {

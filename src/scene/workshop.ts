@@ -102,11 +102,23 @@ const GOAL_MESHES: Record<GoalKind, (g: Goal) => THREE.Object3D> = {
   zone: makeZone,
 };
 
+function makeWasher(): THREE.Group {
+  const g = new THREE.Group();
+  const { radius: r, thick: t } = WORKSHOP.washer;
+  const steel = new THREE.MeshStandardMaterial({ color: 0xc9ced4, roughness: 0.25, metalness: 0.9 });
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(r * 0.68, r * 0.32, 10, 32), steel);
+  ring.rotation.x = Math.PI / 2;
+  ring.scale.z = t / (r * 0.64); // flatten the tube to the washer thickness
+  g.add(ring);
+  return g;
+}
+
 /** Object meshes. To add an object, add a builder here (simple primitives only). */
 const ITEM_MESHES: Record<ItemId, () => THREE.Group> = {
   plate: makePlate,
   can: makeCan,
   pot: makePot,
+  washer: makeWasher,
 };
 
 /** A label that floats up and fades out. Not on the dataset layer. */
