@@ -7,6 +7,21 @@ declare global {
   }
 }
 
+// URL keys are read case-sensitively; typed on a headset keyboard, "?Orbis=0" must still mean orbis=0 (no paid session).
+{
+  const q = new URLSearchParams(location.search);
+  let changed = false;
+  for (const [k, v] of [...q]) {
+    const low = k.toLowerCase();
+    if (k !== low && ['orbis', 'mode', 'tag', 'dataset'].includes(low) && !q.has(low)) {
+      q.delete(k);
+      q.set(low, v);
+      changed = true;
+    }
+  }
+  if (changed) history.replaceState(null, '', `${location.pathname}?${q}${location.hash}`);
+}
+
 const mode = new URLSearchParams(location.search).get('mode') ?? 'app';
 const core = createCore();
 
