@@ -455,10 +455,10 @@ export function startApp(core: Core) {
           { text: challenges.swapNow() ? 'Swap parts any time (hands empty)' : 'Changing a part restarts the challenge', size: 16, color: challenges.swapNow() ? '#ffb347' : '#9fb3c8' },
         ],
         buttons: [
-          ...enabledArms().map((a) => ({ id: `arm:${a}`, label: `${ARMS[a].label} arm`, active: r.arm === a })),
+          ...enabledArms().map((a) => ({ id: `arm:${a}`, label: ARMS[a].label, active: r.arm === a })),
           ...enabledTools().map((t, i) => ({ id: `tool:${t}`, label: TOOLS[t].label, active: r.tool === t, newRow: i === 0 })),
         ],
-        cols: 2,
+        cols: 3,
       });
     } else panels.workshop.set({ hidden: true });
     if (robot && summary?.table) {
