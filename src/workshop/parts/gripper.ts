@@ -12,6 +12,7 @@ export const GRIPPER: ToolDef = {
     if (it.shape === 'flat' || it.shape === 'ring') return `Can't grip a flat ${it.name}`;
     if (it.shape === 'loose') return 'Loose bits slip through the fingers';
     if (it.size === 'big') return 'Too big for this gripper';
+    if (it.fragile) return `Too hard a grip: it would crack the ${it.name}`;
     return null;
   },
   build: (tool, m) => fingerRig(tool, m, 0.11, FINGER_GAP_OPEN, FINGER_GAP_CLOSED),

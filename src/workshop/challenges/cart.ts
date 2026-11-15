@@ -62,6 +62,6 @@ export const CART: ChallengeDef = {
       spawn: (r) => [between(r, W.parcel.spawnX), PARCEL_ITEM.restY, between(r, W.parcel.spawnZ)],
     },
   ],
-  solutions: [{ arm: 'xlong', tool: 'gripper' }, { arm: 'xlong', tool: 'suction' }],
+  solutions: [{ arm: 'xlong', tool: 'gripper' }, { arm: 'xlong', tool: 'suction' }, { arm: 'xlong', tool: 'soft' }],
   scenery: () => [makeCart()],
 };

@@ -30,7 +30,7 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Gripper | part (tool) | 9e3ca17 (standard) | | |
 | Suction | part (tool) | 9e3ca17 | | |
 | Plate | challenge | 9e3ca17 | Suction + an arm that reaches the table | Compact+Suction, Long+Suction, Heavy-duty+Suction |
-| Far | challenge | 9e3ca17 | Long + Gripper or Magnet | Long+Gripper, Long+Magnet |
+| Far | challenge | 9e3ca17 | Long + Gripper, Magnet or Soft gripper | Long+Gripper, Long+Magnet, Long+Soft |
 | Heavy | challenge | 9e3ca17 | Compact or Heavy-duty + Gripper or Magnet | Compact+Gripper, Compact+Magnet, Heavy-duty+Gripper, Heavy-duty+Magnet |
 | Magnet | part (tool) | 96bdd6e | | |
 | Washer | challenge | 96bdd6e | Magnet | Compact+Magnet, Long+Magnet, Heavy-duty+Magnet |
@@ -41,10 +41,11 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Scoop | part (tool) | 161dc39 | | |
 | Marbles | challenge | 161dc39 | Scoop | Compact+Scoop, Long+Scoop, Heavy-duty+Scoop |
 | Tall base | part (arm) | f4f164e | | |
-| Shelf | challenge | d8a9cf2 | Tall base + Gripper | Tall base+Gripper |
+| Shelf | challenge | d8a9cf2 | Tall base + Gripper or Soft gripper | Tall base+Gripper, Tall base+Soft |
 | Extra-long arm | part (arm) | e52e4f0 | | |
-| Cart | challenge | 386319d | Extra-long + Gripper or Suction | Extra-long+Gripper, Extra-long+Suction |
-| Dinner (2 steps, swap) | challenge | DINNER_COMMIT | Suction, then Gripper or Magnet on Compact/Heavy-duty | no single robot; step 1: Compact/Long/Heavy-duty+Suction, then step 2: Compact/Heavy-duty+Gripper/Magnet |
+| Cart | challenge | 386319d | Extra-long + Gripper, Suction or Soft gripper | Extra-long+Gripper, Extra-long+Suction, Extra-long+Soft |
+| Soft gripper | part (tool) | SOFT_COMMIT | | |
+| Dinner (2 steps, swap) | challenge | 03d29e7 | Suction, then Gripper or Magnet on Compact/Heavy-duty | no single robot; step 1: Compact/Long/Heavy-duty+Suction, then step 2: Compact/Heavy-duty+Gripper/Magnet |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
 - Moved every part and challenge into its own file (registry in `src/workshop/registry.ts`). Numbers stay in
@@ -97,6 +98,10 @@ Additions:
    do it, so "pick the right robot" becomes "pick the right robot for each step". In swap challenges a part change
    does not restart the attempt (it is refused while holding something: "Put it down before changing parts");
    swaps are saved in the attempt file (`swaps: [{at, arm, tool}]`) and replays apply them at the same step.
+11. ADD part: soft gripper (`src/workshop/parts/soft.ts`): chunky blue foam fingers. Interesting because it is the
+   standard gripper's mirror image: gentle enough for fragile things (the hard gripper now says "Too hard a grip:
+   it would crack the ..."), but anything over weight 1 slips ("Too heavy for the soft fingers"). It also does
+   the light gripper jobs (Far with Long, Shelf with Tall base, Cart with Extra-long). Parts panel: 3 columns.
 
 Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base checks in `docs/WORKSHOP.md`):
 - [ ] 1 Groundwork (NOT YET TESTED ON HEADSET): in the Workshop, each countdown switches the wall to a different
@@ -128,6 +133,8 @@ Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base check
       empty)"; with the gripper the plate says "Can't grip a flat plate"; poke Suction: the timer keeps running (no
       countdown); while the plate is held, poking Gripper says "Put it down before changing parts"; plate on the
       rack, poke Gripper, pot onto the yellow zone: success. Is poking the parts panel mid-task comfortable?
+- [ ] 11 Soft gripper (NOT YET TESTED ON HEADSET): the parts panel now has 3 columns: are the buttons still easy
+      to hit? Soft gripper shows chunky blue fingers; in Heavy it says "Too heavy for the soft fingers".
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with

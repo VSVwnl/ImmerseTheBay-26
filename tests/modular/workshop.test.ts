@@ -30,42 +30,42 @@ const key = (r: RobotParts) => `${r.arm}+${r.tool}`;
 /** Expected outcome of each Workshop challenge for each robot: 'ok' or the failure reason.
  *  Robots not listed must fail (any reason). */
 const EXPECT: Record<WorkshopLayout, Record<string, 'ok' | 'tool' | 'heavy' | 'reach'>> = {
-  anvil: { 'xlong+gripper': 'heavy', 'xlong+suction': 'tool', 'xlong+magnet': 'heavy', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach',
+  anvil: { 'compact+soft': 'tool', 'long+soft': 'tool', 'heavyduty+soft': 'tool', 'tall+soft': 'reach', 'xlong+soft': 'tool', 'xlong+gripper': 'heavy', 'xlong+suction': 'tool', 'xlong+magnet': 'heavy', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach',
     'compact+gripper': 'heavy', 'compact+suction': 'tool', 'compact+magnet': 'heavy', 'compact+wide': 'tool',
     'long+gripper': 'heavy', 'long+suction': 'tool', 'long+magnet': 'heavy', 'long+wide': 'tool',
     'heavyduty+gripper': 'ok', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'ok', 'heavyduty+wide': 'tool',
     'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool',
   },
-  marbles: { 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'heavy', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach',
+  marbles: { 'compact+soft': 'tool', 'long+soft': 'tool', 'heavyduty+soft': 'tool', 'tall+soft': 'reach', 'xlong+soft': 'tool', 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'heavy', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach',
     'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'tool', 'compact+wide': 'tool', 'compact+scoop': 'ok',
     'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'tool', 'long+wide': 'tool', 'long+scoop': 'ok',
     'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'ok',
   },
-  plate: { 'xlong+gripper': 'tool', 'xlong+suction': 'heavy', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'tool', 'compact+suction': 'ok', 'long+gripper': 'tool', 'long+suction': 'ok', 'compact+magnet': 'tool', 'long+magnet': 'tool', 'compact+wide': 'tool', 'long+wide': 'tool',
+  plate: { 'compact+soft': 'tool', 'long+soft': 'tool', 'heavyduty+soft': 'tool', 'tall+soft': 'reach', 'xlong+soft': 'tool', 'xlong+gripper': 'tool', 'xlong+suction': 'heavy', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'tool', 'compact+suction': 'ok', 'long+gripper': 'tool', 'long+suction': 'ok', 'compact+magnet': 'tool', 'long+magnet': 'tool', 'compact+wide': 'tool', 'long+wide': 'tool',
     'heavyduty+gripper': 'tool', 'heavyduty+suction': 'ok', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool',
     'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool' },
-  far: { 'xlong+gripper': 'heavy', 'xlong+suction': 'tool', 'xlong+magnet': 'heavy', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'reach', 'compact+suction': 'reach', 'long+gripper': 'ok', 'long+suction': 'tool', 'compact+magnet': 'reach', 'long+magnet': 'ok', 'compact+wide': 'reach', 'long+wide': 'tool',
+  far: { 'compact+soft': 'reach', 'long+soft': 'ok', 'heavyduty+soft': 'reach', 'tall+soft': 'reach', 'xlong+soft': 'heavy', 'xlong+gripper': 'heavy', 'xlong+suction': 'tool', 'xlong+magnet': 'heavy', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'reach', 'compact+suction': 'reach', 'long+gripper': 'ok', 'long+suction': 'tool', 'compact+magnet': 'reach', 'long+magnet': 'ok', 'compact+wide': 'reach', 'long+wide': 'tool',
     'heavyduty+gripper': 'reach', 'heavyduty+suction': 'reach', 'heavyduty+magnet': 'reach', 'heavyduty+wide': 'reach',
     'compact+scoop': 'reach', 'long+scoop': 'tool', 'heavyduty+scoop': 'reach' },
-  heavy: { 'xlong+gripper': 'heavy', 'xlong+suction': 'tool', 'xlong+magnet': 'heavy', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'ok', 'compact+suction': 'tool', 'long+gripper': 'heavy', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'heavy', 'compact+wide': 'tool', 'long+wide': 'tool',
+  heavy: { 'compact+soft': 'tool', 'long+soft': 'tool', 'heavyduty+soft': 'tool', 'tall+soft': 'reach', 'xlong+soft': 'tool', 'xlong+gripper': 'heavy', 'xlong+suction': 'tool', 'xlong+magnet': 'heavy', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'ok', 'compact+suction': 'tool', 'long+gripper': 'heavy', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'heavy', 'compact+wide': 'tool', 'long+wide': 'tool',
     'heavyduty+gripper': 'ok', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'ok', 'heavyduty+wide': 'tool',
     'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool' },
-  washer: { 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'heavy', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'ok', 'compact+wide': 'tool', 'long+wide': 'tool',
+  washer: { 'compact+soft': 'tool', 'long+soft': 'tool', 'heavyduty+soft': 'tool', 'tall+soft': 'reach', 'xlong+soft': 'tool', 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'heavy', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'ok', 'compact+wide': 'tool', 'long+wide': 'tool',
     'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'ok', 'heavyduty+wide': 'tool',
     'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool' },
-  crate: { 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'tool', 'xlong+wide': 'heavy', 'xlong+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'tool', 'long+magnet': 'tool', 'compact+wide': 'ok', 'long+wide': 'heavy',
+  crate: { 'compact+soft': 'tool', 'long+soft': 'tool', 'heavyduty+soft': 'tool', 'tall+soft': 'reach', 'xlong+soft': 'tool', 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'tool', 'xlong+wide': 'heavy', 'xlong+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'tool', 'long+magnet': 'tool', 'compact+wide': 'ok', 'long+wide': 'heavy',
     'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'ok',
     'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool' },
-  shelf: { 'xlong+gripper': 'reach', 'xlong+suction': 'reach', 'xlong+magnet': 'reach', 'xlong+wide': 'reach', 'xlong+scoop': 'reach',
+  shelf: { 'compact+soft': 'reach', 'long+soft': 'reach', 'heavyduty+soft': 'reach', 'tall+soft': 'ok', 'xlong+soft': 'reach', 'xlong+gripper': 'reach', 'xlong+suction': 'reach', 'xlong+magnet': 'reach', 'xlong+wide': 'reach', 'xlong+scoop': 'reach',
     'tall+gripper': 'ok', 'tall+suction': 'tool', 'tall+magnet': 'tool', 'tall+wide': 'tool', 'tall+scoop': 'tool',
     'compact+gripper': 'reach', 'compact+suction': 'reach', 'compact+magnet': 'reach', 'compact+wide': 'reach', 'compact+scoop': 'reach', 'long+gripper': 'reach', 'long+suction': 'reach', 'long+magnet': 'reach', 'long+wide': 'reach', 'long+scoop': 'reach', 'heavyduty+gripper': 'reach', 'heavyduty+suction': 'reach', 'heavyduty+magnet': 'reach', 'heavyduty+wide': 'reach', 'heavyduty+scoop': 'reach',
   },
-  cart: {
+  cart: { 'compact+soft': 'reach', 'long+soft': 'reach', 'heavyduty+soft': 'reach', 'tall+soft': 'reach', 'xlong+soft': 'ok',
     'xlong+gripper': 'ok', 'xlong+suction': 'ok', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool',
     'compact+gripper': 'reach', 'compact+suction': 'reach', 'compact+magnet': 'reach', 'compact+wide': 'reach', 'compact+scoop': 'reach', 'long+gripper': 'reach', 'long+suction': 'reach', 'long+magnet': 'reach', 'long+wide': 'reach', 'long+scoop': 'reach', 'heavyduty+gripper': 'reach', 'heavyduty+suction': 'reach', 'heavyduty+magnet': 'reach', 'heavyduty+wide': 'reach', 'heavyduty+scoop': 'reach', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach',
   },
   // two steps: no single robot does both (with Suction the plate goes on, then the pot fails on the tool)
-  dinner: {
+  dinner: { 'compact+soft': 'tool', 'long+soft': 'tool', 'heavyduty+soft': 'tool', 'tall+soft': 'reach', 'xlong+soft': 'tool',
     'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'tool', 'compact+wide': 'tool', 'compact+scoop': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'tool', 'long+wide': 'tool', 'long+scoop': 'tool', 'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'xlong+gripper': 'tool', 'xlong+suction': 'heavy', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool',
   },
 };
@@ -216,6 +216,15 @@ describe('grab rules', () => {
     for (const a of ARM_KINDS.filter((k) => k !== 'xlong')) expect(workspaceFor(a).max[0]).toBeLessThan(p[0] - 0.05);
     expect(ITEMS.parcel.weight).toBeLessThanOrEqual(ARMS.xlong.payload);
     expect(grabCheck(ITEMS.parcel, { arm: 'xlong', tool: 'magnet' })?.text).toBe('Magnet only lifts metal');
+  });
+
+  it('soft gripper: holds what a gripper holds up to weight 1, refuses heavier; the gripper cracks fragile things', () => {
+    const soft = { arm: 'compact', tool: 'soft' };
+    expect(grabCheck(ITEMS.can, soft)).toBeNull();
+    expect(grabCheck(ITEMS.pot, soft)?.text).toBe('Too heavy for the soft fingers');
+    expect(grabCheck(ITEMS.plate, soft)?.text).toBe("Can't grip a flat plate");
+    expect(grabCheck({ ...ITEMS.can, fragile: true, name: 'egg' }, STANDARD_ROBOT)?.text).toBe('Too hard a grip: it would crack the egg');
+    expect(grabCheck({ ...ITEMS.can, fragile: true, name: 'egg' }, soft)).toBeNull();
   });
 
   it('original labels', () => {

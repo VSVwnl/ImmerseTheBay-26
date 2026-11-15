@@ -64,7 +64,7 @@ export interface ToolDef {
 
 export type Material = 'ceramic' | 'metal' | 'wood' | 'glass' | 'plastic' | 'paper';
 /** flat: no sides to grip; cylinder/box/pot: has sides; ring: flat with a hole; loose: many small bits */
-export type Shape = 'flat' | 'cylinder' | 'box' | 'pot' | 'ring' | 'loose';
+export type Shape = 'flat' | 'cylinder' | 'box' | 'pot' | 'ring' | 'loose' | 'round';
 export type Size = 'small' | 'normal' | 'big';
 
 export interface ItemSpec {
@@ -85,6 +85,8 @@ export interface ItemSpec {
   holdDrop?: number;
   /** why suction fails on it, when the generic text doesn't fit */
   suctionText?: string;
+  /** a hard grip would break it */
+  fragile?: boolean;
   /** simple primitive meshes, centered on the item's position */
   mesh: () => THREE.Object3D;
 }

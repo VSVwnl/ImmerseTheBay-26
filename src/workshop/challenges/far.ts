@@ -25,5 +25,5 @@ export const FAR: ChallengeDef = {
   hint: 'Put the can in the green bin',
   items: [CAN_ITEM],
   steps: [{ item: 'can', goal: { kind: 'bin', pos: W.canBin.pos, w: BIN.w, d: BIN.d, h: BIN.h, color: 0x2f9e5b }, spawn: (r) => [W.can.x, CAN_ITEM.restY, between(r, W.can.spawnZ)] }],
-  solutions: [{ arm: 'long', tool: 'gripper' }, { arm: 'long', tool: 'magnet' }],
+  solutions: [{ arm: 'long', tool: 'gripper' }, { arm: 'long', tool: 'magnet' }, { arm: 'long', tool: 'soft' }],
 };

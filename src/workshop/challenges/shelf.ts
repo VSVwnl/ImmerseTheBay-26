@@ -61,6 +61,6 @@ export const SHELF: ChallengeDef = {
       spawn: (r) => [between(r, W.jar.spawnX), W.shelf.top + W.jar.h / 2, between(r, W.jar.spawnZ)],
     },
   ],
-  solutions: [{ arm: 'tall', tool: 'gripper' }],
+  solutions: [{ arm: 'tall', tool: 'gripper' }, { arm: 'tall', tool: 'soft' }],
   scenery: () => [makeShelf()],
 };
