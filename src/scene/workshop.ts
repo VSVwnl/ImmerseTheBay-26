@@ -156,6 +156,25 @@ function makeCrate(): THREE.Group {
   return g;
 }
 
+function makeAnvil(): THREE.Group {
+  const g = new THREE.Group();
+  const { w, h, d } = WORKSHOP.anvil;
+  const iron = new THREE.MeshStandardMaterial({ color: 0x3a3d42, roughness: 0.6, metalness: 0.7 });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(w * 0.7, h * 0.3, d), iron);
+  base.position.y = -h / 2 + h * 0.15;
+  const waist = new THREE.Mesh(new THREE.BoxGeometry(w * 0.4, h * 0.35, d * 0.7), iron);
+  waist.position.y = -h / 2 + h * 0.475;
+  const face = new THREE.Mesh(new THREE.BoxGeometry(w * 0.75, h * 0.35, d), iron);
+  face.position.set(-w * 0.05, h / 2 - h * 0.175, 0);
+  const horn = new THREE.Mesh(new THREE.ConeGeometry(d * 0.42, w * 0.35, 16), iron);
+  horn.rotation.z = -Math.PI / 2;
+  horn.position.set(w * 0.48, h / 2 - h * 0.175, 0);
+  const tag = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.014, 0.002), new THREE.MeshStandardMaterial({ color: ORANGE, roughness: 0.5 }));
+  tag.position.set(0, -h / 2 + h * 0.15, d / 2 + 0.001);
+  g.add(base, waist, face, horn, tag);
+  return g;
+}
+
 /** Object meshes. To add an object, add a builder here (simple primitives only). */
 const ITEM_MESHES: Record<ItemId, () => THREE.Group> = {
   plate: makePlate,
@@ -163,6 +182,7 @@ const ITEM_MESHES: Record<ItemId, () => THREE.Group> = {
   pot: makePot,
   washer: makeWasher,
   crate: makeCrate,
+  anvil: makeAnvil,
 };
 
 /** A label that floats up and fades out. Not on the dataset layer. */

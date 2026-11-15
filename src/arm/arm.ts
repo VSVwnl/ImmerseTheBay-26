@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { ARM_BASE, FINGER_ANIM_S, FINGER_GAP_CLOSED, FINGER_GAP_OPEN, TOOL_LEN, WORKSHOP } from '../config';
 const WIDE = WORKSHOP.wideGap;
 import type { Joints } from './ik';
-import { linksFor, shoulderHeight, STANDARD_ROBOT, type RobotParts, type ToolKind } from './parts';
+import { ARMS, linksFor, shoulderHeight, STANDARD_ROBOT, type RobotParts, type ToolKind } from './parts';
 
 interface Mats {
   orange: THREE.Material;
@@ -98,6 +98,7 @@ export class ArmModel {
     const links = linksFor(parts.arm);
     const { l1: L1, l2: L2 } = links;
     const SH = shoulderHeight(links);
+    const G = ARMS[parts.arm]?.girth ?? 1; // link thickness
     const m: Mats = {
       orange: new THREE.MeshStandardMaterial({ color: 0xf28a1e, roughness: 0.45, metalness: 0.2 }),
       dark: new THREE.MeshStandardMaterial({ color: 0x2d3036, roughness: 0.5, metalness: 0.5 }),
@@ -117,19 +118,19 @@ export class ArmModel {
     // shoulder pivot
     this.upper.position.y = SH;
     this.turret.add(this.upper);
-    const shoulderHub = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.13, 32), m.dark);
+    const shoulderHub = new THREE.Mesh(new THREE.CylinderGeometry(0.055 * G, 0.055 * G, 0.13, 32), m.dark);
     shoulderHub.rotation.z = Math.PI / 2;
     this.upper.add(shoulderHub);
-    const link1 = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.06, L1), m.orange);
+    const link1 = new THREE.Mesh(new THREE.BoxGeometry(0.07 * G, 0.06 * G, L1), m.orange);
     link1.position.z = L1 / 2;
     this.upper.add(link1);
 
     this.fore.position.z = L1;
     this.upper.add(this.fore);
-    const elbowHub = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.11, 28), m.dark);
+    const elbowHub = new THREE.Mesh(new THREE.CylinderGeometry(0.045 * G, 0.045 * G, 0.11, 28), m.dark);
     elbowHub.rotation.z = Math.PI / 2;
     this.fore.add(elbowHub);
-    const link2 = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.05, L2), m.orange);
+    const link2 = new THREE.Mesh(new THREE.BoxGeometry(0.055 * G, 0.05 * G, L2), m.orange);
     link2.position.z = L2 / 2;
     this.fore.add(link2);
 

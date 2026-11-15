@@ -34,6 +34,11 @@ Additions:
    because it needs a two-part answer: only the wide gripper takes something that big (gripper: too big; suction:
    air leaks through the slats; magnet: wood), and only the Compact arm can lift it (Long: too heavy). The wide
    gripper's weakness: it can't hold anything that isn't big, so it fails every other challenge.
+4. Heavy-duty arm (links 20% shorter and drawn thicker, payload 3, reaches only the middle of the table) +
+   Anvil challenge (weight 3 -> red zone). Interesting because strength and reach now trade off across three
+   arms: the anvil is "Too heavy" for Compact and Long, while Heavy-duty can't get near the far can ("Out of
+   reach"). Heavy-duty also lifts the crate with the wide gripper. (Out-of-reach hint radius 0.20 -> 0.25 m so
+   the short arm still explains itself at the far can.)
 
 Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base checks in `docs/WORKSHOP.md`):
 - [ ] 1 Groundwork (NOT YET TESTED ON HEADSET): in the Workshop, each countdown switches the wall to a different
@@ -45,6 +50,9 @@ Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base check
 - [ ] 3 Wide gripper + Crate (NOT YET TESTED ON HEADSET): Long + Wide says "Too heavy for this arm"; Compact + Wide
       carries the crate onto the pallet; the wide fingers open and close visibly; the crate reads as "big and
       heavy"; with the wide gripper the can says "Too small for the wide gripper".
+- [ ] 4 Heavy-duty + Anvil (NOT YET TESTED ON HEADSET): the Heavy-duty arm looks short and thick; with Compact the
+      anvil says "Too heavy for this arm"; Heavy-duty + Gripper (or Magnet) moves it to the red zone; in the Far
+      challenge Heavy-duty stops short and says "Out of reach". Does the hand target feel cramped (smaller reach)?
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with

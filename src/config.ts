@@ -119,17 +119,20 @@ export const FACTORY = { seedBase: 1000, worldEvery: 20, stubSettleMs: 1700 };
 // ---- Switches: delete one word to turn a Workshop part or challenge off ----
 // The standard robot (compact + gripper) and Reach/Place/Sort always exist outside the Workshop: the expert,
 // datasets, training and Robot's turn depend on them. Turning compact or gripper off only hides them here.
-export const ENABLED_PARTS: string[] = ['compact', 'long', 'gripper', 'suction', 'magnet', 'wide'];
-export const ENABLED_CHALLENGES: string[] = ['plate', 'far', 'heavy', 'washer', 'crate'];
+export const ENABLED_PARTS: string[] = ['compact', 'long', 'heavyduty', 'gripper', 'suction', 'magnet', 'wide'];
+export const ENABLED_CHALLENGES: string[] = ['plate', 'far', 'heavy', 'washer', 'crate', 'anvil'];
 
 // ---- Robot Workshop (additive; the standard robot is Compact + Gripper and uses the values above) ----
 export const WORKSHOP = {
   longScale: 1.35, // Long arm links are this much longer than L1/L2
-  payload: { compact: 2, long: 1 },
+  payload: { compact: 2, long: 1, heavyduty: 3 },
+  heavyScale: 0.8, // Heavy-duty links are this much shorter (and drawn thicker)
+  // Heavy-duty reach: about the middle of the table only (its full stretch is 0.63 m)
+  heavyWorkspace: { min: [-0.3, 0.76, -0.92] as Vec3, max: [0.3, 1.05, -0.58] as Vec3 },
   // the Long arm may command the tip further out than WORKSPACE; Compact keeps WORKSPACE exactly
   longWorkspace: { min: [-0.56, 0.76, -0.95] as Vec3, max: [0.56, 1.3, -0.45] as Vec3 },
   // a grab attempt that misses an object outside the arm's workspace by up to this (m, horizontal) says "Out of reach"
-  reachHintRadius: 0.2,
+  reachHintRadius: 0.25,
   slipS: 0.45, // tool wobble after a failed grab
   labelS: 1.8, // floating reason label lifetime
   plate: { radius: 0.06, thick: 0.012, spawnX: [-0.1, 0.1] as [number, number], spawnZ: [-0.85, -0.75] as [number, number] },
@@ -143,4 +146,6 @@ export const WORKSHOP = {
   crate: { size: 0.13, spawnX: [-0.1, 0.1] as [number, number], spawnZ: [-0.86, -0.8] as [number, number] },
   pallet: { pos: [-0.28, 0.75, -0.58] as Vec3, w: 0.22, d: 0.2, h: 0.02 },
   wideGap: { open: 0.17, closed: 0.135 },
+  anvil: { w: 0.1, h: 0.065, d: 0.05, spawnX: [0.12, 0.22] as [number, number], spawnZ: [-0.86, -0.76] as [number, number] },
+  dropZone: { pos: [-0.24, 0.75, -0.66] as Vec3, size: 0.16 },
 };

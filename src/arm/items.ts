@@ -5,7 +5,7 @@
 import { GRAB_RADIUS, TABLE, WORKSHOP, type Vec3 } from '../config';
 import { payloadOf, type RobotParts, type ToolKind, type Workspace } from './parts';
 
-export type ItemId = 'plate' | 'can' | 'pot' | 'washer' | 'crate';
+export type ItemId = 'plate' | 'can' | 'pot' | 'washer' | 'crate' | 'anvil';
 export type Material = 'ceramic' | 'metal' | 'wood' | 'glass' | 'plastic';
 /** flat: no sides to grip; cylinder/box/pot: has sides; ring: flat with a hole; loose: many small bits */
 export type Shape = 'flat' | 'cylinder' | 'box' | 'pot' | 'ring' | 'loose';
@@ -52,6 +52,10 @@ export const ITEMS: Record<ItemId, ItemSpec> = {
   crate: {
     id: 'crate', name: 'crate', material: 'wood', shape: 'box', size: 'big', weight: 2,
     restY: TABLE.top + WORKSHOP.crate.size / 2, radius: WORKSHOP.crate.size / 2, suctionText: 'Air leaks through the slats',
+  },
+  anvil: {
+    id: 'anvil', name: 'anvil', material: 'metal', shape: 'box', size: 'normal', weight: 3,
+    restY: TABLE.top + WORKSHOP.anvil.h / 2, radius: WORKSHOP.anvil.w / 2, suctionText: "Suction can't seal on rough iron",
   },
 };
 export const ITEM_IDS = Object.keys(ITEMS) as ItemId[];

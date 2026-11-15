@@ -27,6 +27,13 @@ const CASES: Case[] = [
     wrong: { arm: 'long', tool: 'wide', label: 'Too heavy for this arm' },
     right: { arm: 'compact', tool: 'wide' },
   },
+  {
+    layout: 'anvil',
+    item: 'anvil',
+    goal: [-0.24, 0.75, -0.66],
+    wrong: { arm: 'compact', tool: 'gripper', label: 'Too heavy for this arm' },
+    right: { arm: 'heavyduty', tool: 'gripper' },
+  },
 ];
 const only = process.env.CASE;
 

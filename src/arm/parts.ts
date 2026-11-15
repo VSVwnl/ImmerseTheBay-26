@@ -3,7 +3,7 @@
 // To add a part: add it to ArmKind/ToolKind, give it an entry in ARMS/TOOLS, and list it in ENABLED_PARTS.
 import { ENABLED_PARTS, L1, L2, SHOULDER_H, WORKSHOP, WORKSPACE, type Vec3 } from '../config';
 
-export type ArmKind = 'compact' | 'long';
+export type ArmKind = 'compact' | 'long' | 'heavyduty';
 export type ToolKind = 'gripper' | 'suction' | 'magnet' | 'wide';
 export interface RobotParts {
   arm: ArmKind;
@@ -30,6 +30,8 @@ export interface ArmSpec {
   workspace: Workspace;
   /** strength / weakness, shown on the parts panel */
   blurb: string;
+  /** drawn link thickness relative to the standard arm */
+  girth?: number;
 }
 export interface ToolSpec {
   id: ToolKind;
@@ -39,10 +41,15 @@ export interface ToolSpec {
 
 export const COMPACT_LINKS: Links = Object.freeze({ l1: L1, l2: L2 });
 export const LONG_LINKS: Links = Object.freeze({ l1: L1 * WORKSHOP.longScale, l2: L2 * WORKSHOP.longScale });
+export const HEAVY_LINKS: Links = Object.freeze({ l1: L1 * WORKSHOP.heavyScale, l2: L2 * WORKSHOP.heavyScale });
 
 export const ARMS: Record<ArmKind, ArmSpec> = {
   compact: { id: 'compact', label: 'Compact', links: COMPACT_LINKS, payload: WORKSHOP.payload.compact, workspace: WORKSPACE, blurb: 'strong, short reach' },
   long: { id: 'long', label: 'Long', links: LONG_LINKS, payload: WORKSHOP.payload.long, workspace: WORKSHOP.longWorkspace, blurb: 'reaches far, weak' },
+  heavyduty: {
+    id: 'heavyduty', label: 'Heavy-duty', links: HEAVY_LINKS, payload: WORKSHOP.payload.heavyduty,
+    workspace: WORKSHOP.heavyWorkspace, blurb: 'very strong, middle of the table only', girth: 1.45,
+  },
 };
 export const TOOLS: Record<ToolKind, ToolSpec> = {
   gripper: { id: 'gripper', label: 'Gripper', blurb: 'grips things with sides' },
