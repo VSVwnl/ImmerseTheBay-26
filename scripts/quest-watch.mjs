@@ -1,4 +1,4 @@
-// Watch the Backlot tab in the Quest Browser: console, reloads, crashes, XR state, challenge phase, grip.
+// Watch the Soundings or Backlot tab in the Quest Browser: console, reloads, crashes, XR state, challenge phase, grip.
 // Re-attaches if the tab is closed, crashes or is replaced.
 //   adb forward tcp:9333 localabstract:chrome_devtools_remote ; node scripts/quest-watch.mjs 600
 import { chromium } from 'playwright';
@@ -21,7 +21,7 @@ async function findPage() {
 while (Date.now() < end) {
   const { browser, page, err } = await findPage();
   if (!page) {
-    console.log(`[${S()}] no Backlot tab ${err ? '(' + err + ')' : ''}`);
+    console.log(`[${S()}] no demo tab ${err ? '(' + err + ')' : ''}`);
     await browser?.close().catch(() => {});
     await sleep(2000);
     continue;
@@ -37,6 +37,11 @@ while (Date.now() < end) {
   while (!closed && Date.now() < end) {
     const s = await page
       .evaluate(() => {
+        const soundings = window.__soundings?.snapshot();
+        if (soundings) {
+          const { phase, site, source, immersive, grip, held, saved } = soundings;
+          return JSON.stringify({ app: 'Soundings', phase, site, source, immersive, grip, held, saved });
+        }
         const b = window.__backlot;
         return JSON.stringify({
           vr: document.getElementById('VRButton')?.textContent,

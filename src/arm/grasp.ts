@@ -4,7 +4,11 @@ import { BIN, BIN_POS, CUBE_SIZE, GRAB_RADIUS, TABLE, type Vec3 } from '../confi
 export type CubeColor = 'red' | 'blue';
 export const COLORS: CubeColor[] = ['red', 'blue'];
 
-const dist = (a: Vec3, b: Vec3) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+/** Distance from the jaws to a grip anchor in snap range, or null when they cannot close on it. */
+export function graspDistance(tip: Vec3, anchor: Vec3, radius = GRAB_RADIUS): number | null {
+  const distance = Math.hypot(tip[0] - anchor[0], tip[1] - anchor[1], tip[2] - anchor[2]);
+  return distance <= radius ? distance : null;
+}
 
 /** Nearest cube whose center is within GRAB_RADIUS of the tip, or null. */
 export function findGrab(tip: Vec3, cubes: Partial<Record<CubeColor, Vec3>>): CubeColor | null {
@@ -13,8 +17,8 @@ export function findGrab(tip: Vec3, cubes: Partial<Record<CubeColor, Vec3>>): Cu
   for (const c of COLORS) {
     const p = cubes[c];
     if (!p) continue;
-    const d = dist(tip, p);
-    if (d <= bestD) {
+    const d = graspDistance(tip, p, bestD);
+    if (d !== null) {
       best = c;
       bestD = d;
     }

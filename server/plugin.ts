@@ -5,7 +5,7 @@
 //   POST /api/usage    Orbis session heartbeat -> data/orbis-usage.json; GET returns the totals
 //   GET  /api/results  summary.json (?tag=smoke for summary-smoke.json)
 //   GET  /api/robot    { summary, tag, policyServer }: what Robot's turn needs, without browser console errors
-import { loadEnv, type Plugin } from 'vite';
+import { loadEnv, type Plugin, type ViteDevServer } from 'vite';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import fs from 'node:fs';
 import net from 'node:net';
@@ -162,6 +162,8 @@ export function backlotServer(opts: { root?: string } = {}): Plugin {
   const dataDir = path.join(root, 'data');
   const usageFile = path.join(dataDir, 'orbis-usage.json');
   let apiKey = '';
+  let mirror: { captured: number; state: unknown; image: string } | null = null;
+  let lastSpectator = 0;
   const readUsage = (): Usage => {
     try {
       return JSON.parse(fs.readFileSync(usageFile, 'utf8'));
@@ -169,6 +171,104 @@ export function backlotServer(opts: { root?: string } = {}): Plugin {
       return {};
     }
   };
+  function installApi(server: Pick<ViteDevServer, 'middlewares'>) {
+    server.middlewares.use(async (req, res, next) => {
+      const url = new URL(req.url ?? '/', 'http://localhost');
+      if (url.pathname.startsWith('/api/') && !LOCAL_HOST.test(String(req.headers.host ?? '')))
+        return sendJson(res, 403, { ok: false, error: 'host not allowed' });
+      try {
+        if (url.pathname === '/api/soundings/mirror') {
+          if (req.method === 'GET') {
+            lastSpectator = Date.now();
+            return sendJson(res, 200, mirror && Date.now() - mirror.captured < 5000 ? mirror : null,
+              { 'Cache-Control': 'no-store' });
+          }
+          if (req.method === 'POST') {
+            const bad = checkSameOrigin(req);
+            if (bad) return sendJson(res, 403, { ok: false, error: bad });
+            const body = JSON.parse(await readBody(req, 750_000));
+            if (typeof body.image === 'string' && body.image.startsWith('data:image/jpeg;base64,')) {
+              mirror = { captured: Date.now(), state: body.state, image: body.image };
+            }
+            return sendJson(res, 200, { watching: Date.now() - lastSpectator < 5000 });
+          }
+        }
+        if (url.pathname === '/api/token' && req.method === 'GET') {
+          return sendJson(res, 200, { available: !!apiKey }, { 'Cache-Control': 'private, no-store' });
+        }
+        if (url.pathname === '/api/token' && req.method === 'POST') {
+          const bad = checkSameOrigin(req);
+          if (bad) return sendJson(res, 403, { ok: false, error: bad });
+          if (!apiKey) return sendJson(res, 503, { ok: false, error: 'no REACTOR_API_KEY' });
+          const r = await fetch('https://api.reactor.inc/tokens', {
+            method: 'POST',
+            headers: { 'Reactor-API-Key': apiKey, 'Content-Type': 'application/json' },
+            body: JSON.stringify(TOKEN_BODY),
+          });
+          const text = await r.text();
+          if (!r.ok) {
+            console.warn(`[backlot] token mint failed ${r.status}: ${text.slice(0, 200)}`);
+            return sendJson(res, 502, { ok: false, error: `token mint failed (${r.status})` });
+          }
+          const { jwt, expires_at } = JSON.parse(text);
+          return sendJson(res, 200, { jwt, expires_at }, { 'Cache-Control': 'private, no-store' });
+        }
+        if (url.pathname === '/api/usage' && req.method === 'POST') {
+          const bad = checkSameOrigin(req);
+          if (bad) return sendJson(res, 403, { ok: false, error: bad });
+          const b = JSON.parse(await readBody(req, 4096));
+          const key = String(b.key ?? '');
+          if (!SAFE.test(key) || !Number.isFinite(b.readyAt) || !Number.isFinite(b.until)) throw new Error('bad usage');
+          const u = readUsage();
+          u[key] = { readyAt: b.readyAt, until: Math.max(b.until, u[key]?.until ?? 0) };
+          fs.mkdirSync(dataDir, { recursive: true });
+          fs.writeFileSync(usageFile, JSON.stringify(u, null, 1));
+          return sendJson(res, 200, { ok: true });
+        }
+        if (url.pathname === '/api/sessions' && req.method === 'GET') {
+          return sendJson(res, 200, listAttempts(dataDir, url.searchParams.get('challenge'), url.searchParams.get('success') === '1'));
+        }
+        if (url.pathname === '/api/results' && req.method === 'GET') {
+          const tag = url.searchParams.get('tag') ?? '';
+          if (tag && !SAFE.test(tag)) throw new Error('bad tag');
+          const f = path.join(dataDir, 'results', `summary${tag ? `-${tag}` : ''}.json`);
+          if (!fs.existsSync(f)) return sendJson(res, 404, { ok: false, error: 'no summary yet (run py/report.py)' });
+          return sendJson(res, 200, JSON.parse(fs.readFileSync(f, 'utf8')), { 'Cache-Control': 'no-store' });
+        }
+        if (url.pathname === '/api/robot' && req.method === 'GET') {
+          const port = Number(url.searchParams.get('port') ?? 8765);
+          if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('bad port');
+          return sendJson(res, 200, await robotProbe(dataDir, port), { 'Cache-Control': 'no-store' });
+        }
+        if (url.pathname === '/api/usage' && req.method === 'GET') {
+          return sendJson(res, 200, usageSummary(readUsage()));
+        }
+        if (url.pathname === '/api/log' && req.method === 'POST') {
+          const bad = checkSameOrigin(req);
+          if (bad) return sendJson(res, 403, { ok: false, error: bad });
+          const body = JSON.parse(await readBody(req));
+          if (body.kind === 'eval-start' || body.kind === 'eval') {
+            const file = writeEval(dataDir, body);
+            return sendJson(res, 200, { ok: true, file: path.relative(root, file) });
+          }
+          const directory = body.kind === 'soundings' ? path.join(dataDir, 'soundings') : dataDir;
+          let file: string;
+          try {
+            file = writeAttempt(directory, body);
+          } catch (error) {
+            // A lost response may cause the headset to retry a record already delivered.
+            if (body.kind !== 'soundings' || (error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+            file = path.join(directory, 'sessions', body.sessionId, body.attemptId + '.json');
+            if (fs.readFileSync(file, 'utf8') !== JSON.stringify(body)) throw error;
+          }
+          return sendJson(res, 200, { ok: true, file: path.relative(root, file) });
+        }
+      } catch (e) {
+        return sendJson(res, 400, { ok: false, error: String((e as Error).message ?? e) });
+      }
+      next();
+    });
+  }
   return {
     name: 'backlot-server',
     configResolved(config) {
@@ -179,78 +279,7 @@ export function backlotServer(opts: { root?: string } = {}): Plugin {
       if (!apiKey || apiKey === 'rk_your_key_here') apiKey = '';
       console.info(`[backlot] Orbis key ${apiKey ? 'found' : 'not set: stub world'}`);
     },
-    configureServer(server) {
-      server.middlewares.use(async (req, res, next) => {
-        const url = new URL(req.url ?? '/', 'http://localhost');
-        if (url.pathname.startsWith('/api/') && !LOCAL_HOST.test(String(req.headers.host ?? '')))
-          return sendJson(res, 403, { ok: false, error: 'host not allowed' });
-        try {
-          if (url.pathname === '/api/token' && req.method === 'GET') {
-            return sendJson(res, 200, { available: !!apiKey }, { 'Cache-Control': 'private, no-store' });
-          }
-          if (url.pathname === '/api/token' && req.method === 'POST') {
-            const bad = checkSameOrigin(req);
-            if (bad) return sendJson(res, 403, { ok: false, error: bad });
-            if (!apiKey) return sendJson(res, 503, { ok: false, error: 'no REACTOR_API_KEY' });
-            const r = await fetch('https://api.reactor.inc/tokens', {
-              method: 'POST',
-              headers: { 'Reactor-API-Key': apiKey, 'Content-Type': 'application/json' },
-              body: JSON.stringify(TOKEN_BODY),
-            });
-            const text = await r.text();
-            if (!r.ok) {
-              console.warn(`[backlot] token mint failed ${r.status}: ${text.slice(0, 200)}`);
-              return sendJson(res, 502, { ok: false, error: `token mint failed (${r.status})` });
-            }
-            const { jwt, expires_at } = JSON.parse(text);
-            return sendJson(res, 200, { jwt, expires_at }, { 'Cache-Control': 'private, no-store' });
-          }
-          if (url.pathname === '/api/usage' && req.method === 'POST') {
-            const bad = checkSameOrigin(req);
-            if (bad) return sendJson(res, 403, { ok: false, error: bad });
-            const b = JSON.parse(await readBody(req, 4096));
-            const key = String(b.key ?? '');
-            if (!SAFE.test(key) || !Number.isFinite(b.readyAt) || !Number.isFinite(b.until)) throw new Error('bad usage');
-            const u = readUsage();
-            u[key] = { readyAt: b.readyAt, until: Math.max(b.until, u[key]?.until ?? 0) };
-            fs.mkdirSync(dataDir, { recursive: true });
-            fs.writeFileSync(usageFile, JSON.stringify(u, null, 1));
-            return sendJson(res, 200, { ok: true });
-          }
-          if (url.pathname === '/api/sessions' && req.method === 'GET') {
-            return sendJson(res, 200, listAttempts(dataDir, url.searchParams.get('challenge'), url.searchParams.get('success') === '1'));
-          }
-          if (url.pathname === '/api/results' && req.method === 'GET') {
-            const tag = url.searchParams.get('tag') ?? '';
-            if (tag && !SAFE.test(tag)) throw new Error('bad tag');
-            const f = path.join(dataDir, 'results', `summary${tag ? `-${tag}` : ''}.json`);
-            if (!fs.existsSync(f)) return sendJson(res, 404, { ok: false, error: 'no summary yet (run py/report.py)' });
-            return sendJson(res, 200, JSON.parse(fs.readFileSync(f, 'utf8')), { 'Cache-Control': 'no-store' });
-          }
-          if (url.pathname === '/api/robot' && req.method === 'GET') {
-            const port = Number(url.searchParams.get('port') ?? 8765);
-            if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('bad port');
-            return sendJson(res, 200, await robotProbe(dataDir, port), { 'Cache-Control': 'no-store' });
-          }
-          if (url.pathname === '/api/usage' && req.method === 'GET') {
-            return sendJson(res, 200, usageSummary(readUsage()));
-          }
-          if (url.pathname === '/api/log' && req.method === 'POST') {
-            const bad = checkSameOrigin(req);
-            if (bad) return sendJson(res, 403, { ok: false, error: bad });
-            const body = JSON.parse(await readBody(req));
-            if (body.kind === 'eval-start' || body.kind === 'eval') {
-              const file = writeEval(dataDir, body);
-              return sendJson(res, 200, { ok: true, file: path.relative(root, file) });
-            }
-            const file = writeAttempt(dataDir, body);
-            return sendJson(res, 200, { ok: true, file: path.relative(root, file) });
-          }
-        } catch (e) {
-          return sendJson(res, 400, { ok: false, error: String((e as Error).message ?? e) });
-        }
-        next();
-      });
-    },
+    configureServer: installApi,
+    configurePreviewServer: installApi,
   };
 }

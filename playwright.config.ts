@@ -8,9 +8,9 @@ export default defineConfig({
   reporter: 'list',
   use: {
     baseURL: 'http://localhost:5173',
-    headless: !process.env.HEADED ? false : false,
+    headless: process.env.HEADED !== '1',
     viewport: { width: 1280, height: 800 },
-    launchOptions: { args: ['--autoplay-policy=no-user-gesture-required', '--use-angle=d3d11'] },
+    launchOptions: { args: ['--autoplay-policy=no-user-gesture-required', ...(process.platform === 'win32' ? ['--use-angle=d3d11'] : [])] },
   },
   webServer: {
     command: 'npm run dev',

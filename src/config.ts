@@ -34,6 +34,15 @@ export const HOME_TIP: Vec3 = [0, 1.0, -0.65];
 // ---- Env ----
 export const MAX_TIP_SPEED = 0.6; // m/s
 export const GRAB_RADIUS = 0.05;
+
+// Soundings workcell, in metres; canyon and mirror share geometry reflected across X.
+export const SUBSEA = {
+  railX: .30, baseZ: -1, camera: [0, 1.16, -1.12] as Vec3,
+  innerLamp: [.055, 1.16, -1.12] as Vec3, railLampY: .99,
+  dockHandle: [0, .84, -.62] as Vec3, canyonHandle: [.38, .81, -.46] as Vec3,
+  cradle: [0, .82, -.75] as Vec3, cageHalfX: .082, cageHalfZ: .065,
+  cradleHalfX: .082, cradleHalfZ: .07, cageRimY: .86, clearanceBelowHandle: .07,
+};
 export const CUBE_SIZE = 0.05;
 export const BIN = { w: 0.16, d: 0.16, h: 0.08, wall: 0.006 };
 export const BIN_POS = {

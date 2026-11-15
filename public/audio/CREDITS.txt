@@ -1,0 +1,11 @@
+Soundings · recovered hydrophone audio
+
+Humpbackwhale2.ogg (song of humpback whales)
+Recording credited to Spyrogumas, published on Wikimedia Commons, 31 May 2010
+https://commons.wikimedia.org/wiki/File:Humpbackwhale2.ogg
+License: CC0 1.0 Universal public domain dedication
+https://creativecommons.org/publicdomain/zero/1.0/
+
+The bundled humpback.mp3 is an excerpt from 00:02 to 00:15 of the source,
+with short fades at both ends and MP3 encoding. Its use in the Monterey
+Canyon mission is fictional; the source does not identify a recording site.

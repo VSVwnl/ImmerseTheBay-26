@@ -1,7 +1,7 @@
 // Live Visko Orbis wall. The only file that imports the Reactor SDK.
 import { Reactor, type ReactorError, type ReactorMessage, type ReactorStatus } from '@reactor-team/js-sdk';
 import { ORBIS_BLANK_LUMA, ORBIS_GEN_SETTLE_MS, ORBIS_MODEL, SESSION_REFRESH_S, TOKEN_REFRESH_MARGIN_S, WORLD_MIN_INTERVAL_S } from '../config';
-import type { World, WorldDef, WorldStatus } from './world';
+import type { World, WorldDef, WorldStatus, SteeringMode } from './world';
 
 // ---- token: cached in memory, reused until shortly before expiry ----
 let cached: { jwt: string; expiresAtMs: number } | null = null;
@@ -29,6 +29,7 @@ export async function getToken(): Promise<string> {
 
 export interface OrbisEvents {
   onStatus?: (s: WorldStatus, detail?: string) => void;
+  onSteered?: (def: WorldDef) => void;
   onError?: (msg: string) => void;
 }
 
@@ -41,7 +42,7 @@ export class OrbisWorld implements World {
   private rstatus: ReactorStatus = 'disconnected';
   private def: WorldDef | null = null;
   private lastSteerMs = -Infinity;
-  private queued: { def: WorldDef; mode: 'morph' | 'fresh' } | null = null;
+  private queued: { def: WorldDef; mode: SteeringMode } | null = null;
   private queueTimer = 0;
   private runStartedMs = 0;
   private started = false; // a run has been started on this session
@@ -49,6 +50,8 @@ export class OrbisWorld implements World {
   private awaitingGen = false; // after a reset: old frames, then black, until generation_started + a lit frame
   private setupDone = false; // connect() finished (resolution, audio); setWorld may start a run
   private awaitingFrames = true;
+  private frameCallback = 0;
+  private framePoll = 0;
   private framesAfterMs = 0;
   private availableRes: string[] = [];
   private readyAtMs = 0;
@@ -61,7 +64,6 @@ export class OrbisWorld implements World {
     this.video.muted = true;
     this.video.playsInline = true;
     this.video.autoplay = true;
-    this.watchFrames();
   }
 
   private set(s: WorldStatus, detail?: string) {
@@ -100,13 +102,13 @@ export class OrbisWorld implements World {
         this.awaitingFrames = false;
         this.set('live');
       }
-      v.requestVideoFrameCallback!(onFrame);
+      if (v.requestVideoFrameCallback) this.frameCallback = v.requestVideoFrameCallback(onFrame);
     };
-    if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(onFrame);
+    if (v.requestVideoFrameCallback) this.frameCallback = v.requestVideoFrameCallback(onFrame);
     else {
       // fallback: poll readyState / currentTime
       let lastT = -1;
-      setInterval(() => {
+      this.framePoll = window.setInterval(() => {
         if (v.readyState >= 2 && v.currentTime !== lastT) {
           lastT = v.currentTime;
           onFrame();
@@ -121,6 +123,7 @@ export class OrbisWorld implements World {
     const jwt = await getToken();
     const reactor = new Reactor({ modelName: ORBIS_MODEL });
     this.reactor = reactor;
+    this.watchFrames();
     reactor.on('trackReceived', (name: string, _track: MediaStreamTrack, stream: MediaStream) => {
       if (name !== 'main_video') return;
       this.video.srcObject = stream;
@@ -219,7 +222,7 @@ export class OrbisWorld implements World {
     this.runStartedMs = performance.now();
   }
 
-  async setWorld(def: WorldDef, mode: 'morph' | 'fresh' = 'morph'): Promise<void> {
+  async setWorld(def: WorldDef, mode: SteeringMode = 'morph'): Promise<void> {
     this.def = def;
     if (!this.reactor || this.rstatus !== 'ready' || !this.setupDone) return; // stored; used at connect
     if (!this.started) return this.startFresh(def); // connected with no world yet (factory, eval)
@@ -247,8 +250,11 @@ export class OrbisWorld implements World {
     }
     this.lastSteerMs = now;
     const runAgeS = (now - this.runStartedMs) / 1000;
-    if (mode === 'fresh' || runAgeS > SESSION_REFRESH_S) await this.startFresh(def);
-    else await this.reactor.sendCommand('set_prompt', { prompt: def.prompt });
+    if (mode === 'fresh' || (mode === 'morph' && runAgeS > SESSION_REFRESH_S)) await this.startFresh(def);
+    else {
+      await this.reactor.sendCommand('set_prompt', { prompt: def.prompt });
+      this.events.onSteered?.(def);
+    }
   }
 
   /** A short follow-up prompt describing a single visible change (polish: world reacts to success). */
@@ -285,6 +291,11 @@ export class OrbisWorld implements World {
     const r = this.reactor;
     this.reactor = null;
     clearInterval(this.usageTimer);
+    clearInterval(this.framePoll);
+    this.video.cancelVideoFrameCallback?.(this.frameCallback);
+    clearTimeout(this.queueTimer);
+    this.queueTimer = 0;
+    this.queued = null;
     if (this.readyAtMs) {
       const body = JSON.stringify({ key: this.usageKey, readyAt: this.readyAtMs, until: Date.now() });
       navigator.sendBeacon?.('/api/usage', new Blob([body], { type: 'application/json' }));

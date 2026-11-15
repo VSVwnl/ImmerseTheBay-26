@@ -148,6 +148,14 @@ describe('OrbisWorld', () => {
     expect(cmds()).toEqual(['reset', 'set_prompt', 'start']);
   });
 
+  it('keeps a Soundings dive continuous after the normal morph refresh interval', async () => {
+    const o = await connected();
+    sent.length = 0;
+    vi.advanceTimersByTime(160_000);
+    await o.setWorld(def('monterey'), 'continuous');
+    expect(cmds()).toEqual(['set_prompt']);
+  });
+
   it('a fresh switch inside the 4 s interval waits, then resets: status is loading when it returns (factory labels stay true)', async () => {
     const o = await connected();
     vi.advanceTimersByTime(600);

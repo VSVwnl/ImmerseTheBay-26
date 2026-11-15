@@ -1,4 +1,27 @@
-import type { Page } from '@playwright/test';
+import { test as browserTest, type Page } from '@playwright/test';
+import { spawn, spawnSync } from 'node:child_process';
+
+/** Preserve the build loaded at the start of a rehearsal on a shared development server.
+ * Only Vite's hot-reload socket is intercepted. Robot, dataset and world streams stay real. */
+export const test = browserTest.extend({
+  context: async ({context}, use) => {
+    await context.routeWebSocket(/ws:\/\/localhost:5173\/\?token=/, () => {});
+    await use(context);
+  },
+});
+
+/** Universal macOS Python inherits its parent Node's architecture. The venv's wheels
+ * can be native even when Node is running under Rosetta. */
+export function spawnPython(args: string[]) {
+  const py = process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python';
+  if (process.platform === 'darwin' && process.arch === 'x64') {
+    const check = ['-c', 'import numpy'];
+    if (spawnSync(py, check).status !== 0 && spawnSync('/usr/bin/arch', ['-arm64', py, ...check]).status === 0) {
+      return spawn('/usr/bin/arch', ['-arm64', py, ...args], {stdio:'pipe'});
+    }
+  }
+  return spawn(py, args, {stdio:'pipe'});
+}
 
 export type V3 = [number, number, number];
 
@@ -83,7 +106,7 @@ export async function playAll(page: Page) {
   await page.locator('.panel-side button[data-id="start"], .panel-side button[data-id="again"]').first().click();
   await waitPhase(page, 'running');
   let s = await state(page);
-  for (const t of s.reachTargets) await moveTo(page, t, 0.038);
+  for (const t of s.reachTargets) await moveTo(page, t, 0.04);
   await waitPhase(page, 'between');
   await waitPhase(page, 'running');
   s = await state(page);

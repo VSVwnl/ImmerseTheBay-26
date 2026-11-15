@@ -7,11 +7,13 @@ export interface WorldDef {
   heldOut?: boolean;
 }
 
+export type SteeringMode = 'fresh' | 'morph' | 'continuous';
+
 export type WorldStatus = 'idle' | 'loading' | 'live' | 'stub' | 'error';
 
 export interface World {
   connect(): Promise<void>;
-  setWorld(def: WorldDef, mode?: 'morph' | 'fresh'): Promise<void>;
+  setWorld(def: WorldDef, mode?: SteeringMode): Promise<void>;
   getVideo(): HTMLVideoElement;
   status(): WorldStatus;
   current(): WorldDef | null;

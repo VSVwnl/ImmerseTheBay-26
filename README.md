@@ -1,4 +1,44 @@
-# Backlot
+# Soundings
+
+Rig an underwater robot on a Meta Quest 3, pilot its arm through a fixed mast camera, and recover an acoustic recorder in Monterey Canyon. Moving the floodlight changes the water you can see through. Moving the arm changes which pickups you can reach. A successful recovery unlocks a whale recording. Built for Stanford Gaming and the Visko Living Worlds interactivity prize.
+
+![Soundings rigging workbench](docs/media/rig-workbench.jpg)
+
+## Run the game
+
+Use Node 22.12+ or 24, npm, and a WebGL 2 browser. The Soundings game needs no Python service.
+
+```sh
+npm ci
+npm run dev
+```
+
+Open [Soundings](http://localhost:5173). For a built demo, run `npm run build` and `npm run preview` with the development server closed. Both servers provide the local API. Practice works without credentials. The explicit [practice launch](http://localhost:5173/?orbis=0) prevents a paid Orbis connection.
+
+For **live Orbis**, register for the Visko team key. Copy `.env.example` to `.env`, set `REACTOR_API_KEY` there, then start or restart the server. The first pointer interaction or **Connect Orbis** prewarms a session. Wait for **Orbis live** and moving water. The server mints short-lived session tokens. Keep the key on the laptop.
+
+For **Quest**, enable developer mode, connect USB, accept debugging inside the headset, and run:
+
+```sh
+adb devices -l
+adb reverse tcp:5173 tcp:5173
+```
+
+Open `http://localhost:5173` in Quest Browser and select **Enter VR**. Open the [spectator view](http://localhost:5173/?mode=spectator) on the laptop to display the same mounted camera and dive status. Both browser sessions must use this server. The headset needs internet for live Orbis.
+
+## Play and teach
+
+- **Rig.** Inspect the fixed center camera and three accessory sockets. Mount the arm on either outer rail. Place the lamp beside the lens or on the free rail, then aim forward or inward. Use the controls or, in VR, point at a fitted part, hold pinch or trigger, then release over a free compatible socket. To exchange occupied rails, park the lamp at the inner socket first.
+- **Pilot.** Run the dock check by touching the exposed handle. Predict a failure, launch the canyon dive, read the symbol, close on the top handle, lift above the cage lip, center over the marked cradle, and release. On Quest, begin with your right hand relaxed near the center of your body. Move it to steer; pinch to close and open to release. A controller's trigger operates the same jaws. On desktop, aim with the pointer, scroll or use W/S for height, and click the feed or press Space to toggle the jaws.
+- **Observe.** **Steer water · hold pose** holds the tool still and changes the water condition in the current session. Wait for a visible change and select **Capture changed water**. Review an attempt or return to the workbench at any point. A working first build can recover the recorder immediately.
+- **Review.** Compare the flown lamp and alternate socket against one frozen water image and tool pose. If you ran the water test, compare the two displayed water conditions at the same pose as well. Try the opposite-side pickup to test what you learned. **Reset mission** starts a fresh pilot log.
+- **Records.** The server saves 30 Hz traces, predictions, symbol answers, steering requests, actual sensor captures and outcomes in `data/soundings/sessions/<session>/<attempt>.json`. Captures carry their practice/live source and media timestamp. In the demo client, failed uploads remain queued locally in IndexedDB for reconnection. Use the judge guide for the timed walkthrough and verification record.
+
+[Judge script and validation](docs/SOUNDINGS-DEMO.md) · [Soundings design brief](docs/IDEAS.md) · [Recording credits](public/audio/CREDITS.txt)
+
+## Backlot research modes
+
+The original robot-learning workbench remains at [Backlot](http://localhost:5173/?mode=app). Its factory and evaluation modes share the existing arm and data pipeline.
 
 Teach a robot a task once in VR, let a live world model show it that task in a hundred different
 worlds, then watch it do the task alone in a world it has never seen.
@@ -49,7 +89,7 @@ only by the dev server, which mints short-lived session tokens; it is never sent
 adb reverse tcp:5173 tcp:5173
 ```
 
-Open `http://localhost:5173` in Quest Browser and press Enter VR. The right hand drives the arm
+Open `http://localhost:5173/?mode=app` in Quest Browser and press Enter VR. The right hand drives the arm
 (pinch to grip); poke the panels with a fingertip. Controllers work as a fallback (grip pose +
 trigger). The headset still needs internet for the Orbis stream.
 
@@ -97,7 +137,7 @@ python -m venv --system-site-packages .venv
 
 ```bash
 npm test                                   # unit tests
-npm run e2e                                # Playwright end-to-end in headed Chromium
+npm run e2e                                # Playwright in Chromium (HEADED=1 shows the browser)
 .venv/Scripts/python -m pytest py/tests    # data server, training, serving, report
 ```
 

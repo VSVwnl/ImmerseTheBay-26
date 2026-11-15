@@ -1,9 +1,8 @@
-import { expect, test } from '@playwright/test';
-import { spawn, type ChildProcess } from 'node:child_process';
+import { expect } from '@playwright/test';
+import type { ChildProcess } from 'node:child_process';
 import fs from 'node:fs';
-import { playAll } from './helpers';
+import { playAll, spawnPython, test } from './helpers';
 
-const PY = process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python';
 const CK = { single: 'data/ckpt/smoke-single.pt', multi: 'data/ckpt/smoke-multi.pt' };
 const haveAll = fs.existsSync(CK.single) && fs.existsSync(CK.multi) && (fs.existsSync('data/results/summary.json') || fs.existsSync('data/results/summary-smoke.json'));
 let server: ChildProcess;
@@ -12,7 +11,7 @@ test.describe('M5 Robot\'s turn', () => {
   test.skip(!haveAll, 'needs smoke checkpoints and a results summary (run M4 first)');
 
   test.beforeAll(async () => {
-    server = spawn(PY, ['py/serve.py', '--ckpt', `single=${CK.single}`, '--ckpt', `multi=${CK.multi}`, '--port', '8767'], { stdio: 'pipe' });
+    server = spawnPython(['py/serve.py', '--ckpt', `single=${CK.single}`, '--ckpt', `multi=${CK.multi}`, '--port', '8767']);
     await new Promise<void>((resolve, reject) => {
       const t = setTimeout(() => reject(new Error('policy server did not start')), 60000);
       const on = (d: Buffer) => String(d).includes('policies') && String(d).includes('ws://') && (clearTimeout(t), resolve());
@@ -26,7 +25,7 @@ test.describe('M5 Robot\'s turn', () => {
     test.setTimeout(240_000);
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(String(e)));
-    await page.goto('/?orbis=0&policyPort=8767');
+    await page.goto('/?mode=app&orbis=0&policyPort=8767');
     await page.mouse.click(640, 600);
     await playAll(page);
     const btn = page.locator('.panel-side button[data-id="robot"]');

@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { playAll } from './helpers';
+import { expect } from '@playwright/test';
+import { playAll, test } from './helpers';
 
 const SHOTS = 'e2e-shots';
 
@@ -7,7 +7,7 @@ test('M3 Part A: Multiply replays the Place demo in 8 worlds, counter and thumbn
   test.setTimeout(240_000);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto('/?orbis=0');
+  await page.goto('/?mode=app&orbis=0');
   await page.mouse.click(640, 600);
   await playAll(page);
   const mult = page.locator('.panel-side button[data-id="multiply"]');

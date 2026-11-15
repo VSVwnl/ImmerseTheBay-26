@@ -1,11 +1,10 @@
 // Chooses between the stub and live Orbis. The Orbis client (and the Reactor SDK) is loaded lazily,
 // only when a key exists and a connection is requested, so `npm run dev` without a key never touches it.
 import { StubWorld } from './stub';
-import type { World, WorldDef, WorldStatus } from './world';
+import type { World, WorldDef, WorldStatus, SteeringMode } from './world';
 import type { OrbisWorld } from './orbis';
 
 export class WorldManager implements World {
-  readonly stub = new StubWorld();
   private orbis: OrbisWorld | null = null;
   private def: WorldDef | null = null;
   private showing: HTMLVideoElement;
@@ -13,9 +12,10 @@ export class WorldManager implements World {
   keyAvailable: boolean | null = null;
   lastError = '';
   onVideoChange: (v: HTMLVideoElement) => void = () => {};
+  onSteered: (def: WorldDef) => void = () => {};
   onStatusChange: (s: WorldStatus) => void = () => {};
 
-  constructor() {
+  constructor(readonly stub = new StubWorld()) {
     this.showing = this.stub.getVideo();
   }
 
@@ -48,6 +48,7 @@ export class WorldManager implements World {
         this.onStatusChange('loading');
         const { OrbisWorld } = await import('./orbis');
         const o = new OrbisWorld({
+          onSteered: def => this.onSteered(def),
           onStatus: (s, detail) => {
             if (s === 'live') {
               this.stub.setOverlay('');
@@ -88,7 +89,7 @@ export class WorldManager implements World {
     this.onVideoChange(v);
   }
 
-  async setWorld(def: WorldDef, mode: 'morph' | 'fresh' = 'morph'): Promise<void> {
+  async setWorld(def: WorldDef, mode: SteeringMode = 'morph'): Promise<void> {
     this.def = def;
     await this.stub.setWorld(def);
     if (this.orbis) await this.orbis.setWorld(def, mode);

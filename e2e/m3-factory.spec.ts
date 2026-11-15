@@ -1,17 +1,21 @@
-import { expect, test } from '@playwright/test';
-import { spawn, type ChildProcess } from 'node:child_process';
+import { expect } from '@playwright/test';
+import type { ChildProcess } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const PY = process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python';
+import { spawnPython, test } from './helpers';
 const DS = 'smoke-e2e';
 let server: ChildProcess;
 
 test.beforeAll(async () => {
   fs.rmSync(path.join('data', 'datasets', DS), { recursive: true, force: true });
-  server = spawn(PY, ['py/data_server.py', '--port', '8766'], { stdio: 'pipe' });
+  server = spawnPython(['py/data_server.py', '--port', '8766']);
   await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error('data server did not start')), 15000);
+    let problem = '';
+    server.stderr!.on('data', d => { problem += String(d); });
+    server.once('error', reject);
+    server.once('exit', code => reject(new Error(`data server exited ${code}: ${problem}`)));
+    const t = setTimeout(() => reject(new Error('data server did not start: ' + problem)), 15000);
     server.stdout!.on('data', (d) => String(d).includes('listening') && (clearTimeout(t), resolve()));
   });
 });

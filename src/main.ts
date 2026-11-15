@@ -1,5 +1,5 @@
+export {};
 // Renderer, scene, loop, mode switch (app / factory / eval).
-import { createCore } from './core';
 
 declare global {
   interface Window {
@@ -22,13 +22,24 @@ declare global {
   if (changed) history.replaceState(null, '', `${location.pathname}?${q}${location.hash}`);
 }
 
-const mode = new URLSearchParams(location.search).get('mode') ?? 'app';
-const core = createCore();
+const mode = new URLSearchParams(location.search).get('mode') ?? 'soundings';
 
-if (mode === 'factory') {
-  void import('./factory/factory').then((m) => m.startFactory(core));
-} else if (mode === 'eval') {
-  void import('./policy/eval').then((m) => m.startEval(core));
-} else {
-  void import('./app').then((m) => m.startApp(core));
+async function launch() {
+  if (mode === 'soundings' || mode === 'spectator') {
+    const { startSoundings } = await import('./soundings/app');
+    await startSoundings(mode === 'spectator');
+    return;
+  }
+  const { createCore } = await import('./core');
+  const core = createCore();
+  if (mode === 'factory') (await import('./factory/factory')).startFactory(core);
+  else if (mode === 'eval') (await import('./policy/eval')).startEval(core);
+  else (await import('./app')).startApp(core);
 }
+
+void launch().catch(error => {
+  console.error(error);
+  const message = document.createElement('p');
+  message.textContent = 'Unable to start the 3D view. Enable WebGL in your browser and reload.';
+  document.body.prepend(message);
+});

@@ -12,8 +12,8 @@ export interface IKResult {
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-export function shoulderPoint(): Vec3 {
-  return [ARM_BASE[0], ARM_BASE[1] + SHOULDER_H, ARM_BASE[2]];
+export function shoulderPoint(base: Vec3 = ARM_BASE): Vec3 {
+  return [base[0], base[1] + SHOULDER_H, base[2]];
 }
 
 /**
@@ -22,8 +22,8 @@ export function shoulderPoint(): Vec3 {
  * elbow: interior angle between upper link and forearm (PI = straight).
  * wristPitch: rotation of the tool relative to the forearm, chosen so the tool points down.
  */
-export function solveIK(target: Vec3): IKResult {
-  const S = shoulderPoint();
+export function solveIK(target: Vec3, base: Vec3 = ARM_BASE): IKResult {
+  const S = shoulderPoint(base);
   const W: Vec3 = [target[0], target[1] + TOOL_LEN, target[2]];
   const dx = W[0] - S[0];
   const dz = W[2] - S[2];
@@ -40,7 +40,7 @@ export function solveIK(target: Vec3): IKResult {
   const forearmAngle = shoulder - (Math.PI - elbow);
   const wristPitch = -Math.PI / 2 - forearmAngle;
   const joints: Joints = [yaw, shoulder, elbow, wristPitch];
-  return { joints, tip: forwardKinematics(joints).tip, clamped };
+  return { joints, tip: forwardKinematics(joints, base).tip, clamped };
 }
 
 export interface FKResult {
@@ -50,9 +50,9 @@ export interface FKResult {
   tip: Vec3;
 }
 
-export function forwardKinematics(j: Joints): FKResult {
+export function forwardKinematics(j: Joints, base: Vec3 = ARM_BASE): FKResult {
   const [yaw, sh, el, wp] = j;
-  const S = shoulderPoint();
+  const S = shoulderPoint(base);
   const hx = Math.sin(yaw);
   const hz = Math.cos(yaw);
   const a1 = sh;

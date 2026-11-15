@@ -29,18 +29,23 @@ export class XRInput {
   /** which device drove the arm last: 'hand' | 'controller' | null */
   mode: 'hand' | 'controller' | null = null;
 
-  constructor(private renderer: THREE.WebGLRenderer) {
+  constructor(private renderer: THREE.WebGLRenderer, localModels = false) {
     const handFactory = new XRHandModelFactory();
     const ctrlFactory = new XRControllerModelFactory();
     for (let i = 0; i < 2; i++) {
       const hand = renderer.xr.getHand(i) as HandSlot['hand'];
-      hand.add(handFactory.createHandModel(hand, 'mesh'));
+      hand.add(handFactory.createHandModel(hand, localModels ? 'spheres' : 'mesh'));
       const controller = renderer.xr.getController(i);
       const grip = renderer.xr.getControllerGrip(i);
-      grip.add(ctrlFactory.createControllerModel(grip));
+      // Use a local grip silhouette for the offline ocean mission.
+      const gripModel = localModels ? new THREE.Mesh(
+        new THREE.CapsuleGeometry(.017,.07,4,12),
+        new THREE.MeshStandardMaterial({ color: 0xa1c9bd, roughness: .65 }),
+      ) : ctrlFactory.createControllerModel(grip);
+      grip.add(gripModel);
       const slot: HandSlot = { hand, controller, grip, source: null };
       const onConnect = (e: { data?: XRInputSource }) => {
-        if (e.data) slot.source = e.data;
+        if (e.data) { slot.source = e.data; gripModel.visible = !e.data.hand; }
       };
       const onDisconnect = () => {
         slot.source = null;

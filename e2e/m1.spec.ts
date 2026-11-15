@@ -1,7 +1,7 @@
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { BIN, moveTo, phase, pickAndPlace, state, waitPhase } from './helpers';
+import { BIN, moveTo, phase, pickAndPlace, state, test, waitPhase } from './helpers';
 
 const SHOTS = 'e2e-shots';
 
@@ -12,7 +12,8 @@ test('M1: all three challenges with the mouse, records saved, worlds switch', as
   page.on('console', (m) => m.type() === 'error' && !/Failed to load resource/.test(m.text()) && errors.push(m.text()));
   page.on('response', (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
 
-  await page.goto('/?orbis=0'); // never open a paid Orbis session in tests
+  await page.goto('/?mode=app&orbis=0'); // never open a paid Orbis session in tests
+  await page.waitForFunction(() => !!(window as any).__backlot?.world);
   await page.mouse.click(640, 600); // user gesture: starts the wall video
   await page.screenshot({ path: `${SHOTS}/m1-01-idle.png` });
 
@@ -35,7 +36,7 @@ test('M1: all three challenges with the mouse, records saved, worlds switch', as
   await waitPhase(page, 'running');
   let s = await state(page);
   expect(s.layout).toBe('reach');
-  for (const t of s.reachTargets) await moveTo(page, t, 0.038); // env stops once within 0.04
+  for (const t of s.reachTargets) await moveTo(page, t, 0.04); // env stops once within 0.04
   await page.screenshot({ path: `${SHOTS}/m1-03-reach-done.png` });
   await waitPhase(page, 'between');
 

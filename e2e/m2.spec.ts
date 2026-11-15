@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from './helpers';
 import fs from 'node:fs';
 
 const SHOTS = 'e2e-shots';
@@ -11,7 +12,7 @@ test('M2 without a key: token route says unavailable, app runs on the stub and s
   const post = await request.post('/api/token', { headers: { 'Content-Type': 'application/json' }, data: {} });
   expect(post.status()).toBe(503);
 
-  await page.goto('/');
+  await page.goto('/?mode=app');
   await page.mouse.click(640, 600);
   await expect(page.locator('.panel-world')).toContainText('wall: stub');
   await expect(page.locator('.panel-status')).toContainText('wall: stub');
@@ -35,7 +36,7 @@ test('M2 live connect failure falls back to the stub', async ({ page }) => {
   );
   const logs: string[] = [];
   page.on('console', (m) => logs.push(m.text()));
-  await page.goto('/');
+  await page.goto('/?mode=app');
   await expect(page.locator('#orbis-toggle')).toBeVisible();
   await page.mouse.click(640, 600); // first gesture triggers connect
   await expect(page.locator('.panel-world')).toContainText('wall: stub (live failed)', { timeout: 10000 });

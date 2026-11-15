@@ -27,7 +27,7 @@ export class StubWorld implements World {
   private prevPal: [string, string, string] | null = null;
   private overlay = '';
 
-  constructor(width = 1280, height = 720) {
+  constructor(width = 1280, height = 720, animate = true) {
     this.canvas = document.createElement('canvas');
     this.canvas.width = width;
     this.canvas.height = height;
@@ -37,6 +37,8 @@ export class StubWorld implements World {
     this.video.playsInline = true;
     this.video.autoplay = true;
     this.video.loop = true;
+    // Soundings supplies its own practice water and needs only an idle video handle.
+    if (!animate) return;
     this.draw();
     this.video.srcObject = this.canvas.captureStream(30);
     // Keep drawing even when rAF is throttled (XR session owns the frame loop).

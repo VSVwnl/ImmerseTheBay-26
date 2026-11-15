@@ -38,6 +38,17 @@ export interface AttemptRecord {
 const r4 = (v: number) => Math.round(v * 1e4) / 1e4;
 const v4 = (v: Vec3): Vec3 => [r4(v[0]), r4(v[1]), r4(v[2])];
 
+/** Shared by tabletop and subsea attempts. Preserve the exact action for fixed-step replay. */
+export function motionSample(index: number, hz: number, action: Action, tip: Vec3, joints: Joints) {
+  return {
+    t: r4(index / hz),
+    target: [...action.target] as Vec3,
+    grip: action.grip,
+    tip: v4(tip),
+    joints: joints.map(r4) as Joints,
+  };
+}
+
 export function newSessionId(now: Date = new Date()): string {
   const iso = now.toISOString().replace(/\.\d+Z$/, 'Z').replace(/:/g, '-');
   const tag = Math.floor(Math.random() * 0xffff).toString(16).padStart(4, '0');
@@ -90,11 +101,7 @@ export class Recorder {
     if (!this.rec) return;
     const n = this.rec.samples.length;
     this.rec.samples.push({
-      t: r4(n / this.rec.hz),
-      target: [action.target[0], action.target[1], action.target[2]],
-      grip: action.grip,
-      tip: v4(state.tip),
-      joints: state.joints.map(r4) as Joints,
+      ...motionSample(n, this.rec.hz, action, state.tip, state.joints),
       held: state.held,
       cubes: Object.fromEntries(Object.entries(state.cubes).map(([k, v]) => [k, v4(v!)])) as Cubes,
     });

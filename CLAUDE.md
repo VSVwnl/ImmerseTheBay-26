@@ -1,4 +1,6 @@
-# Backlot
+# Soundings and Backlot
+
+The Soundings branch opens the marine robotics game by default. See the Soundings section of `docs/IDEAS.md`, `docs/SOUNDINGS-DEMO.md`, and `src/soundings/`. Keep the original Backlot app reachable at `?mode=app` when editing shared IK, input, world or data code. The older milestone instructions below describe those research modes.
 
 Hackathon project for Immerse the Bay 2026 (Stanford XR hackathon). One developer plus coding agents.
 Hard deadline: Sunday Nov 15, 9:00 AM PST. We submit by 8:30 AM.
