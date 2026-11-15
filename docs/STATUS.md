@@ -55,6 +55,27 @@ Updated: Sat Nov 14, 4:45 PM PST
   policy port listens, so a plain `npm run dev` without the policy server shows no console errors.
 - MIT license; `/api/log` hardened (no dot/traversal ids, no overwrite, JSON + same-origin only).
 
+### Hologram control (branch `hologram`, `?holo=1`, Sat Nov 14 ~11 PM)
+- Replicates a "robots and holograms" XR demo: a cyan scanline hologram of the arm on a magenta emitter puck
+  in the left palm; the right hand pinches the hologram's tip and drags, and the real arm follows. Faint copies
+  of the table, bins, cubes and reach target are in the hologram; a dashed tether joins the two tips while dragging.
+- Code: `src/holo/link.ts` (pure: mapping, grab/drag/tap, palm-up test, anchor filter, hand/controller choice),
+  `src/holo/hologram.ts` (shaders, emitter, mini scene), `src/holo/control.ts` (desktop mouse + XR glue).
+  Small hooks: `DesktopInput.holoMode`, `XRInput.handData/controllerData`, a few guarded lines in `app.ts`.
+- Off by default; every existing mode is unchanged without `?holo=1` (e2e checks the hologram is absent and the
+  mouse still drives the arm).
+- Tests: `tests/holo.test.ts` (17), `e2e/holo.spec.ts` (all three challenges played only through the hologram
+  with the mouse: drag, wheel, tap-to-grip, 3/3 success, records saved), `e2e/holo-xr.spec.ts` (fake hands and
+  controllers through the real app loop: palm up/down, tap, drag 3 cm -> 10 cm, hold while grabbed).
+- **Unverified in the headset**: palm-up detection assumes the WebXR wrist joint's -Y axis points out of the palm
+  (per the Hand Input spec); if the hologram shows with the palm down instead, flip the sign in `palmUpDot`.
+  Hologram size (0.3), grab radius (3 cm) and the 6 mm drag dead zone are starting values.
+
+Headset checklist (hologram):
+- [ ] `/?holo=1`, Enter VR, turn the left palm up: the hologram appears on the palm; palm down: it fades.
+- [ ] Right pinch on the hologram tip and drag: the real arm follows; quick pinch toggles the gripper.
+- [ ] Place a cube using only the hologram; frame rate holds.
+
 ### Real result (M4, live Orbis walls, run 2026-11-15T00-39-44-104Z, `data/results/summary.json`)
 
 | policy | lab | subway* | forest* | desert* | held-out* |
@@ -118,6 +139,9 @@ both policies on the same seeds; all 160 episodes ran on a live wall. Run once; 
 - Multi is weaker than single in the lab: the lab is 1/8 of its data and all of single's.
 
 ### Test results
+- Hologram branch: Vitest 294/294, typecheck clean, Playwright 10 passed + 1 skipped in the full run; M5 failed
+  once in that run (its `playAll` helper timed out waiting for `running`, the known intermittent one; M5 runs
+  without `?holo=1`) and passed alone right after.
 - Vitest: 128/128 (count grows with saved attempts replayed; adds `/api/robot` probe)
 - pytest: 19/19 (adds model, overfit, checkpoint + serve websocket, report table, spatial softmax, avg compat)
 - After the live fixes: Vitest 152/152, typecheck clean, Playwright 7 passed + 1 skipped (the no-key test skips

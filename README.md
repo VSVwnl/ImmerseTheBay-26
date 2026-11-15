@@ -53,6 +53,23 @@ Open `http://localhost:5173` in Quest Browser and press Enter VR. The right hand
 (pinch to grip); poke the panels with a fingertip. Controllers work as a fallback (grip pose +
 trigger). The headset still needs internet for the Orbis stream.
 
+### Hologram control (`?holo=1`)
+
+Open `http://localhost:5173/?holo=1` (add `&orbis=0` to stay on the stub wall). A small cyan hologram of the
+arm stands on a magenta projector puck; the real arm copies whatever you do to the hologram.
+
+| Where | Show the hologram | Move the arm | Gripper |
+| --- | --- | --- | --- |
+| Desktop | always, on a pedestal left of the table | drag the hologram's tip (wheel or W/S: height) | click the tip without dragging, or Space |
+| Quest, hands | turn your left palm up | pinch the hologram's tip with your right hand and drag | a quick pinch on the tip |
+| Quest, controllers | left controller holds it | right trigger on the tip and drag | a quick trigger pull on the tip |
+
+The hologram is 0.3 of the real size in the headset (0.35 on desktop), so 1 cm of hand movement moves the
+real arm about 3 cm. Drags are relative: grabbing never makes the arm jump. Challenges, recording and
+Multiply work as usual (the recorded input is still `hand` / `controller` / `mouse`). During Multiply or Robot's
+turn the hologram only mirrors the arm. It is never in the dataset camera's view. Numbers live in `HOLO` in
+`src/config.ts`. Without `?holo=1` nothing changes.
+
 ### Multiply, data factory, training, evaluation
 
 Python setup (one time). PyTorch must support your GPU; RTX 50-series needs a CUDA 12.8+ build:
