@@ -41,8 +41,8 @@ export const WORLDS: WorldDef[] = [
   W('desert', 'Red desert (held out)', 'A red rocky desert under a pale orange sky, dust devils moving across the plain, a rover driving slowly in the distance.', true),
 ];
 
-/** The six world buttons of the MVP. */
-export const BUTTON_WORLDS = WORLDS.slice(0, 6);
+/** The world buttons (1-8): the eight training worlds; the held-out ones appear only in Robot's turn. */
+export const BUTTON_WORLDS = WORLDS.slice(0, 8);
 /** The eight training worlds (M3). Held-out worlds must never be used for training data. */
 export const TRAINING_WORLDS = WORLDS.filter((w) => !w.heldOut);
 export const HELD_OUT_WORLDS = WORLDS.filter((w) => w.heldOut);

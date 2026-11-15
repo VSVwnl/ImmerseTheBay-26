@@ -60,8 +60,7 @@ only by the dev server, which mints short-lived session tokens; it is never sent
 | Mouse move | arm target follows the cursor (horizontal plane) |
 | Wheel or W / S | raise / lower the target |
 | Click or Space | toggle the gripper |
-| 1 to 6 | switch world |
-| Say a world (Worlds panel) | speak a place to make a custom world (where the browser supports speech) |
+| 1 to 8 | switch world |
 
 URL options: `?orbis=0` keeps the stub wall (no Orbis session, no cost); `?challenges=egg,bucket` limits the
 Workshop to those challenges.
@@ -76,8 +75,8 @@ Open `http://localhost:5173` in Quest Browser and press Enter VR. The right hand
 (pinch to grip); poke the panels with a fingertip. Controllers work as a fallback (grip pose +
 trigger). The headset still needs internet for the Orbis stream.
 
-"Say a world" listens for 8 s at most and shows why when it hears nothing. In the Quest Browser it currently
-never returns a phrase; use the world buttons there.
+Steer the live world with the eight world buttons on the left panel (or keys 1 to 8 on desktop). A voice
+button existed but is switched off: the Quest Browser's speech recognition never returns a phrase.
 
 ### Robot Workshop
 

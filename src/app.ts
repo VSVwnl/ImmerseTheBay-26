@@ -11,13 +11,12 @@ import { pickAttemptWorld } from './tasks/worldpick';
 import { newSessionId, type AttemptRecord, type InputKind } from './tasks/recorder';
 import { Panel, type PanelContent } from './ui/panels';
 import { sfx, unlockAudio } from './ui/sound';
-import { BUTTON_WORLDS, HELD_OUT_WORLDS, PROMPT_PREFIX, TRAINING_WORLDS, type WorldDef } from './world/world';
+import { BUTTON_WORLDS, HELD_OUT_WORLDS, TRAINING_WORLDS, type WorldDef } from './world/world';
 import { PolicyClient } from './policy/client';
 import { RobotTurn } from './policy/robot';
 import { Multiply } from './factory/multiply';
 import { DatasetCamera } from './factory/camera';
 import { ThumbWall } from './ui/thumbs';
-import { listenOnce, stopListening, voiceErrorText, voiceSupported } from './ui/voice';
 import type { Action } from './env/env';
 import type { Core } from './core';
 
@@ -28,26 +27,6 @@ export function startApp(core: Core) {
   // ?challenges=washer,heavy keeps only those Workshop challenges (for testing one quickly); unknown names are ignored
   const only = params.get('challenges')?.split(',').filter((c) => ENABLED_CHALLENGES.includes(c));
   if (only?.length) ENABLED_CHALLENGES.splice(0, ENABLED_CHALLENGES.length, ...only);
-  let listening = false;
-  function speakWorld() {
-    listenOnce(
-      (text) => {
-        const label = text.length > 22 ? text.slice(0, 21) + '…' : text;
-        selectWorld({ id: 'custom', label, prompt: `${PROMPT_PREFIX} ${text}` });
-      },
-      (on, err) => {
-        listening = on;
-        const msg = voiceErrorText(err);
-        if (msg) {
-          console.warn('[voice]', err);
-          sfx.slip();
-          // shown just under the Worlds panel, where the button is
-          const p = PANELS.world.pos;
-          core.workshop.showFail(msg, [p[0], p[1] - 0.45, p[2]]);
-        }
-      },
-    );
-  }
   let worldDef: WorldDef = BUTTON_WORLDS[0];
   void world.setWorld(worldDef, 'fresh');
   // connect to Orbis on the first user gesture when a key exists (?orbis=0 disables)
@@ -76,7 +55,6 @@ export function startApp(core: Core) {
     camera,
     (i) => {
       if (!BUTTON_WORLDS[i]) return;
-      stopListening(); // a preset replaces a pending spoken world
       selectWorld(BUTTON_WORLDS[i]);
     },
     onGesture,
@@ -181,8 +159,6 @@ export function startApp(core: Core) {
     sfx.click();
     onGesture();
     if (panel === 'world') {
-      if (id === 'voice') return speakWorld(); // pressing it again while listening cancels
-      stopListening(); // a preset replaces a pending spoken world
       const def = (robot ? ROBOT_WORLDS : BUTTON_WORLDS).find((w) => w.id === id);
       if (def) selectWorld(def);
       if (def && robot) robot.reset(); // fresh seed in the new world
@@ -319,12 +295,8 @@ export function startApp(core: Core) {
     else panels.world.set({
       title: 'Worlds',
       lines: [{ text: `wall: ${st}${st === 'stub' && world.lastError ? ' (live failed)' : ''}`, size: 22, color: st === 'live' ? '#5fe08f' : st === 'loading' ? '#ffd34d' : '#c9d3dd' }],
-      buttons: [
-        ...BUTTON_WORLDS.map((w, i) => ({ id: w.id, label: `${i + 1} ${w.label}`, active: w.id === world.current()?.id })),
-        ...(voiceSupported
-          ? [{ id: 'voice', label: listening ? 'Listening…' : world.current()?.id === 'custom' ? `Say a world (${world.current()!.label})` : 'Say a world', wide: true, active: listening }]
-          : []),
-      ],
+      // "Say a world" (src/ui/voice.ts) is off: the Quest Browser's speech recognition never returns a phrase
+      buttons: BUTTON_WORLDS.map((w, i) => ({ id: w.id, label: `${i + 1} ${w.label}`, active: w.id === world.current()?.id })),
       cols: 2,
     });
 
