@@ -270,6 +270,30 @@ describe('Workshop challenges: every robot', () => {
     }
   });
 
+  it("each challenge's declared solutions are exactly the robots that solve it", () => {
+    for (const layout of WORKSHOP_LAYOUTS) {
+      const declared = WORKSHOP_TASKS[layout].solutions.map(key).sort();
+      const ok = Object.entries(EXPECT[layout]).filter(([, v]) => v === 'ok').map(([k]) => k).sort();
+      expect(declared).toEqual(ok);
+    }
+  });
+
+  it('a challenge hides itself when none of the robots that solve it can be built from enabled parts', () => {
+    const saved = [...ENABLED_PARTS];
+    try {
+      for (const part of [...ARM_KINDS, ...TOOL_KINDS]) {
+        ENABLED_PARTS.splice(0, ENABLED_PARTS.length, ...saved.filter((p) => p !== part));
+        const shown = workshopChallenges().map((c) => c.layout);
+        for (const layout of WORKSHOP_LAYOUTS) {
+          const still = WORKSHOP_TASKS[layout].solutions.some((r) => r.arm !== part && r.tool !== part);
+          expect(shown.includes(layout)).toBe(still);
+        }
+      }
+    } finally {
+      ENABLED_PARTS.splice(0, ENABLED_PARTS.length, ...saved);
+    }
+  });
+
   it('every spawn and goal is on the table, and every challenge is solvable by some robot', () => {
     for (const layout of WORKSHOP_LAYOUTS) {
       expect(Object.values(EXPECT[layout])).toContain('ok');

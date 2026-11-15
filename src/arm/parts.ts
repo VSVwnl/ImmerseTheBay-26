@@ -1,67 +1,17 @@
-// Robot Workshop parts: which arm and which tool. Compact + Gripper is the standard robot and uses the
-// original constants (L1, L2, SHOULDER_H, WORKSPACE) unchanged. Pure data, no three.js.
-// To add a part: add it to ArmKind/ToolKind, give it an entry in ARMS/TOOLS, and list it in ENABLED_PARTS.
-import { ENABLED_PARTS, L1, L2, SHOULDER_H, WORKSHOP, WORKSPACE, type Vec3 } from '../config';
-
-export type ArmKind = 'compact' | 'long' | 'heavyduty';
-export type ToolKind = 'gripper' | 'suction' | 'magnet' | 'wide' | 'scoop';
-export interface RobotParts {
-  arm: ArmKind;
-  tool: ToolKind;
-}
-export interface Links {
-  l1: number;
-  l2: number;
-  /** shoulder pivot above the base; default SHOULDER_H */
-  shoulderH?: number;
-}
-export interface Workspace {
-  min: Vec3;
-  max: Vec3;
-}
-
-export interface ArmSpec {
-  id: ArmKind;
-  label: string;
-  links: Links;
-  /** heaviest object weight it lifts */
-  payload: number;
-  /** where the tip may be commanded */
-  workspace: Workspace;
-  /** strength / weakness, shown on the parts panel */
-  blurb: string;
-  /** drawn link thickness relative to the standard arm */
-  girth?: number;
-}
-export interface ToolSpec {
-  id: ToolKind;
-  label: string;
-  blurb: string;
-}
-
-export const COMPACT_LINKS: Links = Object.freeze({ l1: L1, l2: L2 });
-export const LONG_LINKS: Links = Object.freeze({ l1: L1 * WORKSHOP.longScale, l2: L2 * WORKSHOP.longScale });
-export const HEAVY_LINKS: Links = Object.freeze({ l1: L1 * WORKSHOP.heavyScale, l2: L2 * WORKSHOP.heavyScale });
-
-export const ARMS: Record<ArmKind, ArmSpec> = {
-  compact: { id: 'compact', label: 'Compact', links: COMPACT_LINKS, payload: WORKSHOP.payload.compact, workspace: WORKSPACE, blurb: 'strong, short reach' },
-  long: { id: 'long', label: 'Long', links: LONG_LINKS, payload: WORKSHOP.payload.long, workspace: WORKSHOP.longWorkspace, blurb: 'reaches far, weak' },
-  heavyduty: {
-    id: 'heavyduty', label: 'Heavy-duty', links: HEAVY_LINKS, payload: WORKSHOP.payload.heavyduty,
-    workspace: WORKSHOP.heavyWorkspace, blurb: 'very strong, middle of the table only', girth: 1.45,
-  },
-};
-export const TOOLS: Record<ToolKind, ToolSpec> = {
-  gripper: { id: 'gripper', label: 'Gripper', blurb: 'grips things with sides' },
-  suction: { id: 'suction', label: 'Suction', blurb: 'lifts flat smooth things' },
-  magnet: { id: 'magnet', label: 'Magnet', blurb: 'any metal, nothing else' },
-  wide: { id: 'wide', label: 'Wide gripper', blurb: 'big things only' },
-  scoop: { id: 'scoop', label: 'Scoop', blurb: 'loose bits, nothing solid' },
-};
+// Robot Workshop parts: which arm and which tool. Each part is defined in its own file under src/workshop/parts/
+// and listed in src/workshop/registry.ts. Compact + Gripper is the standard robot and uses the original constants
+// (L1, L2, SHOULDER_H, WORKSPACE) unchanged.
+import { ENABLED_PARTS, SHOULDER_H } from '../config';
+import { ARMS, TOOLS, ARM_DEFS, TOOL_DEFS } from '../workshop/registry';
+import type { ArmKind, Links, RobotParts, ToolKind, Workspace } from '../workshop/types';
+export type { ArmDef as ArmSpec, ArmKind, Links, RobotParts, ToolDef as ToolSpec, ToolKind, Workspace } from '../workshop/types';
+export { ARMS, TOOLS } from '../workshop/registry';
+export { COMPACT_LINKS } from '../workshop/parts/compact';
+export { LONG_LINKS } from '../workshop/parts/long';
 
 export const STANDARD_ROBOT: Readonly<RobotParts> = Object.freeze({ arm: 'compact', tool: 'gripper' });
-export const ARM_KINDS = Object.keys(ARMS) as ArmKind[];
-export const TOOL_KINDS = Object.keys(TOOLS) as ToolKind[];
+export const ARM_KINDS: ArmKind[] = ARM_DEFS.map((a) => a.id);
+export const TOOL_KINDS: ToolKind[] = TOOL_DEFS.map((t) => t.id);
 export const ARM_LABEL = Object.fromEntries(ARM_KINDS.map((k) => [k, ARMS[k].label])) as Record<ArmKind, string>;
 export const TOOL_LABEL = Object.fromEntries(TOOL_KINDS.map((k) => [k, TOOLS[k].label])) as Record<ToolKind, string>;
 
@@ -107,7 +57,7 @@ export function sameParts(a: RobotParts, b: RobotParts): boolean {
 /** Old attempt files have no arm/tool: they were made with the standard robot. Unknown names fall back too. */
 export function partsOf(rec: { arm?: string; tool?: string }): RobotParts {
   return {
-    arm: rec.arm && rec.arm in ARMS ? (rec.arm as ArmKind) : 'compact',
-    tool: rec.tool && rec.tool in TOOLS ? (rec.tool as ToolKind) : 'gripper',
+    arm: rec.arm && rec.arm in ARMS ? rec.arm : 'compact',
+    tool: rec.tool && rec.tool in TOOLS ? rec.tool : 'gripper',
   };
 }

@@ -1,105 +1,17 @@
-// Robot Workshop challenges as data: each one lists steps (an object, where it spawns, where it must go).
-// A challenge is done when every step's object rests on its goal. Pure and deterministic (seeded rng only).
-// To add a challenge: add its id to WorkshopLayout, an entry in WORKSHOP_TASKS, and list it in ENABLED_CHALLENGES.
-import { BIN, ENABLED_CHALLENGES, TABLE, WORKSHOP, type Vec3 } from '../config';
-import { ITEMS, type ItemId } from '../arm/items';
-import type { Rng } from './rng';
+// Robot Workshop challenge logic. Each challenge is data in its own file under src/workshop/challenges/: steps
+// (an object, where it spawns, where it must go). A challenge is done when every step's object rests on its goal.
+// Pure and deterministic (seeded rng only).
+import { BIN, TABLE, type Vec3 } from '../config';
+import { CHALLENGE_DEFS, CHALLENGES, challengeAvailable, ITEMS } from '../workshop/registry';
+import type { ChallengeDef, Goal, ItemId, TaskStep, WorkshopLayout } from '../workshop/types';
+export type { Goal, GoalKind, TaskStep, WorkshopLayout } from '../workshop/types';
+export type WorkshopTask = ChallengeDef;
 
-export type WorkshopLayout = 'plate' | 'far' | 'heavy' | 'washer' | 'crate' | 'anvil' | 'marbles';
-
-export type GoalKind = 'rack' | 'pallet' | 'bin' | 'zone' | 'bowl';
-export interface Goal {
-  kind: GoalKind;
-  pos: Vec3; // center on the table top
-  w: number;
-  d: number;
-  /** rack: height of the top; bin: wall height; zone: 0 */
-  h: number;
-  color: number;
-}
-export interface TaskStep {
-  item: ItemId;
-  goal: Goal;
-  spawn: (rng: Rng) => Vec3;
-}
-export interface WorkshopTask {
-  layout: WorkshopLayout;
-  name: string;
-  hint: string;
-  steps: TaskStep[];
-  /** which robots solve it, for the panel and docs (tests check the real rules) */
-  solvedBy: string;
-}
-
-const between = (rng: Rng, [lo, hi]: [number, number]) => lo + rng() * (hi - lo);
-const W = WORKSHOP;
-
-export const GOALS = {
-  rack: { kind: 'rack', pos: W.rack.pos, w: W.rack.w, d: W.rack.d, h: W.rack.h, color: 0xb8bcc2 } as Goal,
-  greenBin: { kind: 'bin', pos: W.canBin.pos, w: BIN.w, d: BIN.d, h: BIN.h, color: 0x2f9e5b } as Goal,
-  zone: { kind: 'zone', pos: W.zone.pos, w: W.zone.size, d: W.zone.size, h: 0, color: 0xffd34d } as Goal,
-  tray: { kind: 'bin', pos: W.tray.pos, w: BIN.w, d: BIN.d, h: BIN.h, color: 0x4a6f96 } as Goal,
-  dropZone: { kind: 'zone', pos: W.dropZone.pos, w: W.dropZone.size, d: W.dropZone.size, h: 0, color: 0xff7b6b } as Goal,
-  bowl: { kind: 'bowl', pos: W.bowl.pos, w: W.bowl.r * 1.6, d: W.bowl.r * 1.6, h: W.bowl.h, color: 0x2a6fd6 } as Goal,
-  pallet: { kind: 'pallet', pos: W.pallet.pos, w: W.pallet.w, d: W.pallet.d, h: W.pallet.h, color: 0x9a6b3c } as Goal,
-};
-
-export const WORKSHOP_TASKS: Record<WorkshopLayout, WorkshopTask> = {
-  plate: {
-    layout: 'plate',
-    name: 'Plate',
-    hint: 'Put the plate on the rack',
-    solvedBy: 'Suction, any arm',
-    steps: [{ item: 'plate', goal: GOALS.rack, spawn: (r) => [between(r, W.plate.spawnX), ITEMS.plate.restY, between(r, W.plate.spawnZ)] }],
-  },
-  far: {
-    layout: 'far',
-    name: 'Far',
-    hint: 'Put the can in the green bin',
-    solvedBy: 'Long + Gripper',
-    steps: [{ item: 'can', goal: GOALS.greenBin, spawn: (r) => [W.can.x, ITEMS.can.restY, between(r, W.can.spawnZ)] }],
-  },
-  heavy: {
-    layout: 'heavy',
-    name: 'Heavy',
-    hint: 'Put the pot on the glowing zone',
-    solvedBy: 'Compact + Gripper',
-    steps: [{ item: 'pot', goal: GOALS.zone, spawn: (r) => [between(r, W.pot.spawnX), ITEMS.pot.restY, between(r, W.pot.spawnZ)] }],
-  },
-  washer: {
-    layout: 'washer',
-    name: 'Washer',
-    hint: 'Put the steel washer in the blue tray',
-    solvedBy: 'Magnet, any arm',
-    steps: [{ item: 'washer', goal: GOALS.tray, spawn: (r) => [between(r, W.washer.spawnX), ITEMS.washer.restY, between(r, W.washer.spawnZ)] }],
-  },
-  crate: {
-    layout: 'crate',
-    name: 'Crate',
-    hint: 'Put the big crate on the pallet',
-    solvedBy: 'Compact + Wide gripper',
-    steps: [{ item: 'crate', goal: GOALS.pallet, spawn: (r) => [between(r, W.crate.spawnX), ITEMS.crate.restY, between(r, W.crate.spawnZ)] }],
-  },
-  anvil: {
-    layout: 'anvil',
-    name: 'Anvil',
-    hint: 'Move the anvil onto the red zone',
-    solvedBy: 'Heavy-duty + Gripper or Magnet',
-    steps: [{ item: 'anvil', goal: GOALS.dropZone, spawn: (r) => [between(r, W.anvil.spawnX), ITEMS.anvil.restY, between(r, W.anvil.spawnZ)] }],
-  },
-  marbles: {
-    layout: 'marbles',
-    name: 'Marbles',
-    hint: 'Pour the marbles into the blue bowl',
-    solvedBy: 'Scoop, any arm',
-    steps: [{ item: 'marbles', goal: GOALS.bowl, spawn: (r) => [between(r, W.marbles.spawnX), ITEMS.marbles.restY, between(r, W.marbles.spawnZ)] }],
-  },
-};
-
-export const WORKSHOP_LAYOUTS = Object.keys(WORKSHOP_TASKS) as WorkshopLayout[];
+export const WORKSHOP_TASKS: Record<WorkshopLayout, ChallengeDef> = CHALLENGES;
+export const WORKSHOP_LAYOUTS: WorkshopLayout[] = CHALLENGE_DEFS.map((c) => c.layout);
 export const isWorkshopLayout = (l: string): l is WorkshopLayout => l in WORKSHOP_TASKS;
-/** Challenges switched on in config, in registry order. */
-export const enabledWorkshopLayouts = (): WorkshopLayout[] => WORKSHOP_LAYOUTS.filter((l) => ENABLED_CHALLENGES.includes(l));
+/** Challenges switched on in config and solvable with the enabled parts, in registry order. */
+export const enabledWorkshopLayouts = (): WorkshopLayout[] => CHALLENGE_DEFS.filter(challengeAvailable).map((c) => c.layout);
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const over = (p: Vec3, g: Goal) => Math.abs(p[0] - g.pos[0]) <= g.w / 2 && Math.abs(p[2] - g.pos[2]) <= g.d / 2;
@@ -124,7 +36,7 @@ export function settleOn(layout: WorkshopLayout, item: ItemId, p: Vec3): { pos: 
     if (!over(p, g)) continue;
     const mine = s === own;
     if (g.kind === 'rack' || g.kind === 'pallet') return { pos: [p[0], spec.restY + g.h, p[2]], goal: mine, offTable: false };
-    if (g.kind === 'bin') {
+    if (g.kind === 'bin' || g.kind === 'basket') {
       const mx = Math.max(0, g.w / 2 - BIN.wall - spec.radius);
       const mz = Math.max(0, g.d / 2 - BIN.wall - spec.radius);
       return { pos: [clamp(p[0], g.pos[0] - mx, g.pos[0] + mx), spec.restY, clamp(p[2], g.pos[2] - mz, g.pos[2] + mz)], goal: mine, offTable: false };

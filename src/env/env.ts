@@ -211,7 +211,7 @@ export class TaskEnv implements Env {
     }
     s.grip = g;
     if (isItem(s.held)) s.items[s.held] = [s.tip[0], s.tip[1], s.tip[2]];
-    else if (s.held) s.cubes[s.held] = [s.tip[0], s.tip[1], s.tip[2]];
+    else if (s.held) s.cubes[s.held as CubeColor] = [s.tip[0], s.tip[1], s.tip[2]];
 
     // reach progress
     if (s.layout === 'reach' && s.reachIndex < s.reachTargets.length) {

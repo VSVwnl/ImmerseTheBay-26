@@ -1,102 +1,12 @@
 // Arm model: base, turret, two links, wrist, and a tool. Driven by joint angles from ik.ts.
 // Built for one set of parts; the app builds a new one when parts change. The standard robot
 // (Compact + Gripper) builds exactly the original meshes.
-// To add a tool look, add a builder to TOOL_BUILDERS (simple primitives only).
+// Each tool's meshes come from its part file (src/workshop/parts/).
 import * as THREE from 'three';
-import { ARM_BASE, FINGER_ANIM_S, FINGER_GAP_CLOSED, FINGER_GAP_OPEN, TOOL_LEN, WORKSHOP } from '../config';
-const WIDE = WORKSHOP.wideGap;
+import { ARM_BASE, FINGER_ANIM_S, WORKSHOP } from '../config';
 import type { Joints } from './ik';
-import { ARMS, linksFor, shoulderHeight, STANDARD_ROBOT, type RobotParts, type ToolKind } from './parts';
-
-interface Mats {
-  orange: THREE.Material;
-  dark: THREE.Material;
-  steel: THREE.Material;
-}
-/** What the grip animation moves: two fingers (gap open/closed), or a pad that squashes. */
-interface ToolRig {
-  fingers: THREE.Mesh[];
-  gapOpen: number;
-  gapClosed: number;
-  pad: THREE.Object3D | null;
-}
-
-function fingerRig(tool: THREE.Group, m: Mats, palmW: number, gapOpen: number, gapClosed: number, fingerLen = 0.065): ToolRig {
-  const palm = new THREE.Mesh(new THREE.BoxGeometry(palmW, 0.035, 0.02), m.dark);
-  palm.position.z = TOOL_LEN - 0.055;
-  tool.add(palm);
-  const fingers: THREE.Mesh[] = [];
-  for (let i = 0; i < 2; i++) {
-    const f = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.03, fingerLen), m.steel);
-    f.position.z = TOOL_LEN - 0.012;
-    fingers.push(f);
-    tool.add(f);
-  }
-  return { fingers, gapOpen, gapClosed, pad: null };
-}
-
-function stem(tool: THREE.Group, m: Mats, r = 0.012): void {
-  const s = new THREE.Mesh(new THREE.CylinderGeometry(r, r, TOOL_LEN - 0.07, 16), m.steel);
-  s.rotation.x = Math.PI / 2;
-  s.position.z = 0.06 + (TOOL_LEN - 0.07) / 2;
-  tool.add(s);
-}
-
-const TOOL_BUILDERS: Record<ToolKind, (tool: THREE.Group, m: Mats) => ToolRig> = {
-  gripper: (tool, m) => fingerRig(tool, m, 0.11, FINGER_GAP_OPEN, FINGER_GAP_CLOSED),
-  scoop: (tool, m) => {
-    // stem to a shallow open tray at the tip: a flat bottom with low walls on three sides
-    stem(tool, m);
-    const bottom = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.065, 0.004), m.steel);
-    bottom.position.z = TOOL_LEN;
-    tool.add(bottom);
-    for (const [w, h, x, y] of [
-      [0.075, 0.004, 0, 0.0305],
-      [0.004, 0.065, 0.0355, 0],
-      [0.004, 0.065, -0.0355, 0],
-    ] as [number, number, number, number][]) {
-      const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.02), m.orange);
-      wall.position.set(x, y, TOOL_LEN - 0.01);
-      tool.add(wall);
-    }
-    return { fingers: [], gapOpen: 0, gapClosed: 0, pad: null };
-  },
-  wide: (tool, m) => {
-    const rig = fingerRig(tool, m, WIDE.open + 0.05, WIDE.open, WIDE.closed, 0.1);
-    for (const f of rig.fingers) f.position.z = TOOL_LEN - 0.03; // longer fingers reach down the crate's sides
-    return rig;
-  },
-  suction: (tool, m) => {
-    // stem down to a flat round rubber pad whose face is at the tip point
-    stem(tool, m);
-    const rubber = new THREE.MeshStandardMaterial({ color: 0x1d1f23, roughness: 0.9, metalness: 0 });
-    const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.03, 0.014, 32), rubber);
-    pad.rotation.x = Math.PI / 2;
-    pad.position.z = TOOL_LEN - 0.007;
-    tool.add(pad);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.031, 0.004, 8, 32), m.orange);
-    ring.position.z = TOOL_LEN - 0.016;
-    tool.add(ring);
-    return { fingers: [], gapOpen: 0, gapClosed: 0, pad };
-  },
-  magnet: (tool, m) => {
-    // stem to a red electromagnet puck with a steel face at the tip point
-    stem(tool, m);
-    const red = new THREE.MeshStandardMaterial({ color: 0xc8322a, roughness: 0.5, metalness: 0.3 });
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.03, 28), red);
-    body.rotation.x = Math.PI / 2;
-    body.position.z = TOOL_LEN - 0.022;
-    tool.add(body);
-    const face = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.007, 28), m.steel);
-    face.rotation.x = Math.PI / 2;
-    face.position.z = TOOL_LEN - 0.0035;
-    tool.add(face);
-    const coil = new THREE.Mesh(new THREE.TorusGeometry(0.033, 0.003, 6, 28), m.orange);
-    coil.position.z = TOOL_LEN - 0.03;
-    tool.add(coil);
-    return { fingers: [], gapOpen: 0, gapClosed: 0, pad: face };
-  },
-};
+import { ARMS, linksFor, shoulderHeight, STANDARD_ROBOT, TOOLS, type RobotParts } from './parts';
+import type { ToolMats as Mats, ToolRig } from '../workshop/types';
 
 export class ArmModel {
   readonly root = new THREE.Group();
@@ -160,7 +70,7 @@ export class ArmModel {
     flange.rotation.x = Math.PI / 2;
     flange.position.z = 0.035;
     this.tool.add(flange);
-    this.rig = (TOOL_BUILDERS[parts.tool] ?? TOOL_BUILDERS.gripper)(this.tool, m);
+    this.rig = (TOOLS[parts.tool] ?? TOOLS.gripper).build(this.tool, m);
     this.gap = this.rig.gapOpen;
     this.setGap(this.rig.gapOpen);
     this.root.traverse((o) => {

@@ -20,6 +20,36 @@ Decisions (made without asking):
   Challenges are data (`src/env/workshop.ts`): a list of steps (object, spawn, goal), so two-step challenges need
   no new code.
 
+Items (commit = where it was added; later moved to one file each in `src/workshop/parts/` and
+`src/workshop/challenges/`):
+
+| Item | Type | Commit | Parts it needs | Configurations that solve it |
+|---|---|---|---|---|
+| Compact arm | part (arm) | 9e3ca17 (standard) | | |
+| Long arm | part (arm) | 9e3ca17 | | |
+| Gripper | part (tool) | 9e3ca17 (standard) | | |
+| Suction | part (tool) | 9e3ca17 | | |
+| Plate | challenge | 9e3ca17 | Suction + an arm that reaches the table | Compact+Suction, Long+Suction, Heavy-duty+Suction |
+| Far | challenge | 9e3ca17 | Long + Gripper or Magnet | Long+Gripper, Long+Magnet |
+| Heavy | challenge | 9e3ca17 | Compact or Heavy-duty + Gripper or Magnet | Compact+Gripper, Compact+Magnet, Heavy-duty+Gripper, Heavy-duty+Magnet |
+| Magnet | part (tool) | 96bdd6e | | |
+| Washer | challenge | 96bdd6e | Magnet | Compact+Magnet, Long+Magnet, Heavy-duty+Magnet |
+| Wide gripper | part (tool) | 751b458 | | |
+| Crate | challenge | 751b458 | Wide gripper + Compact or Heavy-duty | Compact+Wide, Heavy-duty+Wide |
+| Heavy-duty arm | part (arm) | c72c181 | | |
+| Anvil | challenge | c72c181 | Heavy-duty + Gripper or Magnet | Heavy-duty+Gripper, Heavy-duty+Magnet |
+| Scoop | part (tool) | 161dc39 | | |
+| Marbles | challenge | 161dc39 | Scoop | Compact+Scoop, Long+Scoop, Heavy-duty+Scoop |
+
+Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
+- Moved every part and challenge into its own file (registry in `src/workshop/registry.ts`). Numbers stay in
+  `src/config.ts` (project rule). Each challenge declares `solutions`; a test checks them against the real rules
+  by solving every challenge with every robot.
+- A challenge hides itself when none of its solving robots can be built from `ENABLED_PARTS` (tested by
+  switching each part off in turn).
+- Tall base + Shelf were working but not committed when the new rules arrived; set aside and re-added as two
+  separate `ADD` commits after the restructure.
+
 Additions:
 1. Groundwork: switches, part/challenge registries, random world per attempt, modular test folders.
    Interesting because every later part or challenge is one data entry plus one row of expected outcomes, and
