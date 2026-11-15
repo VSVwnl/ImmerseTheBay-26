@@ -368,7 +368,9 @@ both policies on the same seeds; all 160 episodes ran on a live wall. Run once; 
 - Multiply in the headset not tried; dataset-camera render in XR (second pass at replay midpoints) unverified.
 
 ### Orbis minutes used
-- **76.8 min over 20 sessions** by 07:58 PST (+6.1 min, 2 sessions: `modular` headset test, Sun 07:51:47-07:54:09
+- **78.2 min over 22 sessions** by 08:19 PST (+1.4 min, 2 sessions: headset check of the eye-level and world-button
+  changes, Sun 08:17:11-08:17:16 and 08:17:16-08:18:36 PST, both ended by page reloads).
+  76.8 min over 20 sessions by 07:58 PST (+6.1 min, 2 sessions: `modular` headset test, Sun 07:51:47-07:54:09
   and 07:54:10-07:57:50 PST by the Quest console; both ended by page reloads for the eye-level fix).
   70.7 min over 18 sessions by 07:38 PST (+15.5 min, 2 sessions: headset smoke test of the `codex/backlot-recovery`
   branch, Sun 07:20:53-07:26:01 and 07:27:36-07:38:02 PST by the Quest console; the second was left running after the
