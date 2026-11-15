@@ -146,6 +146,17 @@ Additions:
    Interesting because the normal suction, the obvious answer for flat things, is now the wrong size ("Pad too
    small for something this big"); flat rules out grippers, glass rules out the magnet. Only Big suction.
 
+Final check (Sun 13:56-14:14 UTC, full suite once, started early on request):
+- Typecheck clean. Vitest 1115/1115 (incl. 600+ modular Workshop tests and 6 new voice tests). pytest 19/19.
+- Playwright: 20 passed, 1 skipped (no-key test skips when a key exists), 2 failed: Scrap passed on rerun (the
+  known intermittent "tip did not arrive" mouse-helper flake); Shelf failed again because the test carried the jar
+  at 1.45 m, a point that now lies under the taller desktop side panel; carrying at 1.15 m fixed it (1225a80).
+  Note for desktop players: very high carry points can be hidden under the side panel.
+- Voice ("Say a world") in the Quest Browser, tested by the developer: it stuck on "Listening…" and could not be
+  used again after picking a preset. Fixed (916a159): listening ends after 8 s, cancels on a second press or a
+  preset, and says why. After the fix the headset shows "Didn't catch that: try again, a bit louder": the Quest
+  Browser's speech recognition returns no phrase. Not solved; the world buttons are the reliable path.
+
 Live Orbis check of the Workshop (Sun ~03:55 PST, `scripts/workshop-live-check.mjs`, 2 sessions, 0.6 min):
 - First try stayed on the stub: the dev server's pre-bundled Orbis SDK was stale ("reactor-wasm failed to load:
   Failed to fetch dynamically imported module .../node_modules/.vite/deps/reactor_wasm-...js"). Restarting the dev
@@ -357,7 +368,7 @@ both policies on the same seeds; all 160 episodes ran on a live wall. Run once; 
 - Multiply in the headset not tried; dataset-camera render in XR (second pass at replay midpoints) unverified.
 
 ### Orbis minutes used
-- **49.1 min over 14 sessions** (+0.6 min, 2 sessions: Workshop live check, Sun ~03:55 PST). Before that: **48.5 min over 12 sessions** (Sat 3:15-6:00 PM; +2.5 min from the accidental `?Orbis=0` headset tab), by our own log (`curl http://localhost:5173/api/usage`):
+- **55.2 min over 16 sessions** by 06:15 PST (+6.1 min, 2 sessions: the developer's headset voice test, Sun ~06:00 PST). 49.1 min over 14 sessions after the Workshop live check (+0.6 min, 2 sessions, Sun ~03:55 PST). Before that: **48.5 min over 12 sessions** (Sat 3:15-6:00 PM; +2.5 min from the accidental `?Orbis=0` headset tab), by our own log (`curl http://localhost:5173/api/usage`):
   testing and debugging ~12 min (live check, trials, probe, two stalled trials ~7 min, one aborted multi build
   2.2 min), `multi` dataset ~25 min, `single` ~7 min, evaluation 3 min. The Reactor dashboard is authoritative.
 
