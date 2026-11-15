@@ -49,7 +49,7 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Scrap (2 steps, one robot) | challenge | ef6c4ca | Long + Magnet | Long+Magnet |
 | Restock (2 steps, swap arms) | challenge | 1c78b26 | Extra-long, then Heavy-duty | no single robot; step 1: Extra-long+Gripper/Suction/Soft, then step 2: Heavy-duty+Gripper/Magnet |
 | Hook | part (tool) | d53f22b | | |
-| Bucket | challenge | BUCKET_COMMIT | Hook + Compact or Heavy-duty | Compact+Hook, Heavy-duty+Hook |
+| Bucket | challenge | ba2aad1 | Hook + Compact or Heavy-duty | Compact+Hook, Heavy-duty+Hook |
 | Dinner (2 steps, swap) | challenge | 03d29e7 | Suction, then Gripper or Magnet on Compact/Heavy-duty | no single robot; step 1: Compact/Long/Heavy-duty+Suction, then step 2: Compact/Heavy-duty+Gripper/Magnet |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
