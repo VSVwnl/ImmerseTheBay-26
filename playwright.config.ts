@@ -1,5 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
+const port = Number(process.env.E2E_PORT ?? 5173);
+const baseURL = `http://127.0.0.1:${port}`;
+
 export default defineConfig({
   testDir: 'e2e',
   timeout: 180_000,
@@ -7,14 +10,14 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:5173',
-    headless: !process.env.HEADED ? false : false,
+    baseURL,
+    headless: !process.env.HEADED,
     viewport: { width: 1280, height: 800 },
-    launchOptions: { args: ['--autoplay-policy=no-user-gesture-required', '--use-angle=d3d11'] },
+    launchOptions: { args: ['--autoplay-policy=no-user-gesture-required', '--enable-unsafe-swiftshader'] },
   },
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
+    command: `npm run dev -- --port ${port}`,
+    url: baseURL,
     reuseExistingServer: true,
     timeout: 60_000,
   },

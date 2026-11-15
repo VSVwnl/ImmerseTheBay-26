@@ -230,6 +230,48 @@ describe('OrbisWorld', () => {
     expect(o.status()).toBe('idle');
   });
 
+  it('does not create a Reactor session when a token arrives after disconnect', async () => {
+    const before = lastReactor;
+    let finishMint!: () => void;
+    vi.stubGlobal('fetch', () => new Promise(resolve => {
+      finishMint = () => resolve({ ok: true, json: async () => ({ jwt: 'jwt-1', expires_at: Date.now() / 1000 + 3600 }) });
+    }));
+    const { OrbisWorld } = await import('../src/world/orbis');
+    const world = new OrbisWorld();
+    const connecting = world.connect();
+    await world.disconnect();
+    finishMint();
+    await connecting;
+    expect(lastReactor).toBe(before);
+    expect(sent).toEqual([]);
+    expect(world.status()).toBe('idle');
+  });
+
+  it('closes a late SDK acquisition and refuses commands or ready events from the closed connection', async () => {
+    let finishAcquisition!: () => void;
+    let markStarted!: () => void;
+    const started = new Promise<void>(resolve => { markStarted = resolve; });
+    const connect = vi.spyOn(FakeReactor.prototype, 'connect').mockImplementationOnce(function () {
+      markStarted();
+      return new Promise<void>(resolve => { finishAcquisition = resolve; });
+    });
+    try {
+      const { OrbisWorld } = await import('../src/world/orbis');
+      const world = new OrbisWorld();
+      await world.setWorld(def('warehouse'), 'fresh');
+      const connecting = world.connect();
+      await started;
+      const old = lastReactor!;
+      await world.disconnect();
+      finishAcquisition();
+      await connecting;
+      old.emit('statusChanged', 'ready');
+      old.emit('message', { type: 'generation_complete', data: {} });
+      expect(cmds()).toEqual(['__disconnect', '__disconnect']);
+      expect(world.status()).toBe('idle');
+    } finally { connect.mockRestore(); }
+  });
+
   it('an unrecoverable error reports error status', async () => {
     const onStatus = vi.fn();
     const { OrbisWorld } = await import('../src/world/orbis');

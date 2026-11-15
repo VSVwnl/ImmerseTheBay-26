@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { REACH_SUCCESS_DIST } from '../src/config';
 
 export type V3 = [number, number, number];
 
@@ -60,7 +61,22 @@ export async function toggleGrip(page: Page) {
 }
 
 export async function waitPhase(page: Page, ph: string, timeout = 15000) {
-  await page.waitForFunction((want) => (window as any).__backlot.challenges.phase === want, ph, { timeout });
+  await page.waitForFunction((want) => (window as any).__backlot?.challenges?.phase === want, ph, { timeout });
+}
+
+/** Wait for the challenge that needs input. The brief success interstitial can pass while a screenshot is taken. */
+export async function waitForChallenge(page: Page, layout: 'reach' | 'place' | 'sort') {
+  await page.waitForFunction(want => {
+    const app = (window as any).__backlot;
+    return app?.challenges.phase === 'running' && app.state().layout === want;
+  }, layout, { timeout: 20_000 });
+}
+
+export async function playReach(page: Page) {
+  await waitForChallenge(page, 'reach');
+  const s = await state(page);
+  // The arm freezes as soon as the final reach succeeds. Use its actual stopping tolerance.
+  for (const point of s.reachTargets) await moveTo(page, point, REACH_SUCCESS_DIST);
 }
 
 export const BIN = { red: [-0.3, 0.75, -0.55] as V3, blue: [0.3, 0.75, -0.55] as V3 };
@@ -81,15 +97,11 @@ export async function pickAndPlace(page: Page, cube: V3, bin: V3) {
 /** Play all three challenges with the mouse from the idle screen. */
 export async function playAll(page: Page) {
   await page.locator('.panel-side button[data-id="start"], .panel-side button[data-id="again"]').first().click();
-  await waitPhase(page, 'running');
+  await playReach(page);
+  await waitForChallenge(page, 'place');
   let s = await state(page);
-  for (const t of s.reachTargets) await moveTo(page, t, 0.038);
-  await waitPhase(page, 'between');
-  await waitPhase(page, 'running');
-  s = await state(page);
   await pickAndPlace(page, s.cubes.red!, BIN.red);
-  await waitPhase(page, 'between');
-  await waitPhase(page, 'running');
+  await waitForChallenge(page, 'sort');
   s = await state(page);
   await pickAndPlace(page, s.cubes.red!, BIN.red);
   s = await state(page);

@@ -30,7 +30,9 @@ SAFE = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}$")
 MAX_STEPS_PER_EPISODE = 1000
 # Browsers always send Origin: only the dev server's pages may connect. None = non-browser clients (tests, scripts),
 # which a web page cannot impersonate.
-ALLOWED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173", None]
+from local_origins import local_origins
+
+ALLOWED_ORIGINS = local_origins()
 
 
 def is_smoke(dataset: str) -> bool:
@@ -140,10 +142,13 @@ def writer_dataset(msg: dict, reply: dict) -> str:
 async def serve(port: int, root: Path, ready: asyncio.Event | None = None, stop: asyncio.Event | None = None):
     import websockets
 
+    # On dual-stack hosts, port 0 can pick a different port for each address.
+    host = "127.0.0.1" if port == 0 else "localhost"
     async with websockets.serve(
-        lambda ws: handle(ws, root), "localhost", port, max_size=8 * 1024 * 1024, origins=ALLOWED_ORIGINS
-    ):
-        print(f"[data] listening on ws://localhost:{port}, writing to {root}", flush=True)
+        lambda ws: handle(ws, root), host, port, max_size=8 * 1024 * 1024, origins=ALLOWED_ORIGINS
+    ) as server:
+        bound_port = server.sockets[0].getsockname()[1]
+        print(f"[data] listening on ws://localhost:{bound_port}, writing to {root}", flush=True)
         if ready:
             ready.set()
         await (stop.wait() if stop else asyncio.Future())

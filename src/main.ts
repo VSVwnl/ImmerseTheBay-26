@@ -22,13 +22,15 @@ declare global {
   if (changed) history.replaceState(null, '', `${location.pathname}?${q}${location.hash}`);
 }
 
-const mode = new URLSearchParams(location.search).get('mode') ?? 'app';
+const mode = new URLSearchParams(location.search).get('mode') ?? 'recovery';
 const core = createCore();
 
 if (mode === 'factory') {
   void import('./factory/factory').then((m) => m.startFactory(core));
 } else if (mode === 'eval') {
   void import('./policy/eval').then((m) => m.startEval(core));
-} else {
+} else if (mode === 'app') {
   void import('./app').then((m) => m.startApp(core));
+} else {
+  void import('./recovery/app').then((m) => m.startRecovery(core));
 }

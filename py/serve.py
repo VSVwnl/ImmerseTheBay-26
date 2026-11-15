@@ -22,7 +22,9 @@ import torch
 
 from policy_model import IMG, load_checkpoint, pick_device, preprocess_images, preprocess_states, to_action
 
-ALLOWED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173", None]
+from local_origins import local_origins
+
+ALLOWED_ORIGINS = local_origins()
 
 
 class PolicyBank:
@@ -66,8 +68,10 @@ async def handle(ws, bank: PolicyBank) -> None:
 async def serve(bank: PolicyBank, port: int, ready: asyncio.Event | None = None, stop: asyncio.Event | None = None):
     import websockets
 
-    async with websockets.serve(lambda ws: handle(ws, bank), "localhost", port, max_size=4 * 1024 * 1024, origins=ALLOWED_ORIGINS):
-        print(f"[serve] policies {list(bank.models)} on ws://localhost:{port} ({bank.device})", flush=True)
+    host = "127.0.0.1" if port == 0 else "localhost"
+    async with websockets.serve(lambda ws: handle(ws, bank), host, port, max_size=4 * 1024 * 1024, origins=ALLOWED_ORIGINS) as server:
+        bound_port = server.sockets[0].getsockname()[1]
+        print(f"[serve] policies {list(bank.models)} on ws://localhost:{bound_port} ({bank.device})", flush=True)
         if ready:
             ready.set()
         await (stop.wait() if stop else asyncio.Future())

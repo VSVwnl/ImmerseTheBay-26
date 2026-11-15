@@ -37,6 +37,8 @@ const log = (...a: unknown[]) => console.info('[orbis]', ...a);
 export class OrbisWorld implements World {
   private video: HTMLVideoElement;
   private reactor: Reactor | null = null;
+  private connection: AbortController | null = null;
+  private opening: Promise<void> | null = null;
   private st: WorldStatus = 'idle';
   private rstatus: ReactorStatus = 'disconnected';
   private def: WorldDef | null = null;
@@ -61,7 +63,6 @@ export class OrbisWorld implements World {
     this.video.muted = true;
     this.video.playsInline = true;
     this.video.autoplay = true;
-    this.watchFrames();
   }
 
   private set(s: WorldStatus, detail?: string) {
@@ -91,42 +92,62 @@ export class OrbisWorld implements World {
     }
   }
 
-  private watchFrames() {
+  private watchFrames(signal: AbortSignal) {
     const v = this.video as HTMLVideoElement & {
       requestVideoFrameCallback?: (cb: (now: number, meta: { mediaTime: number }) => void) => number;
     };
+    let frameRequest = 0;
     const onFrame = () => {
+      if (signal.aborted) return;
       if (this.reactor && this.awaitingFrames && !this.awaitingGen && performance.now() > this.framesAfterMs && this.rstatus === 'ready' && !this.frameIsBlank()) {
         this.awaitingFrames = false;
         this.set('live');
       }
-      v.requestVideoFrameCallback!(onFrame);
+      frameRequest = v.requestVideoFrameCallback?.(onFrame) ?? 0;
     };
-    if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(onFrame);
+    if (v.requestVideoFrameCallback) {
+      frameRequest = v.requestVideoFrameCallback(onFrame);
+      signal.addEventListener('abort', () => v.cancelVideoFrameCallback?.(frameRequest), { once: true });
+    }
     else {
       // fallback: poll readyState / currentTime
       let lastT = -1;
-      setInterval(() => {
+      const timer = setInterval(() => {
         if (v.readyState >= 2 && v.currentTime !== lastT) {
           lastT = v.currentTime;
           onFrame();
         }
       }, 200);
+      signal.addEventListener('abort', () => clearInterval(timer), { once: true });
     }
   }
 
-  async connect(): Promise<void> {
-    if (this.reactor) return;
+  connect(): Promise<void> {
+    if (this.opening) return this.opening;
+    if (this.reactor) return Promise.resolve();
+    const connection = new AbortController();
+    this.connection = connection;
+    this.opening = this.open(connection.signal).finally(() => {
+      if (this.connection === connection) this.opening = null;
+    });
+    return this.opening;
+  }
+
+  private async open(signal: AbortSignal): Promise<void> {
     this.set('loading', 'requesting token');
     const jwt = await getToken();
+    // Minting a JWT does not create a billable session. Never connect after Local rehearsal wins.
+    if (signal.aborted) return;
     const reactor = new Reactor({ modelName: ORBIS_MODEL });
     this.reactor = reactor;
+    this.watchFrames(signal);
     reactor.on('trackReceived', (name: string, _track: MediaStreamTrack, stream: MediaStream) => {
-      if (name !== 'main_video') return;
+      if (signal.aborted || name !== 'main_video') return;
       this.video.srcObject = stream;
       void this.video.play().catch(() => {});
     });
     reactor.on('statusChanged', (s: ReactorStatus) => {
+      if (signal.aborted) return;
       this.rstatus = s;
       log('reactor', s);
       if (s === 'waiting' || s === 'connecting') this.set('loading', s);
@@ -136,27 +157,31 @@ export class OrbisWorld implements World {
       }
       if (s === 'disconnected' && this.st !== 'idle') this.set('error', 'disconnected');
     });
-    reactor.on('message', (m: ReactorMessage) => this.onMessage(m));
+    reactor.on('message', (m: ReactorMessage) => { if (!signal.aborted) this.onMessage(m); });
     reactor.on('error', (e: ReactorError) => {
+      if (signal.aborted) return;
       if (e.operation === 'sendCommand') {
         log('command refused', e.code, e.message);
         return;
       }
       this.lastError = `${e.operation}: [${e.code}] ${e.message}`;
       console.warn('[orbis] error', this.lastError, 'recoverable', e.recoverable);
-      if (e.recoverable) void reactor.reconnect().catch(() => this.fail(this.lastError));
+      if (e.recoverable) void reactor.reconnect().then(() => {
+        if (signal.aborted) return reactor.disconnect();
+      }).catch(() => { if (!signal.aborted) this.fail(this.lastError); });
       else this.fail(this.lastError);
     });
 
-    const ready = new Promise<void>((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error('timed out waiting for Orbis session (180 s)')), 180_000);
-      const check = (s: ReactorStatus) => {
-        if (s === 'ready') {
-          clearTimeout(t);
-          resolve();
-        }
+    const ready = new Promise<boolean>((resolve) => {
+      const done = (success: boolean) => {
+        clearTimeout(timer);
+        signal.removeEventListener('abort', cancel);
+        resolve(success);
       };
-      reactor.on('statusChanged', check);
+      const cancel = () => done(false);
+      const timer = setTimeout(cancel, 180_000);
+      signal.addEventListener('abort', cancel, { once: true });
+      reactor.on('statusChanged', (s: ReactorStatus) => { if (s === 'ready') done(true); });
     });
     const stateSeen = new Promise<void>((resolve) => {
       const h = (m: ReactorMessage) => {
@@ -164,11 +189,23 @@ export class OrbisWorld implements World {
       };
       reactor.on('message', h);
     });
-    await reactor.connect(jwt);
-    if (this.rstatus !== 'ready') await ready;
+    try {
+      await reactor.connect(jwt);
+    } finally {
+      // The SDK can finish acquiring a session after a concurrent disconnect request.
+      if (signal.aborted) await reactor.disconnect().catch(() => {});
+    }
+    if (signal.aborted) return;
+    if (this.rstatus !== 'ready' && !(await ready)) {
+      if (signal.aborted) return;
+      throw new Error('timed out waiting for Orbis session (180 s)');
+    }
     await Promise.race([stateSeen, new Promise((r) => setTimeout(r, 3000))]);
+    if (signal.aborted) return;
     if (this.availableRes.includes('1080p')) await reactor.sendCommand('set_resolution', { resolution: '1080p' });
+    if (signal.aborted) return;
     await reactor.sendCommand('set_audio_enabled', { audio_enabled: false });
+    if (signal.aborted) return;
     this.setupDone = true;
     if (this.def) await this.startFresh(this.def);
   }
@@ -210,8 +247,11 @@ export class OrbisWorld implements World {
     this.awaitingGen = true; // measured: ~1.3 s of old-world frames, then ~4 s black, then the new world
     this.set('loading', 'starting world');
     await r.sendCommand('reset', {});
+    if (r !== this.reactor) return;
     await r.sendCommand('set_prompt', { prompt: def.prompt });
+    if (r !== this.reactor) return;
     await r.sendCommand('start', {});
+    if (r !== this.reactor) return;
     this.started = true;
     this.lastSteerMs = performance.now();
     // frames from before the reset may still be in flight; ignore the first ~0.5 s
@@ -259,6 +299,20 @@ export class OrbisWorld implements World {
     await this.reactor.sendCommand('set_prompt', { prompt });
   }
 
+  /** Send one incident steer in the current generation. A successful return means the command
+   *  was sent, even if we had to wait for the model's steering interval. */
+  async steerIncident(prompt: string, signal: AbortSignal): Promise<void> {
+    const reactor = this.reactor;
+    const delay = this.lastSteerMs + WORLD_MIN_INTERVAL_S * 1000 - performance.now();
+    if (delay > 0) await new Promise<void>((resolve) => window.setTimeout(resolve, delay));
+    signal.throwIfAborted();
+    if (!reactor || reactor !== this.reactor || this.rstatus !== 'ready' || this.st !== 'live') {
+      throw new Error('The live Orbis stream is unavailable.');
+    }
+    this.lastSteerMs = performance.now();
+    await reactor.sendCommand('set_prompt', { prompt });
+  }
+
   getVideo(): HTMLVideoElement {
     return this.video;
   }
@@ -282,8 +336,16 @@ export class OrbisWorld implements World {
   }
 
   async disconnect(): Promise<void> {
+    this.connection?.abort();
+    this.connection = null;
+    this.opening = null;
     const r = this.reactor;
     this.reactor = null;
+    this.rstatus = 'disconnected';
+    this.video.srcObject = null;
+    this.queued = null;
+    clearTimeout(this.queueTimer);
+    this.queueTimer = 0;
     clearInterval(this.usageTimer);
     if (this.readyAtMs) {
       const body = JSON.stringify({ key: this.usageKey, readyAt: this.readyAtMs, until: Date.now() });

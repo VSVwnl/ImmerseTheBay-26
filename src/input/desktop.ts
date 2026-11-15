@@ -51,8 +51,8 @@ export class DesktopInput {
   };
 
   private onWheel = (e: WheelEvent) => {
-    e.preventDefault();
     if (!this.enabled) return;
+    e.preventDefault();
     this.raise(-e.deltaY * WHEEL_STEP);
   };
 

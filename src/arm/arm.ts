@@ -1,7 +1,8 @@
 // Arm model: base, turret, two links, wrist, two-finger gripper. Driven by joint angles from ik.ts.
 import * as THREE from 'three';
-import { ARM_BASE, FINGER_ANIM_S, FINGER_GAP_CLOSED, FINGER_GAP_OPEN, L1, L2, SHOULDER_H, TOOL_LEN } from '../config';
+import { ARM_BASE, FINGER_GAP_OPEN, L1, L2, SHOULDER_H, TOOL_LEN } from '../config';
 import type { Joints } from './ik';
+import { advanceGap, FINGER, fingerOffset, PALM } from './gripper';
 
 export class ArmModel {
   readonly root = new THREE.Group();
@@ -55,12 +56,14 @@ export class ArmModel {
     flange.rotation.x = Math.PI / 2;
     flange.position.z = 0.035;
     this.tool.add(flange);
-    const palm = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.035, 0.02), dark);
-    palm.position.z = TOOL_LEN - 0.055;
+    const palm = new THREE.Mesh(new THREE.BoxGeometry(...PALM.size), dark);
+    palm.name = 'gripper-palm';
+    palm.position.z = TOOL_LEN - PALM.aboveTip;
     this.tool.add(palm);
     for (let i = 0; i < 2; i++) {
-      const f = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.03, 0.065), steel);
-      f.position.z = TOOL_LEN - 0.012;
+      const f = new THREE.Mesh(new THREE.BoxGeometry(...FINGER.size), steel);
+      f.name = i === 0 ? 'gripper-left' : 'gripper-right';
+      f.position.z = TOOL_LEN - FINGER.aboveTip;
       this.fingers.push(f);
       this.tool.add(f);
     }
@@ -80,16 +83,13 @@ export class ArmModel {
 
   private setGap(g: number): void {
     this.gap = g;
-    this.fingers[0].position.x = -(g / 2 + 0.006);
-    this.fingers[1].position.x = g / 2 + 0.006;
+    this.fingers[0].position.x = -fingerOffset(g);
+    this.fingers[1].position.x = fingerOffset(g);
   }
 
   /** Animate the finger gap toward open/closed over FINGER_ANIM_S. */
   updateGrip(closed: boolean, dt: number): void {
-    const target = closed ? FINGER_GAP_CLOSED : FINGER_GAP_OPEN;
-    const rate = (FINGER_GAP_OPEN - FINGER_GAP_CLOSED) / FINGER_ANIM_S;
-    const d = target - this.gap;
-    const step = Math.sign(d) * Math.min(Math.abs(d), rate * dt);
-    if (step !== 0) this.setGap(this.gap + step);
+    const next = advanceGap(this.gap, closed, dt);
+    if (next !== this.gap) this.setGap(next);
   }
 }

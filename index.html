@@ -46,6 +46,100 @@
     <div id="hud"></div>
     <div id="toolbar"></div>
     <div id="help">Mouse: move arm &middot; wheel or W/S: up/down &middot; click or Space: grip &middot; 1&ndash;6: world</div>
+    <template id="recovery-template">
+      <main class="rc-console" aria-label="Parcel recovery operator console">
+        <header class="rc-nav">
+          <div class="rc-brand"><span class="rc-mark" aria-hidden="true"><i></i><b></b></span>Backlot</div>
+          <span class="rc-nav-divider" aria-hidden="true"></span>
+          <span class="rc-nav-label rc-operator-label">Operator console</span><span class="rc-nav-label rc-audience-label">Spectator view</span>
+          <div class="rc-nav-actions">
+            <a class="rc-spectator-link" href="?mode=spectator" target="_blank" rel="noopener">Spectator view <span aria-hidden="true">↗</span></a>
+            <button type="button" class="rc-quest" data-action="enter-xr"><span class="rc-visors" aria-hidden="true"></span>Enter VR</button>
+          </div>
+        </header>
+        <div class="rc-page">
+          <div class="rc-mast">
+            <div><h1>Parcel recovery<span aria-hidden="true">.</span></h1><p class="rc-operator-label">Generate a blockage, teach a route and replay the recovery.</p><p class="rc-audience-label">Follow the operator’s incident and compare each robot run.</p></div>
+            <div class="rc-session-controls">
+              <button type="button" class="rc-text-button" data-action="practice">Local rehearsal</button>
+              <button type="button" class="rc-neutral" data-action="reset"><span aria-hidden="true">↺</span> Reset</button>
+            </div>
+          </div>
+          <div class="rc-layout">
+            <section class="rc-workcell" aria-labelledby="rc-cell-title">
+              <div class="rc-panel-head rc-dark-head">
+                <h2 id="rc-cell-title"><span class="rc-glyph-cell" aria-hidden="true"></span>Robot workcell</h2>
+                <span class="rc-micro rc-source"><i></i> Simulation</span>
+              </div>
+              <div class="rc-stage" data-el="stage" aria-label="Interactive robot workcell"></div>
+              <div class="rc-run">
+                <div class="rc-run-copy">
+                  <div class="rc-phase"><span data-el="phase-dot"></span><span data-el="phase">Standby</span></div>
+                  <h3 data-el="title" aria-live="polite">Set up an incident</h3>
+                  <p data-el="caption">Steer the infeed or start a local rehearsal.</p>
+                </div>
+                <div class="rc-run-actions" data-el="run-actions">
+                  <button type="button" class="rc-action" data-action="baseline" hidden>Run baseline <span aria-hidden="true">→</span></button>
+                  <button type="button" class="rc-action" data-action="teach" hidden>Teach recovery <span aria-hidden="true">→</span></button>
+                  <button type="button" class="rc-action" data-action="save" hidden>Save demonstration <span aria-hidden="true">✓</span></button>
+                  <button type="button" class="rc-action" data-action="replay" hidden>Replay skill <span aria-hidden="true">▷</span></button>
+                  <button type="button" class="rc-action rc-secondary-action" data-action="next" hidden>Next incident <span aria-hidden="true">→</span></button>
+                </div>
+              </div>
+              <div class="rc-input-guide"><span class="rc-hint-symbol" aria-hidden="true">⌖</span><span data-el="input">Mouse moves the arm · Wheel or W/S changes height · Click or Space grips</span></div>
+            </section>
+            <aside class="rc-director" aria-labelledby="rc-director-title">
+              <div class="rc-panel-head"><h2 id="rc-director-title">Incident generator</h2><span class="rc-mode" data-el="mode">Local</span></div>
+              <div class="rc-preview"><canvas data-el="feed" width="384" height="216" role="img" aria-label="Infeed camera preview"></canvas>
+                <div class="rc-feed-stamp"><span class="rc-aperture" aria-hidden="true"></span><span data-el="feed-stamp">Workcell plan</span></div>
+                <div class="rc-crosshairs" aria-hidden="true"></div>
+              </div>
+              <div class="rc-director-body">
+                <div class="rc-infeed-label"><span data-el="source">Local infeed</span><span class="rc-micro" data-el="lane">Awaiting incident</span></div>
+                <p data-el="feed-caption">Steer the live infeed, then capture a clear frame.</p>
+                <div class="rc-steer" role="group" aria-label="Steer the world">
+                  <button type="button" class="rc-neutral" data-action="steer-left"><span aria-hidden="true">←</span> Steer left</button>
+                  <button type="button" class="rc-neutral" data-action="steer-right">Steer right <span aria-hidden="true">→</span></button>
+                </div>
+                <button type="button" class="rc-capture" data-action="capture"><span class="rc-shutter" aria-hidden="true"></span>Capture frame</button>
+                <div class="rc-confirm" role="group" aria-label="Confirm obstruction in captured frame" data-el="confirm" hidden>
+                  <span class="rc-micro">Confirm the blocked side</span>
+                  <div><button type="button" class="rc-neutral" data-action="confirm-left">Left side</button><button type="button" class="rc-neutral" data-action="confirm-right">Right side</button></div>
+                  <small>Frame unclear? Steer again to generate another.</small>
+                </div>
+                <button type="button" class="rc-neutral rc-retry" data-action="retry" hidden>Reconnect to Orbis</button>
+              </div>
+            </aside>
+          </div>
+          <section class="rc-results" aria-labelledby="rc-results-title">
+            <div class="rc-results-head"><div class="rc-results-heading"><h2 id="rc-results-title">Run comparison</h2><span class="rc-micro" data-el="run-count" hidden></span></div>
+              <div class="rc-data-actions"><button type="button" class="rc-text-button" data-action="resume" hidden>Load saved skill</button><button type="button" class="rc-neutral" data-action="download"><span aria-hidden="true">↓</span> Export episode</button></div>
+            </div>
+            <div class="rc-table-wrap"><table>
+              <thead><tr><th scope="col">Run</th><th scope="col">Completion</th><th scope="col">Path length</th><th scope="col">Collisions</th><th scope="col">Duration</th></tr></thead>
+              <tbody>
+                <tr data-result="clear" hidden><th scope="row"><span class="rc-trace nominal"></span>Clear station</th><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+                <tr data-result="baseline"><th scope="row"><span class="rc-trace baseline"></span>Baseline</th><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+                <tr data-result="demonstration" hidden><th scope="row"><span class="rc-trace human"></span>Human correction</th><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+                <tr data-result="recovery"><th scope="row"><span class="rc-trace recovered"></span>Skill replay</th><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+                <tr data-result="fresh" hidden><th scope="row"><span class="rc-trace fresh"></span>Fresh incident</th><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+              </tbody>
+            </table></div>
+            <div class="rc-skill" data-el="skill" hidden>
+              <div class="rc-timeline-main">
+                <div class="rc-timeline-title"><h3>Saved skill</h3><span class="rc-micro" data-el="timeline-count"></span></div>
+                <div class="rc-timeline" data-el="timeline" role="img" aria-label="Recorded demonstration phases">
+                  <div class="rc-bands" data-el="bands"></div><span class="rc-playhead" data-el="playhead" hidden></span>
+                </div>
+                <ol class="rc-phase-list" data-el="phase-list" aria-label="Demonstration phases"></ol>
+              </div>
+              <figure class="rc-evidence" data-el="evidence" hidden><img data-el="evidence-image" alt="Captured Orbis frame for the saved demonstration"><figcaption data-el="evidence-label">Captured incident</figcaption></figure>
+            </div>
+            <div class="rc-record" data-el="record" hidden><span data-el="incident"></span><span data-el="samples"></span></div>
+          </section>
+        </div>
+      </main>
+    </template>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

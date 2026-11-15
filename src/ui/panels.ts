@@ -248,6 +248,17 @@ export class Panel {
     if (fired) this.onPress(this.name, fired);
   }
 
+  /** Resolve a controller select ray against the same hit regions as near-hand poking. */
+  rayButton(ray: THREE.Raycaster): string | null {
+    if (!this.mesh.visible) return null;
+    const hit = ray.intersectObject(this.mesh, false)[0];
+    if (!hit) return null;
+    const point = this.mesh.worldToLocal(hit.point);
+    const rect = this.rects.find(r => !r.disabled &&
+      Math.abs(point.x-r.x) <= r.w/2 && Math.abs(point.y-r.y) <= r.h/2);
+    return rect?.id ?? null;
+  }
+
   /** World position of a button's center (tests use it to poke). */
   buttonWorld(id: string): THREE.Vector3 | null {
     const r = this.rects.find((q) => q.id === id);

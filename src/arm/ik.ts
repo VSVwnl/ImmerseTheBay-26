@@ -3,6 +3,15 @@
 import { ARM_BASE, L1, L2, SHOULDER_H, TOOL_LEN, type Vec3 } from '../config';
 
 export type Joints = [number, number, number, number]; // [yaw, shoulder, elbow, wristPitch]
+export type Quaternion = [number, number, number, number];
+
+/** World orientation (xyzw) of the rendered tool. Local +Z points towards its tip. */
+export function toolOrientation([yaw, shoulder, elbow, wrist]: Joints): Quaternion {
+  const pitch = -shoulder + Math.PI - elbow - wrist;
+  const sy = Math.sin(yaw / 2), cy = Math.cos(yaw / 2);
+  const sp = Math.sin(pitch / 2), cp = Math.cos(pitch / 2);
+  return [cy * sp, sy * cp, -sy * sp, cy * cp];
+}
 
 export interface IKResult {
   joints: Joints;

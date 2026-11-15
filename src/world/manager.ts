@@ -10,6 +10,7 @@ export class WorldManager implements World {
   private def: WorldDef | null = null;
   private showing: HTMLVideoElement;
   private connecting: Promise<void> | null = null;
+  private generation = 0;
   keyAvailable: boolean | null = null;
   lastError = '';
   onVideoChange: (v: HTMLVideoElement) => void = () => {};
@@ -40,32 +41,37 @@ export class WorldManager implements World {
   /** Connect to Orbis if a key exists; otherwise stay on the stub. Never throws. */
   connect(): Promise<void> {
     if (this.connecting) return this.connecting;
+    if (this.orbis) return Promise.resolve();
+    const generation = ++this.generation;
+    this.lastError = '';
     this.connecting = (async () => {
       if (this.keyAvailable === null) await this.probe();
-      if (!this.keyAvailable) return;
+      if (!this.keyAvailable || generation !== this.generation) return;
       try {
         this.stub.setOverlay('Loading live world');
         this.onStatusChange('loading');
         const { OrbisWorld } = await import('./orbis');
+        if (generation !== this.generation) return;
         const o = new OrbisWorld({
           onStatus: (s, detail) => {
+            if (generation !== this.generation || this.orbis !== o) return;
             if (s === 'live') {
               this.stub.setOverlay('');
               this.show(o.getVideo());
             }
             if (s === 'loading' && detail) this.stub.setOverlay('Loading live world');
-            if (s === 'error') void this.fallback(detail ?? 'error');
+            if (s === 'error') { void this.fallback(detail ?? 'error'); return; }
             this.onStatusChange(this.status());
           },
         });
         this.orbis = o;
         if (this.def) await o.setWorld(this.def, 'fresh');
-        await o.connect();
+        if (generation === this.generation) await o.connect();
       } catch (e) {
-        await this.fallback(String((e as Error)?.message ?? e));
+        if (generation === this.generation) await this.fallback(String((e as Error)?.message ?? e));
       }
     })().finally(() => {
-      this.connecting = null;
+      if (generation === this.generation) this.connecting = null;
     });
     return this.connecting;
   }
@@ -73,12 +79,7 @@ export class WorldManager implements World {
   private async fallback(reason: string) {
     console.warn('[world] falling back to stub:', reason);
     this.lastError = reason;
-    const o = this.orbis;
-    this.orbis = null;
-    this.stub.setOverlay('');
-    this.show(this.stub.getVideo());
-    if (o) await o.disconnect().catch(() => {});
-    this.onStatusChange(this.status());
+    await this.close();
   }
 
   private show(v: HTMLVideoElement) {
@@ -91,12 +92,17 @@ export class WorldManager implements World {
   async setWorld(def: WorldDef, mode: 'morph' | 'fresh' = 'morph'): Promise<void> {
     this.def = def;
     await this.stub.setWorld(def);
-    if (this.orbis) await this.orbis.setWorld(def, mode);
+    if (this.orbis && this.def === def) await this.orbis.setWorld(def, mode);
   }
 
   /** Polish: a short follow-up prompt describing one visible change. */
   async nudge(prompt: string): Promise<void> {
     await this.orbis?.nudge(prompt);
+  }
+
+  async steerIncident(prompt: string, signal: AbortSignal): Promise<void> {
+    if (!this.orbis) throw new Error('Connect to live Orbis before steering.');
+    await this.orbis.steerIncident(prompt, signal);
   }
 
   getVideo(): HTMLVideoElement {
@@ -117,11 +123,18 @@ export class WorldManager implements World {
   }
 
   async disconnect(): Promise<void> {
+    this.lastError = '';
+    await this.close();
+  }
+
+  private async close(): Promise<void> {
+    ++this.generation;
+    this.connecting = null;
     const o = this.orbis;
     this.orbis = null;
     this.stub.setOverlay('');
     this.show(this.stub.getVideo());
-    if (o) await o.disconnect();
     this.onStatusChange(this.status());
+    if (o) await o.disconnect();
   }
 }

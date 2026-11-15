@@ -3,19 +3,35 @@
 import { SIM_HZ, type Vec3 } from '../config';
 import type { Action, Cubes, EnvState, Layout } from '../env/env';
 import { TaskEnv } from '../env/env';
-import type { Joints } from '../arm/ik';
+import { toolOrientation, type Joints, type Quaternion } from '../arm/ik';
 import type { CubeColor } from '../arm/grasp';
 
 export type InputKind = 'mouse' | 'hand' | 'controller' | 'replay' | 'policy';
+
+/** Raw WebXR hand observation in stage coordinates (metres, quaternion xyzw). */
+export interface HandPose {
+  tracked: boolean;
+  wrist: { position: Vec3; orientation: Quaternion } | null;
+  thumbTip: Vec3 | null;
+  indexTip: Vec3 | null;
+  thumbTipOrientation?: Quaternion | null;
+  indexTipOrientation?: Quaternion | null;
+}
 
 export interface Sample {
   t: number;
   target: Vec3;
   grip: 0 | 1;
+  actualGrip?: 0 | 1;
+  fingerGapM?: number;
   tip: Vec3;
+  /** Optional for historical logs. Orientation of the robot tool in stage coordinates (xyzw). */
+  tipOrientation?: Quaternion;
   joints: Joints;
   held: CubeColor | null;
   cubes: Cubes;
+  /** Optional for existing logs. A null value indicates no physical hand observation. */
+  hand?: HandPose | null;
 }
 
 export interface AttemptRecord {
@@ -37,6 +53,30 @@ export interface AttemptRecord {
 
 const r4 = (v: number) => Math.round(v * 1e4) / 1e4;
 const v4 = (v: Vec3): Vec3 => [r4(v[0]), r4(v[1]), r4(v[2])];
+
+/** Pre-step observation paired with the exact command about to be applied. */
+export function captureSample(t: number, state: EnvState & { fingerGapM?: number }, action: Action, hand?: HandPose | null): Sample {
+  return {
+    t: r4(t),
+    target: [...action.target],
+    grip: action.grip,
+    actualGrip: state.grip,
+    ...(state.fingerGapM === undefined ? {} : { fingerGapM: state.fingerGapM }),
+    tip: v4(state.tip),
+    tipOrientation: toolOrientation(state.joints),
+    joints: state.joints.map(r4) as Joints,
+    held: state.held,
+    cubes: Object.fromEntries(Object.entries(state.cubes).map(([k, v]) => [k, v4(v!)])) as Cubes,
+    ...(hand === undefined ? {} : { hand: hand && {
+      tracked: hand.tracked,
+      wrist: hand.wrist && { position: [...hand.wrist.position], orientation: [...hand.wrist.orientation] },
+      thumbTip: hand.thumbTip && [...hand.thumbTip],
+      indexTip: hand.indexTip && [...hand.indexTip],
+      thumbTipOrientation: hand.thumbTipOrientation && [...hand.thumbTipOrientation],
+      indexTipOrientation: hand.indexTipOrientation && [...hand.indexTipOrientation],
+    } }),
+  };
+}
 
 export function newSessionId(now: Date = new Date()): string {
   const iso = now.toISOString().replace(/\.\d+Z$/, 'Z').replace(/:/g, '-');
@@ -86,18 +126,10 @@ export class Recorder {
 
   /** Call once per fixed step with the state BEFORE the step and the action applied at it.
    *  Targets and grip are stored unrounded so replay is exact. */
-  sample(state: EnvState, action: Action): void {
+  sample(state: EnvState, action: Action, hand?: HandPose | null): void {
     if (!this.rec) return;
     const n = this.rec.samples.length;
-    this.rec.samples.push({
-      t: r4(n / this.rec.hz),
-      target: [action.target[0], action.target[1], action.target[2]],
-      grip: action.grip,
-      tip: v4(state.tip),
-      joints: state.joints.map(r4) as Joints,
-      held: state.held,
-      cubes: Object.fromEntries(Object.entries(state.cubes).map(([k, v]) => [k, v4(v!)])) as Cubes,
-    });
+    this.rec.samples.push(captureSample(n / this.rec.hz, state, action, hand));
     if (this.lastTip) {
       this.rec.pathLengthM += Math.hypot(
         state.tip[0] - this.lastTip[0],

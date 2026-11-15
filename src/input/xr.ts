@@ -5,6 +5,7 @@ import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerM
 import type { Action } from '../env/env';
 import type { Vec3 } from '../config';
 import { ControllerControl, PinchControl } from './handlogic';
+import type { HandPose } from '../recovery/engine';
 
 type Side = 'left' | 'right';
 
@@ -34,7 +35,8 @@ export class XRInput {
     const ctrlFactory = new XRControllerModelFactory();
     for (let i = 0; i < 2; i++) {
       const hand = renderer.xr.getHand(i) as HandSlot['hand'];
-      hand.add(handFactory.createHandModel(hand, 'mesh'));
+      // Local joint geometry also renders when headset internet access is limited.
+      hand.add(handFactory.createHandModel(hand, 'spheres'));
       const controller = renderer.xr.getController(i);
       const grip = renderer.xr.getControllerGrip(i);
       grip.add(ctrlFactory.createControllerModel(grip));
@@ -70,9 +72,38 @@ export class XRInput {
     return this.renderer.xr.isPresenting;
   }
 
+  /** Measured joint poses in the same local-floor frame as the simulated workcell.
+   * Read the current XRFrame directly so a lost joint never becomes a stale valid sample. */
+  rawHand(frame: XRFrame | undefined): HandPose {
+    const empty: HandPose = { tracked: false, wrist: null, thumbTip: null, indexTip: null };
+    const source = this.slot('right', 'hand')?.source?.hand;
+    const space = this.renderer.xr.getReferenceSpace();
+    if (!frame?.getJointPose || !space || !source) return empty;
+    const jointPose = (joint: XRHandJoint) => {
+      const jointSpace = source.get(joint);
+      return jointSpace ? frame.getJointPose?.(jointSpace, space)?.transform : null;
+    };
+    const position = (pose: XRRigidTransform | null | undefined): Vec3 | null =>
+      pose ? [pose.position.x, pose.position.y, pose.position.z] : null;
+    const wrist = jointPose('wrist');
+    const thumb = jointPose('thumb-tip');
+    const index = jointPose('index-finger-tip');
+    const orientation = (pose: XRRigidTransform | null | undefined): [number, number, number, number] | null =>
+      pose ? [pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w] : null;
+    const thumbTip = position(thumb);
+    const indexTip = position(index);
+    const q = wrist?.orientation;
+    return {
+      tracked: !!(wrist && thumbTip && indexTip),
+      wrist: wrist && q ? { position: position(wrist)!, orientation: [q.x, q.y, q.z, q.w] } : null,
+      thumbTip, indexTip,
+      thumbTipOrientation: orientation(thumb), indexTipOrientation: orientation(index),
+    };
+  }
+
   update(dt: number): void {
     const rh = this.slot('right', 'hand');
-    if (rh) {
+    if (rh?.hand.visible) {
       const thumb = this.joint(rh, 'thumb-tip');
       const index = this.joint(rh, 'index-finger-tip');
       this.pinch.update(thumb && index ? { thumbTip: toVec(thumb), indexTip: toVec(index) } : null, dt);
@@ -82,7 +113,7 @@ export class XRInput {
     }
     this.pinch.update(null, dt);
     const rc = this.slot('right', 'controller');
-    if (rc) {
+    if (rc?.grip.visible) {
       const gp = rc.source?.gamepad;
       this.ctrl.update({ grip: toVec(rc.grip), trigger: gp?.buttons[0]?.value ?? 0 }, dt);
       if (this.ctrl.active) this.mode = 'controller';
@@ -100,14 +131,20 @@ export class XRInput {
   }
 
   /** Fingertips (both index tips, or controller ray origins) for poking panels. */
-  pokeTips(): THREE.Vector3[] {
+  controllerSide(index: number): XRHandedness | undefined {
+    return this.slots[index]?.source?.handedness;
+  }
+
+  pokeTips(onlySide?: Side): THREE.Vector3[] {
     const tips: THREE.Vector3[] = [];
     for (const s of this.slots) {
-      if (!s.source) continue;
+      if (!s.source || (onlySide && s.source.handedness !== onlySide)) continue;
       if (s.source.hand) {
+        if (!s.hand.visible) continue;
         const j = this.joint(s, 'index-finger-tip');
         if (j) tips.push(j.getWorldPosition(new THREE.Vector3()));
       } else {
+        if (!s.controller.visible) continue;
         // a point a few cm in front of the controller's ray origin
         const p = new THREE.Vector3(0, 0, -0.05).applyMatrix4(s.controller.matrixWorld);
         tips.push(p);
