@@ -51,7 +51,8 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Hook | part (tool) | d53f22b | | |
 | Bucket | challenge | ba2aad1 | Hook + Compact or Heavy-duty | Compact+Hook, Heavy-duty+Hook |
 | Cleanup (3 steps, 2 swaps) | challenge | 04e7642 | Magnet, then Scoop, then Soft gripper | no single robot; Magnet + Compact/Long/Heavy-duty, then Scoop + Compact/Long/Heavy-duty, then Soft + Compact/Long/Heavy-duty/Extra-long |
-| Big suction | part (tool) | BIGS_COMMIT | | |
+| Big suction | part (tool) | 83cf7c5 | | |
+| Pane | challenge | PANE_COMMIT | Big suction + Compact, Long or Heavy-duty | Compact+Big suction, Long+Big suction, Heavy-duty+Big suction |
 | Dinner (2 steps, swap) | challenge | 03d29e7 | Suction, then Gripper or Magnet on Compact/Heavy-duty | no single robot; step 1: Compact/Long/Heavy-duty+Suction, then step 2: Compact/Heavy-duty+Gripper/Magnet |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
@@ -138,6 +139,9 @@ Additions:
    splits suction by size: it holds big flat smooth things the normal pad can't ("Pad too small for something this
    big"), but nothing small ("Pad too big for something this small"). No existing object is big and flat, so
    nothing else changed.
+19. ADD challenge: pane (`src/workshop/challenges/pane.ts`): a big glass pane lying flat -> wide drying rack.
+   Interesting because the normal suction, the obvious answer for flat things, is now the wrong size ("Pad too
+   small for something this big"); flat rules out grippers, glass rules out the magnet. Only Big suction.
 
 Live Orbis check of the Workshop (Sun ~03:55 PST, `scripts/workshop-live-check.mjs`, 2 sessions, 0.6 min):
 - First try stayed on the stub: the dev server's pre-bundled Orbis SDK was stale ("reactor-wasm failed to load:
@@ -196,6 +200,8 @@ Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base check
       bowl; poke Soft gripper: egg to the carton. Three swaps on the left panel mid-run: comfortable? Under 60 s?
 - [ ] 18 Big suction (NOT YET TESTED ON HEADSET): two pads on a crossbar at the tip; with the plate it says "Pad
       too big for something this small".
+- [ ] 19 Pane (NOT YET TESTED ON HEADSET): the pane is transparent with orange edges: easy enough to see? Suction
+      says "Pad too small for something this big"; Big suction lays it on the wide rack.
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with

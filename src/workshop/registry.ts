@@ -30,10 +30,11 @@ import { SCRAP } from './challenges/scrap';
 import { RESTOCK } from './challenges/restock';
 import { BUCKET } from './challenges/bucket';
 import { CLEANUP } from './challenges/cleanup';
+import { PANE } from './challenges/pane';
 
 export const ARM_DEFS: ArmDef[] = [COMPACT, LONG, HEAVYDUTY, TALL, XLONG];
 export const TOOL_DEFS: ToolDef[] = [GRIPPER, SUCTION, MAGNET, WIDE, SCOOP, SOFT, HOOK, BIGSUCTION];
-export const CHALLENGE_DEFS: ChallengeDef[] = [PLATE, FAR, HEAVY, WASHER, CRATE, ANVIL, MARBLES, SHELF, CART, DINNER, EGG, SCRAP, RESTOCK, BUCKET, CLEANUP];
+export const CHALLENGE_DEFS: ChallengeDef[] = [PLATE, FAR, HEAVY, WASHER, CRATE, ANVIL, MARBLES, SHELF, CART, DINNER, EGG, SCRAP, RESTOCK, BUCKET, CLEANUP, PANE];
 
 const byId = <T extends { id: string }>(xs: T[]) => Object.fromEntries(xs.map((x) => [x.id, x])) as Record<string, T>;
 export const ARMS: Record<string, ArmDef> = byId(ARM_DEFS);

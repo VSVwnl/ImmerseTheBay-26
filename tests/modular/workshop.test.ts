@@ -86,6 +86,9 @@ const EXPECT: Record<WorkshopLayout, Record<string, 'ok' | 'tool' | 'heavy' | 'r
   cleanup: { 'compact+bigsuction': 'tool', 'long+bigsuction': 'tool', 'heavyduty+bigsuction': 'tool', 'tall+bigsuction': 'reach', 'xlong+bigsuction': 'tool',
     'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'tool', 'compact+wide': 'tool', 'compact+scoop': 'tool', 'compact+soft': 'tool', 'compact+hook': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'tool', 'long+wide': 'tool', 'long+scoop': 'tool', 'long+soft': 'tool', 'long+hook': 'tool', 'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'tool', 'heavyduty+soft': 'tool', 'heavyduty+hook': 'tool', 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'heavy', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'xlong+soft': 'tool', 'xlong+hook': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'tall+soft': 'reach', 'tall+hook': 'reach',
   },
+  pane: {
+    'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'tool', 'compact+wide': 'tool', 'compact+scoop': 'tool', 'compact+soft': 'tool', 'compact+hook': 'tool', 'compact+bigsuction': 'ok', 'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'tool', 'long+wide': 'tool', 'long+scoop': 'tool', 'long+soft': 'tool', 'long+hook': 'tool', 'long+bigsuction': 'ok', 'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'tool', 'heavyduty+soft': 'tool', 'heavyduty+hook': 'tool', 'heavyduty+bigsuction': 'ok', 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'xlong+soft': 'tool', 'xlong+hook': 'tool', 'xlong+bigsuction': 'heavy', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'tall+soft': 'reach', 'tall+hook': 'reach', 'tall+bigsuction': 'reach',
+  },
 };
 
 function grid(ws: { min: Vec3; max: Vec3 }, n: number): Vec3[] {
@@ -275,6 +278,12 @@ describe('grab rules', () => {
     expect(grabCheck(pane, { arm: 'compact', tool: 'suction' })?.text).toBe('Pad too small for something this big');
     expect(grabCheck(ITEMS.plate, { arm: 'compact', tool: 'bigsuction' })?.text).toBe('Pad too big for something this small');
     expect(grabCheck(ITEMS.crate, { arm: 'compact', tool: 'bigsuction' })?.text).toBe('Air leaks through the slats');
+  });
+
+  it('pane: big, flat, glass: only the big suction', () => {
+    expect(grabCheck(ITEMS.pane, { arm: 'compact', tool: 'suction' })?.text).toBe('Pad too small for something this big');
+    expect(grabCheck(ITEMS.pane, STANDARD_ROBOT)?.text).toBe("Can't grip a flat pane");
+    expect(grabCheck(ITEMS.pane, { arm: 'compact', tool: 'bigsuction' })).toBeNull();
   });
 
   it('original labels', () => {

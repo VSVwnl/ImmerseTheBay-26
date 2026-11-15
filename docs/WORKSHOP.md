@@ -33,6 +33,7 @@ standard robot. Not merged.
 | Scoop | loose bits | anything solid |
 | Soft gripper | fragile things | over weight 1; flat, loose, big |
 | Hook | anything with a handle | anything without one |
+| Big suction | big flat smooth things | anything small; same surface rules as suction |
 
 ## Challenges (one file each in `src/workshop/challenges/`)
 
@@ -52,6 +53,7 @@ standard robot. Not merged.
 | Restock | parcel from the cart, then the anvil (swap arms) | Extra-long, then Heavy-duty |
 | Dinner | plate -> rack, then pot -> zone (swap tools) | Suction, then Gripper / Magnet on Compact / Heavy-duty |
 | Bucket | pail of sand with a handle (weight 2) -> sandy zone | Hook + Compact / Heavy-duty |
+| Pane | big glass pane -> wide rack | Big suction + Compact / Long / Heavy-duty |
 | Cleanup | washer -> tray, marbles -> bowl, egg -> carton (swap tools twice) | Magnet, then Scoop, then Soft gripper |
 
 ## Switches and testing
