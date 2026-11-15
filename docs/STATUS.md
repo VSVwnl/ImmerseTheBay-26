@@ -50,6 +50,7 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Restock (2 steps, swap arms) | challenge | 1c78b26 | Extra-long, then Heavy-duty | no single robot; step 1: Extra-long+Gripper/Suction/Soft, then step 2: Heavy-duty+Gripper/Magnet |
 | Hook | part (tool) | d53f22b | | |
 | Bucket | challenge | ba2aad1 | Hook + Compact or Heavy-duty | Compact+Hook, Heavy-duty+Hook |
+| Cleanup (3 steps, 2 swaps) | challenge | CLEANUP_COMMIT | Magnet, then Scoop, then Soft gripper | no single robot; Magnet + Compact/Long/Heavy-duty, then Scoop + Compact/Long/Heavy-duty, then Soft + Compact/Long/Heavy-duty/Extra-long |
 | Dinner (2 steps, swap) | challenge | 03d29e7 | Suction, then Gripper or Magnet on Compact/Heavy-duty | no single robot; step 1: Compact/Long/Heavy-duty+Suction, then step 2: Compact/Heavy-duty+Gripper/Magnet |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
@@ -127,6 +128,11 @@ Additions:
    (weight 2) -> sandy zone. Interesting because the wide gripper, the usual answer for big things, fails for a new
    reason ("Squeezing it would spill the sand"), and only the hook works, on an arm strong enough (Long: "Too
    heavy"). Solved by Compact + Hook and Heavy-duty + Hook.
+17. ADD challenge: cleanup (`src/workshop/challenges/cleanup.ts`): three steps, two tool swaps: steel washer ->
+   tray (magnet), loose marbles -> bowl (scoop), egg -> carton (soft gripper). Interesting because it is the whole
+   idea in one run: three objects on one table that each defeat the previous tool. The generic swap test now
+   tries every combination of per-step robots for any number of steps. (Also: a part swap now frees the old
+   arm's materials as well as its geometry.)
 
 Live Orbis check of the Workshop (Sun ~03:55 PST, `scripts/workshop-live-check.mjs`, 2 sessions, 0.6 min):
 - First try stayed on the stub: the dev server's pre-bundled Orbis SDK was stale ("reactor-wasm failed to load:
@@ -181,6 +187,8 @@ Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base check
       object says "Nothing to hook onto: no handle". Also check the compact side panel (names three per line).
 - [ ] 16 Bucket (NOT YET TESTED ON HEADSET): with the Wide gripper: "Squeezing it would spill the sand"; with the
       Hook on Long: "Too heavy for this arm"; Compact + Hook carries it to the sandy zone, hanging under the hook.
+- [ ] 17 Cleanup (NOT YET TESTED ON HEADSET): Magnet: washer to the tray; poke Scoop (no restart): marbles to the
+      bowl; poke Soft gripper: egg to the carton. Three swaps on the left panel mid-run: comfortable? Under 60 s?
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with

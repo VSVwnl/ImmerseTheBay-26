@@ -82,6 +82,10 @@ const EXPECT: Record<WorkshopLayout, Record<string, 'ok' | 'tool' | 'heavy' | 'r
   bucket: {
     'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'tool', 'compact+wide': 'tool', 'compact+scoop': 'tool', 'compact+soft': 'tool', 'compact+hook': 'ok', 'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'tool', 'long+wide': 'tool', 'long+scoop': 'tool', 'long+soft': 'tool', 'long+hook': 'heavy', 'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'tool', 'heavyduty+soft': 'tool', 'heavyduty+hook': 'ok', 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'xlong+soft': 'tool', 'xlong+hook': 'heavy', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'tall+soft': 'reach', 'tall+hook': 'reach',
   },
+  // three steps, swap tools twice: magnet, scoop, soft gripper
+  cleanup: {
+    'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'tool', 'compact+wide': 'tool', 'compact+scoop': 'tool', 'compact+soft': 'tool', 'compact+hook': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'tool', 'long+wide': 'tool', 'long+scoop': 'tool', 'long+soft': 'tool', 'long+hook': 'tool', 'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'tool', 'heavyduty+soft': 'tool', 'heavyduty+hook': 'tool', 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'heavy', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'xlong+soft': 'tool', 'xlong+hook': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'tall+soft': 'reach', 'tall+hook': 'reach',
+  },
 };
 
 function grid(ws: { min: Vec3; max: Vec3 }, n: number): Vec3[] {
@@ -446,22 +450,44 @@ for (const layout of WORKSHOP_LAYOUTS.filter((l) => WORKSHOP_TASKS[l].swap)) {
     });
   });
 
-  it('every pair of step robots solves it with one swap between the steps', () => {
-    for (const r1 of task.stepSolutions![0])
-      for (const r2 of task.stepSolutions![1])
-        for (const seed of [2, 31]) {
-          const env = new TaskEnv(seed, layout, r1);
-          pickPlace(env, env.state().items[task.steps[0].item]!, task.steps[0].goal.pos);
-          expect(env.state().success).toBe(false);
-          expect(env.setRobot(r2)).toBe(true);
-          pickPlace(env, env.state().items[task.steps[1].item]!, task.steps[1].goal.pos);
-          expect(env.state().success).toBe(true);
-          expect(env.state().grabFails).toBe(0);
-        }
+  it('every combination of step robots solves it, swapping between steps; not done before the last step', () => {
+    const combos = task.stepSolutions!.reduce<RobotParts[][]>((acc, rs) => acc.flatMap((c) => rs.map((r) => [...c, r])), [[]]);
+    for (const robots of combos)
+      for (const seed of [2, 31]) {
+        const env = new TaskEnv(seed, layout, robots[0]);
+        task.steps.forEach((st, i) => {
+          if (i > 0) {
+            expect(env.state().success).toBe(false);
+            expect(env.setRobot(robots[i])).toBe(true);
+          }
+          pickPlace(env, env.state().items[st.item]!, st.goal.pos);
+        });
+        expect(env.state().success).toBe(true);
+        expect(env.state().grabFails).toBe(0);
+      }
   });
 
   });
 }
+
+describe('cleanup: three steps, two swaps', () => {
+  it('magnet, then scoop, then soft gripper solves it; stopping after two steps does not', () => {
+    const t = WORKSHOP_TASKS.cleanup;
+    for (const seed of [3, 17, 99]) {
+      const env = new TaskEnv(seed, 'cleanup', { arm: 'compact', tool: 'magnet' });
+      t.steps.forEach((st, i) => {
+        if (i === 1) expect(env.setRobot({ arm: 'compact', tool: 'scoop' })).toBe(true);
+        if (i === 2) {
+          expect(env.state().success).toBe(false);
+          expect(env.setRobot({ arm: 'long', tool: 'soft' })).toBe(true);
+        }
+        pickPlace(env, env.state().items[st.item]!, st.goal.pos);
+      });
+      expect(env.state().success).toBe(true);
+      expect(env.state().grabFails).toBe(0);
+    }
+  });
+});
 
 describe('swap challenges (dinner): parts change mid-challenge', () => {
   const task = WORKSHOP_TASKS.dinner;
