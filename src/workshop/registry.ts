@@ -6,6 +6,7 @@ import { COMPACT } from './parts/compact';
 import { LONG } from './parts/long';
 import { HEAVYDUTY } from './parts/heavyduty';
 import { TALL } from './parts/tall';
+import { XLONG } from './parts/xlong';
 import { GRIPPER } from './parts/gripper';
 import { SUCTION } from './parts/suction';
 import { MAGNET } from './parts/magnet';
@@ -20,7 +21,7 @@ import { ANVIL } from './challenges/anvil';
 import { MARBLES } from './challenges/marbles';
 import { SHELF } from './challenges/shelf';
 
-export const ARM_DEFS: ArmDef[] = [COMPACT, LONG, HEAVYDUTY, TALL];
+export const ARM_DEFS: ArmDef[] = [COMPACT, LONG, HEAVYDUTY, TALL, XLONG];
 export const TOOL_DEFS: ToolDef[] = [GRIPPER, SUCTION, MAGNET, WIDE, SCOOP];
 export const CHALLENGE_DEFS: ChallengeDef[] = [PLATE, FAR, HEAVY, WASHER, CRATE, ANVIL, MARBLES, SHELF];
 

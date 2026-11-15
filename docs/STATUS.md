@@ -41,7 +41,8 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Scoop | part (tool) | 161dc39 | | |
 | Marbles | challenge | 161dc39 | Scoop | Compact+Scoop, Long+Scoop, Heavy-duty+Scoop |
 | Tall base | part (arm) | f4f164e | | |
-| Shelf | challenge | SHELF_COMMIT | Tall base + Gripper | Tall base+Gripper |
+| Shelf | challenge | d8a9cf2 | Tall base + Gripper | Tall base+Gripper |
+| Extra-long arm | part (arm) | XLONG_COMMIT | | |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
 - Moved every part and challenge into its own file (registry in `src/workshop/registry.ts`). Numbers stay in
@@ -81,6 +82,10 @@ Additions:
 7. ADD challenge: shelf (`src/workshop/challenges/shelf.ts`): a honey jar on a high shelf -> tall wicker basket.
    Interesting because it's the first job where the arm's height, not its strength or the tool, decides:
    every other arm says "Out of reach", and the jar is glass with a round side, so only the gripper holds it.
+8. ADD part: extra-long arm (`src/workshop/parts/xlong.ts`): links 70% longer and thinner, reaches past the
+   table's side edges, payload 0.5. Interesting because it is the extreme version of the reach/strength trade:
+   it reaches everything on the table but every existing object is "Too heavy for this arm". (Out-of-reach hint
+   radius 0.25 -> 0.45 m so the shorter arms still explain themselves at the next challenge's side cart.)
 
 Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base checks in `docs/WORKSHOP.md`):
 - [ ] 1 Groundwork (NOT YET TESTED ON HEADSET): in the Workshop, each countdown switches the wall to a different
@@ -103,6 +108,8 @@ Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base check
 - [ ] 7 Shelf (NOT YET TESTED ON HEADSET): the high shelf and the jar on it are visible behind-left of the arm;
       with Long, reaching up says "Out of reach"; Tall base + Gripper lifts the jar off and drops it in the basket.
       Is the shelf at a comfortable hand height (jar ~1.42 m)?
+- [ ] 8 Extra-long arm (NOT YET TESTED ON HEADSET): the arm is visibly long and thin; folded at rest it towers
+      over the table (fine?); it reaches the table corners; lifting the plate says "Too heavy for this arm".
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with

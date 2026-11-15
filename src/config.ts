@@ -119,13 +119,16 @@ export const FACTORY = { seedBase: 1000, worldEvery: 20, stubSettleMs: 1700 };
 // ---- Switches: delete one word to turn a Workshop part or challenge off ----
 // The standard robot (compact + gripper) and Reach/Place/Sort always exist outside the Workshop: the expert,
 // datasets, training and Robot's turn depend on them. Turning compact or gripper off only hides them here.
-export const ENABLED_PARTS: string[] = ['compact', 'long', 'heavyduty', 'tall', 'gripper', 'suction', 'magnet', 'wide', 'scoop'];
+export const ENABLED_PARTS: string[] = ['compact', 'long', 'heavyduty', 'tall', 'xlong', 'gripper', 'suction', 'magnet', 'wide', 'scoop'];
 export const ENABLED_CHALLENGES: string[] = ['plate', 'far', 'heavy', 'washer', 'crate', 'anvil', 'marbles', 'shelf'];
 
 // ---- Robot Workshop (additive; the standard robot is Compact + Gripper and uses the values above) ----
 export const WORKSHOP = {
   longScale: 1.35, // Long arm links are this much longer than L1/L2
-  payload: { compact: 2, long: 1, heavyduty: 3, tall: 2 },
+  payload: { compact: 2, long: 1, heavyduty: 3, tall: 2, xlong: 0.5 },
+  // Extra-long: links 70% longer; reaches past the table's side edges but lifts only light things
+  xlongScale: 1.7,
+  xlongWorkspace: { min: [-0.85, 0.76, -0.95] as Vec3, max: [0.85, 1.3, -0.42] as Vec3 },
   // Tall base: shoulder 0.3 m higher; reaches high shelves but its tip can't come down to the table
   tallRise: 0.3,
   tallWorkspace: { min: [-0.35, 0.9, -0.95] as Vec3, max: [0.35, 1.45, -0.6] as Vec3 },
@@ -135,7 +138,7 @@ export const WORKSHOP = {
   // the Long arm may command the tip further out than WORKSPACE; Compact keeps WORKSPACE exactly
   longWorkspace: { min: [-0.56, 0.76, -0.95] as Vec3, max: [0.56, 1.3, -0.45] as Vec3 },
   // a grab attempt that misses an object outside the arm's workspace by up to this (m, horizontal) says "Out of reach"
-  reachHintRadius: 0.25,
+  reachHintRadius: 0.45,
   reachHintDy: 0.4, // ... and up to this far above or below it (the shelf jar is high above the other arms)
   slipS: 0.45, // tool wobble after a failed grab
   labelS: 1.8, // floating reason label lifetime
