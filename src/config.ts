@@ -120,7 +120,7 @@ export const FACTORY = { seedBase: 1000, worldEvery: 20, stubSettleMs: 1700 };
 // The standard robot (compact + gripper) and Reach/Place/Sort always exist outside the Workshop: the expert,
 // datasets, training and Robot's turn depend on them. Turning compact or gripper off only hides them here.
 export const ENABLED_PARTS: string[] = ['compact', 'long', 'heavyduty', 'tall', 'xlong', 'gripper', 'suction', 'magnet', 'wide', 'scoop'];
-export const ENABLED_CHALLENGES: string[] = ['plate', 'far', 'heavy', 'washer', 'crate', 'anvil', 'marbles', 'shelf'];
+export const ENABLED_CHALLENGES: string[] = ['plate', 'far', 'heavy', 'washer', 'crate', 'anvil', 'marbles', 'shelf', 'cart'];
 
 // ---- Robot Workshop (additive; the standard robot is Compact + Gripper and uses the values above) ----
 export const WORKSHOP = {
@@ -138,7 +138,7 @@ export const WORKSHOP = {
   // the Long arm may command the tip further out than WORKSPACE; Compact keeps WORKSPACE exactly
   longWorkspace: { min: [-0.56, 0.76, -0.95] as Vec3, max: [0.56, 1.3, -0.45] as Vec3 },
   // a grab attempt that misses an object outside the arm's workspace by up to this (m, horizontal) says "Out of reach"
-  reachHintRadius: 0.45,
+  reachHintRadius: 0.55,
   reachHintDy: 0.4, // ... and up to this far above or below it (the shelf jar is high above the other arms)
   slipS: 0.45, // tool wobble after a failed grab
   labelS: 1.8, // floating reason label lifetime
@@ -161,4 +161,8 @@ export const WORKSHOP = {
   shelf: { pos: [-0.3, 0.75, -0.86] as Vec3, top: 1.37, w: 0.2, d: 0.14 },
   jar: { r: 0.03, h: 0.1, spawnX: [-0.36, -0.24] as [number, number], spawnZ: [-0.89, -0.83] as [number, number] },
   basket: { pos: [0.3, 0.75, -0.66] as Vec3, w: 0.16, d: 0.16, h: 0.2 },
+  // side cart beside the table's back-right corner, top level with the table, with a light parcel on it
+  cart: { pos: [0.72, 0.75, -0.92] as Vec3, w: 0.18, d: 0.2 },
+  parcel: { size: 0.07, spawnX: [0.69, 0.75] as [number, number], spawnZ: [-0.94, -0.88] as [number, number] },
+  outbox: { pos: [-0.05, 0.75, -0.55] as Vec3 },
 };

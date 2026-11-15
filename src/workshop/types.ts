@@ -62,7 +62,7 @@ export interface ToolDef {
   build: (tool: THREE.Group, m: ToolMats) => ToolRig;
 }
 
-export type Material = 'ceramic' | 'metal' | 'wood' | 'glass' | 'plastic';
+export type Material = 'ceramic' | 'metal' | 'wood' | 'glass' | 'plastic' | 'paper';
 /** flat: no sides to grip; cylinder/box/pot: has sides; ring: flat with a hole; loose: many small bits */
 export type Shape = 'flat' | 'cylinder' | 'box' | 'pot' | 'ring' | 'loose';
 export type Size = 'small' | 'normal' | 'big';

@@ -48,6 +48,13 @@ const CASES: Case[] = [
     wrong: { arm: 'long', tool: 'gripper', label: 'Out of reach' },
     right: { arm: 'tall', tool: 'gripper' },
   },
+  {
+    layout: 'cart',
+    item: 'parcel',
+    goal: [-0.05, 0.75, -0.55],
+    wrong: { arm: 'long', tool: 'gripper', label: 'Out of reach' },
+    right: { arm: 'xlong', tool: 'gripper' },
+  },
 ];
 const only = process.env.CASE;
 

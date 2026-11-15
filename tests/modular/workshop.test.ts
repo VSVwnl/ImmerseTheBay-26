@@ -60,6 +60,10 @@ const EXPECT: Record<WorkshopLayout, Record<string, 'ok' | 'tool' | 'heavy' | 'r
     'tall+gripper': 'ok', 'tall+suction': 'tool', 'tall+magnet': 'tool', 'tall+wide': 'tool', 'tall+scoop': 'tool',
     'compact+gripper': 'reach', 'compact+suction': 'reach', 'compact+magnet': 'reach', 'compact+wide': 'reach', 'compact+scoop': 'reach', 'long+gripper': 'reach', 'long+suction': 'reach', 'long+magnet': 'reach', 'long+wide': 'reach', 'long+scoop': 'reach', 'heavyduty+gripper': 'reach', 'heavyduty+suction': 'reach', 'heavyduty+magnet': 'reach', 'heavyduty+wide': 'reach', 'heavyduty+scoop': 'reach',
   },
+  cart: {
+    'xlong+gripper': 'ok', 'xlong+suction': 'ok', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool',
+    'compact+gripper': 'reach', 'compact+suction': 'reach', 'compact+magnet': 'reach', 'compact+wide': 'reach', 'compact+scoop': 'reach', 'long+gripper': 'reach', 'long+suction': 'reach', 'long+magnet': 'reach', 'long+wide': 'reach', 'long+scoop': 'reach', 'heavyduty+gripper': 'reach', 'heavyduty+suction': 'reach', 'heavyduty+magnet': 'reach', 'heavyduty+wide': 'reach', 'heavyduty+scoop': 'reach', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach',
+  },
 };
 
 function grid(ws: { min: Vec3; max: Vec3 }, n: number): Vec3[] {
@@ -201,6 +205,15 @@ describe('grab rules', () => {
     expect(grabCheck(ITEMS.plate, { arm: 'xlong', tool: 'suction' })?.text).toBe('Too heavy for this arm');
   });
 
+  it('cart: the parcel sits past the table edge, only the extra-long arm reaches it, and it is light', () => {
+    const env = new TaskEnv(4, 'cart');
+    const p = env.state().items.parcel!;
+    expect(p[0]).toBeGreaterThan(0.6); // off the table, on the cart
+    for (const a of ARM_KINDS.filter((k) => k !== 'xlong')) expect(workspaceFor(a).max[0]).toBeLessThan(p[0] - 0.05);
+    expect(ITEMS.parcel.weight).toBeLessThanOrEqual(ARMS.xlong.payload);
+    expect(grabCheck(ITEMS.parcel, { arm: 'xlong', tool: 'magnet' })?.text).toBe('Magnet only lifts metal');
+  });
+
   it('original labels', () => {
     expect(grabCheck(ITEMS.pot, { arm: 'long', tool: 'gripper' })?.text).toBe('Too heavy for this arm');
     expect(grabCheck(ITEMS.plate, STANDARD_ROBOT)?.text).toBe("Can't grip a flat plate");
@@ -321,16 +334,18 @@ describe('Workshop challenges: every robot', () => {
     }
   });
 
-  it('every spawn and goal is on the table, and every challenge is solvable by some robot', () => {
+  it('every goal is on the table; objects spawn on the table unless the challenge brings scenery (shelf, cart)', () => {
+    const onTable = (p: Vec3) => Math.abs(p[0]) < 0.6 && p[2] > -1.1 && p[2] < -0.4;
     for (const layout of WORKSHOP_LAYOUTS) {
       expect(Object.values(EXPECT[layout])).toContain('ok');
-      for (const st of WORKSHOP_TASKS[layout].steps)
+      const task = WORKSHOP_TASKS[layout];
+      for (const st of task.steps) {
+        expect(onTable(st.goal.pos)).toBe(true);
         for (const seed of [1, 9, 99]) {
           const p = st.spawn(() => ((seed * 9301 + 49297) % 233280) / 233280);
-          expect(Math.abs(p[0])).toBeLessThan(0.6);
-          expect(p[2]).toBeGreaterThan(-1.1);
-          expect(p[2]).toBeLessThan(-0.4);
+          if (!task.scenery) expect(onTable(p)).toBe(true);
         }
+      }
     }
   });
 
