@@ -61,7 +61,7 @@ export function outOfReachItem(tip: Vec3, items: Partial<Record<ItemId, Vec3>>, 
     if (!p) continue;
     const closest: Vec3 = [clamp(p[0], ws.min[0], ws.max[0]), clamp(p[1], ws.min[1], ws.max[1]), clamp(p[2], ws.min[2], ws.max[2])];
     const unreachable = Math.hypot(p[0] - closest[0], p[1] - closest[1], p[2] - closest[2]) > GRAB_RADIUS;
-    if (unreachable && hdist(tip, p) <= WORKSHOP.reachHintRadius && Math.abs(tip[1] - p[1]) <= 0.2) return id;
+    if (unreachable && hdist(tip, p) <= WORKSHOP.reachHintRadius && Math.abs(tip[1] - p[1]) <= WORKSHOP.reachHintDy) return id;
   }
   return null;
 }

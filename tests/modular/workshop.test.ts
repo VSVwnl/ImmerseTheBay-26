@@ -56,6 +56,10 @@ const EXPECT: Record<WorkshopLayout, Record<string, 'ok' | 'tool' | 'heavy' | 'r
   crate: { 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'tool', 'long+magnet': 'tool', 'compact+wide': 'ok', 'long+wide': 'heavy',
     'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'ok',
     'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool' },
+  shelf: {
+    'tall+gripper': 'ok', 'tall+suction': 'tool', 'tall+magnet': 'tool', 'tall+wide': 'tool', 'tall+scoop': 'tool',
+    'compact+gripper': 'reach', 'compact+suction': 'reach', 'compact+magnet': 'reach', 'compact+wide': 'reach', 'compact+scoop': 'reach', 'long+gripper': 'reach', 'long+suction': 'reach', 'long+magnet': 'reach', 'long+wide': 'reach', 'long+scoop': 'reach', 'heavyduty+gripper': 'reach', 'heavyduty+suction': 'reach', 'heavyduty+magnet': 'reach', 'heavyduty+wide': 'reach', 'heavyduty+scoop': 'reach',
+  },
 };
 
 function grid(ws: { min: Vec3; max: Vec3 }, n: number): Vec3[] {
@@ -178,6 +182,17 @@ describe('grab rules', () => {
     expect(shoulderPoint(linksFor('tall'))[1]).toBeCloseTo(shoulderPoint()[1] + WORKSHOP.tallRise, 12);
     expect(workspaceFor('tall').max[1]).toBeGreaterThan(Math.max(...ARM_KINDS.filter((k) => k !== 'tall').map((k) => workspaceFor(k).max[1])));
     expect(workspaceFor('tall').min[1]).toBeGreaterThan(ITEMS.pot.restY + 0.05);
+  });
+
+  it('shelf: the jar is above every arm but the tall base; glass and round, so gripper only', () => {
+    expect(grabCheck(ITEMS.jar, { arm: 'tall', tool: 'gripper' })).toBeNull();
+    expect(grabCheck(ITEMS.jar, { arm: 'tall', tool: 'magnet' })?.text).toBe('Magnet only lifts metal');
+    expect(grabCheck(ITEMS.jar, { arm: 'tall', tool: 'suction' })?.text).toBe("Suction can't seal on a jar");
+    const jarY = WORKSHOP.shelf.top + WORKSHOP.jar.h / 2;
+    for (const a of ARM_KINDS.filter((k) => k !== 'tall')) expect(workspaceFor(a).max[1]).toBeLessThan(jarY - 0.05);
+    expect(workspaceFor('tall').max[1]).toBeGreaterThan(jarY);
+    const env = new TaskEnv(3, 'shelf');
+    expect(env.state().items.jar![1]).toBeCloseTo(jarY, 9);
   });
 
   it('original labels', () => {

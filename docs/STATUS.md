@@ -41,6 +41,7 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Scoop | part (tool) | 161dc39 | | |
 | Marbles | challenge | 161dc39 | Scoop | Compact+Scoop, Long+Scoop, Heavy-duty+Scoop |
 | Tall base | part (arm) | f4f164e | | |
+| Shelf | challenge | SHELF_COMMIT | Tall base + Gripper | Tall base+Gripper |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
 - Moved every part and challenge into its own file (registry in `src/workshop/registry.ts`). Numbers stay in
@@ -77,6 +78,9 @@ Additions:
    because its weakness is the opposite of every other arm's: it reaches higher than any of them but its tip
    can't come down to the table, so every table job says "Out of reach". (A variation on the suggested "can't
    reach the near table edge": a shelf is only interesting if the other arms truly can't get up there.)
+7. ADD challenge: shelf (`src/workshop/challenges/shelf.ts`): a honey jar on a high shelf -> tall wicker basket.
+   Interesting because it's the first job where the arm's height, not its strength or the tool, decides:
+   every other arm says "Out of reach", and the jar is glass with a round side, so only the gripper holds it.
 
 Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base checks in `docs/WORKSHOP.md`):
 - [ ] 1 Groundwork (NOT YET TESTED ON HEADSET): in the Workshop, each countdown switches the wall to a different
@@ -96,6 +100,9 @@ Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base check
       visible enough? Frame rate with 7 marble spheres fine?
 - [ ] 6 Tall base (NOT YET TESTED ON HEADSET): poke "Tall base arm": the column grows; the hand target stops well
       above the table; reaching for the plate says "Out of reach". Is the tall arm's motion still comfortable?
+- [ ] 7 Shelf (NOT YET TESTED ON HEADSET): the high shelf and the jar on it are visible behind-left of the arm;
+      with Long, reaching up says "Out of reach"; Tall base + Gripper lifts the jar off and drops it in the basket.
+      Is the shelf at a comfortable hand height (jar ~1.42 m)?
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with

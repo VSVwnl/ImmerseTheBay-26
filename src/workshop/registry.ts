@@ -18,10 +18,11 @@ import { WASHER } from './challenges/washer';
 import { CRATE } from './challenges/crate';
 import { ANVIL } from './challenges/anvil';
 import { MARBLES } from './challenges/marbles';
+import { SHELF } from './challenges/shelf';
 
 export const ARM_DEFS: ArmDef[] = [COMPACT, LONG, HEAVYDUTY, TALL];
 export const TOOL_DEFS: ToolDef[] = [GRIPPER, SUCTION, MAGNET, WIDE, SCOOP];
-export const CHALLENGE_DEFS: ChallengeDef[] = [PLATE, FAR, HEAVY, WASHER, CRATE, ANVIL, MARBLES];
+export const CHALLENGE_DEFS: ChallengeDef[] = [PLATE, FAR, HEAVY, WASHER, CRATE, ANVIL, MARBLES, SHELF];
 
 const byId = <T extends { id: string }>(xs: T[]) => Object.fromEntries(xs.map((x) => [x.id, x])) as Record<string, T>;
 export const ARMS: Record<string, ArmDef> = byId(ARM_DEFS);

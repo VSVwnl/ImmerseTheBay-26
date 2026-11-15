@@ -3,7 +3,7 @@
 // Add a CASES row for each new challenge.
 import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs';
-import { moveTo, pickAndPlace, state, toggleGrip, waitPhase, type V3 } from '../helpers';
+import { moveTo, state, toggleGrip, waitPhase, type V3 } from '../helpers';
 
 interface Case {
   layout: string;
@@ -41,12 +41,37 @@ const CASES: Case[] = [
     wrong: { arm: 'compact', tool: 'gripper', label: 'Loose bits slip through the fingers' },
     right: { arm: 'compact', tool: 'scoop' },
   },
+  {
+    layout: 'shelf',
+    item: 'jar',
+    goal: [0.3, 0.75, -0.66],
+    wrong: { arm: 'long', tool: 'gripper', label: 'Out of reach' },
+    right: { arm: 'tall', tool: 'gripper' },
+  },
 ];
 const only = process.env.CASE;
 
 const items = (page: Page): Promise<Record<string, V3>> => page.evaluate(() => (window as any).__backlot.state().items);
 const label = (page: Page): Promise<string | null> => page.evaluate(() => (window as any).__backlot.core.workshop.lastLabel);
 const robot = (page: Page) => page.evaluate(() => (window as any).__backlot.challenges.robot);
+
+const workspace = (page: Page): Promise<{ min: V3; max: V3 }> => page.evaluate(() => (window as any).__backlot.desktop.workspace);
+const clampTo = (ws: { min: V3; max: V3 }, p: V3) => [0, 1, 2].map((i) => Math.min(ws.max[i], Math.max(ws.min[i], p[i]))) as V3;
+
+/** Pick and place with heights this arm can reach (objects may sit on a high shelf). */
+async function pickPlace(page: Page, obj: V3, goal: V3) {
+  const ws = await workspace(page);
+  const grab = clampTo(ws, [obj[0], Math.max(0.775, obj[1] - 0.01), obj[2]]);
+  const carryY = Math.min(ws.max[1], Math.max(0.95, obj[1] + 0.05));
+  await moveTo(page, [grab[0], Math.min(ws.max[1], grab[1] + 0.1), grab[2]]);
+  await moveTo(page, grab);
+  await toggleGrip(page);
+  if (!(await state(page)).held) throw new Error('grab failed');
+  await moveTo(page, [grab[0], carryY, grab[2]]);
+  await moveTo(page, [goal[0], carryY, goal[2]]);
+  await toggleGrip(page);
+  if ((await state(page)).held) throw new Error('release failed');
+}
 
 async function setParts(page: Page, arm: string, tool: string) {
   const r = await robot(page);
@@ -70,10 +95,10 @@ for (const c of CASES.filter((k) => !only || k.layout === only)) {
 
     // wrong parts: as close as this arm gets, close the tool: nothing held, the reason shows
     const obj = (await items(page))[c.item];
-    const ws = await page.evaluate(() => (window as any).__backlot.desktop.workspace);
-    const at = [0, 1, 2].map((i) => Math.min(ws.max[i], Math.max(ws.min[i], obj[i]))) as V3;
-    await moveTo(page, [at[0], at[1] + 0.1, at[2]]);
-    await moveTo(page, [at[0], 0.775, at[2]]);
+    const ws = await workspace(page);
+    const at = clampTo(ws, [obj[0], Math.max(0.775, obj[1] - 0.01), obj[2]]);
+    await moveTo(page, [at[0], Math.min(ws.max[1], at[1] + 0.1), at[2]]);
+    await moveTo(page, at);
     await toggleGrip(page);
     expect((await state(page)).held).toBeNull();
     expect(await label(page)).toBe(c.wrong.label);
@@ -83,7 +108,7 @@ for (const c of CASES.filter((k) => !only || k.layout === only)) {
     // right parts: restarts the challenge, then solve it
     await setParts(page, c.right.arm, c.right.tool);
     await waitPhase(page, 'running');
-    await pickAndPlace(page, (await items(page))[c.item], c.goal);
+    await pickPlace(page, (await items(page))[c.item], c.goal);
     await page.waitForTimeout(150);
     await page.screenshot({ path: `e2e-shots/ch-${c.layout}-done.png` });
     await waitPhase(page, 'results', 10000);

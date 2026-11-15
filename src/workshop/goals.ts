@@ -75,6 +75,32 @@ function makePallet(g0: Goal): THREE.Group {
   return g;
 }
 
+function makeBasket(g0: Goal): THREE.Group {
+  const g = new THREE.Group();
+  const wicker = new THREE.MeshStandardMaterial({ color: g0.color, roughness: 0.95 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x8a6436, roughness: 0.95 });
+  const t = 0.008;
+  for (const [w, d, x, z] of [
+    [g0.w, t, 0, g0.d / 2],
+    [g0.w, t, 0, -g0.d / 2],
+    [t, g0.d, g0.w / 2, 0],
+    [t, g0.d, -g0.w / 2, 0],
+  ] as [number, number, number, number][]) {
+    const side = new THREE.Mesh(new THREE.BoxGeometry(w, g0.h, d), wicker);
+    side.position.set(x, g0.h / 2, z);
+    g.add(side);
+    for (let i = 1; i < 5; i++) {
+      const band = new THREE.Mesh(new THREE.BoxGeometry(w + 0.002, 0.006, d + 0.002), dark);
+      band.position.set(x, (g0.h * i) / 5, z);
+      g.add(band);
+    }
+  }
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(g0.w, 0.004, g0.d), dark);
+  floor.position.y = 0.002;
+  g.add(floor);
+  return g;
+}
+
 /** Goal meshes by kind, drawn with their base on the table top at the goal's x/z. */
 export const GOAL_MESHES: Record<GoalKind, (g: Goal) => THREE.Object3D> = {
   rack: makeRack,
@@ -82,5 +108,5 @@ export const GOAL_MESHES: Record<GoalKind, (g: Goal) => THREE.Object3D> = {
   bin: (g) => makeBin(g.color),
   zone: makeZone,
   bowl: makeBowl,
-  basket: (g) => makeBin(g.color),
+  basket: makeBasket,
 };

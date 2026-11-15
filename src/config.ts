@@ -120,7 +120,7 @@ export const FACTORY = { seedBase: 1000, worldEvery: 20, stubSettleMs: 1700 };
 // The standard robot (compact + gripper) and Reach/Place/Sort always exist outside the Workshop: the expert,
 // datasets, training and Robot's turn depend on them. Turning compact or gripper off only hides them here.
 export const ENABLED_PARTS: string[] = ['compact', 'long', 'heavyduty', 'tall', 'gripper', 'suction', 'magnet', 'wide', 'scoop'];
-export const ENABLED_CHALLENGES: string[] = ['plate', 'far', 'heavy', 'washer', 'crate', 'anvil', 'marbles'];
+export const ENABLED_CHALLENGES: string[] = ['plate', 'far', 'heavy', 'washer', 'crate', 'anvil', 'marbles', 'shelf'];
 
 // ---- Robot Workshop (additive; the standard robot is Compact + Gripper and uses the values above) ----
 export const WORKSHOP = {
@@ -136,6 +136,7 @@ export const WORKSHOP = {
   longWorkspace: { min: [-0.56, 0.76, -0.95] as Vec3, max: [0.56, 1.3, -0.45] as Vec3 },
   // a grab attempt that misses an object outside the arm's workspace by up to this (m, horizontal) says "Out of reach"
   reachHintRadius: 0.25,
+  reachHintDy: 0.4, // ... and up to this far above or below it (the shelf jar is high above the other arms)
   slipS: 0.45, // tool wobble after a failed grab
   labelS: 1.8, // floating reason label lifetime
   plate: { radius: 0.06, thick: 0.012, spawnX: [-0.1, 0.1] as [number, number], spawnZ: [-0.85, -0.75] as [number, number] },
@@ -153,4 +154,8 @@ export const WORKSHOP = {
   dropZone: { pos: [-0.24, 0.75, -0.66] as Vec3, size: 0.16 },
   marbles: { r: 0.011, spread: 0.03, spawnX: [-0.14, -0.02] as [number, number], spawnZ: [-0.86, -0.76] as [number, number] },
   bowl: { pos: [0.27, 0.75, -0.62] as Vec3, r: 0.08, h: 0.045 },
+  // high shelf (top surface height) with a glass jar on it, and a tall basket whose rim the tall base can reach
+  shelf: { pos: [-0.3, 0.75, -0.86] as Vec3, top: 1.37, w: 0.2, d: 0.14 },
+  jar: { r: 0.03, h: 0.1, spawnX: [-0.36, -0.24] as [number, number], spawnZ: [-0.89, -0.83] as [number, number] },
+  basket: { pos: [0.3, 0.75, -0.66] as Vec3, w: 0.16, d: 0.16, h: 0.2 },
 };
