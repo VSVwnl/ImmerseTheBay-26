@@ -5,6 +5,7 @@ import type { ArmDef, ChallengeDef, ItemSpec, ToolDef } from './types';
 import { COMPACT } from './parts/compact';
 import { LONG } from './parts/long';
 import { HEAVYDUTY } from './parts/heavyduty';
+import { TALL } from './parts/tall';
 import { GRIPPER } from './parts/gripper';
 import { SUCTION } from './parts/suction';
 import { MAGNET } from './parts/magnet';
@@ -18,7 +19,7 @@ import { CRATE } from './challenges/crate';
 import { ANVIL } from './challenges/anvil';
 import { MARBLES } from './challenges/marbles';
 
-export const ARM_DEFS: ArmDef[] = [COMPACT, LONG, HEAVYDUTY];
+export const ARM_DEFS: ArmDef[] = [COMPACT, LONG, HEAVYDUTY, TALL];
 export const TOOL_DEFS: ToolDef[] = [GRIPPER, SUCTION, MAGNET, WIDE, SCOOP];
 export const CHALLENGE_DEFS: ChallengeDef[] = [PLATE, FAR, HEAVY, WASHER, CRATE, ANVIL, MARBLES];
 

@@ -40,6 +40,7 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Anvil | challenge | c72c181 | Heavy-duty + Gripper or Magnet | Heavy-duty+Gripper, Heavy-duty+Magnet |
 | Scoop | part (tool) | 161dc39 | | |
 | Marbles | challenge | 161dc39 | Scoop | Compact+Scoop, Long+Scoop, Heavy-duty+Scoop |
+| Tall base | part (arm) | TALL_COMMIT | | |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
 - Moved every part and challenge into its own file (registry in `src/workshop/registry.ts`). Numbers stay in
@@ -72,6 +73,10 @@ Additions:
 5. Scoop tool + Marbles challenge (a handful of glass marbles -> blue bowl). Interesting because a "thing" that is
    really many small loose bits defeats every grasping idea at once (fingers: slip through; suction: loose;
    magnet: glass; wide: loose), and the scoop, which can't pick up anything solid, is the only answer with any arm.
+6. ADD part: tall base (`src/workshop/parts/tall.ts`): the standard links on a column 0.3 m taller. Interesting
+   because its weakness is the opposite of every other arm's: it reaches higher than any of them but its tip
+   can't come down to the table, so every table job says "Out of reach". (A variation on the suggested "can't
+   reach the near table edge": a shelf is only interesting if the other arms truly can't get up there.)
 
 Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base checks in `docs/WORKSHOP.md`):
 - [ ] 1 Groundwork (NOT YET TESTED ON HEADSET): in the Workshop, each countdown switches the wall to a different
@@ -89,6 +94,8 @@ Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base check
 - [ ] 5 Scoop + Marbles (NOT YET TESTED ON HEADSET): with the Gripper the marbles say "Loose bits slip through the
       fingers"; with the Scoop they sit in the orange-walled tray and land in the blue bowl; the marbles are small:
       visible enough? Frame rate with 7 marble spheres fine?
+- [ ] 6 Tall base (NOT YET TESTED ON HEADSET): poke "Tall base arm": the column grows; the hand target stops well
+      above the table; reaching for the plate says "Out of reach". Is the tall arm's motion still comfortable?
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with

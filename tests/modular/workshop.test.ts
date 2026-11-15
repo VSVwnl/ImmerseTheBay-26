@@ -30,30 +30,30 @@ const key = (r: RobotParts) => `${r.arm}+${r.tool}`;
 /** Expected outcome of each Workshop challenge for each robot: 'ok' or the failure reason.
  *  Robots not listed must fail (any reason). */
 const EXPECT: Record<WorkshopLayout, Record<string, 'ok' | 'tool' | 'heavy' | 'reach'>> = {
-  anvil: {
+  anvil: { 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach',
     'compact+gripper': 'heavy', 'compact+suction': 'tool', 'compact+magnet': 'heavy', 'compact+wide': 'tool',
     'long+gripper': 'heavy', 'long+suction': 'tool', 'long+magnet': 'heavy', 'long+wide': 'tool',
     'heavyduty+gripper': 'ok', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'ok', 'heavyduty+wide': 'tool',
     'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool',
   },
-  marbles: {
+  marbles: { 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach',
     'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'tool', 'compact+wide': 'tool', 'compact+scoop': 'ok',
     'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'tool', 'long+wide': 'tool', 'long+scoop': 'ok',
     'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'ok',
   },
-  plate: { 'compact+gripper': 'tool', 'compact+suction': 'ok', 'long+gripper': 'tool', 'long+suction': 'ok', 'compact+magnet': 'tool', 'long+magnet': 'tool', 'compact+wide': 'tool', 'long+wide': 'tool',
+  plate: { 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'tool', 'compact+suction': 'ok', 'long+gripper': 'tool', 'long+suction': 'ok', 'compact+magnet': 'tool', 'long+magnet': 'tool', 'compact+wide': 'tool', 'long+wide': 'tool',
     'heavyduty+gripper': 'tool', 'heavyduty+suction': 'ok', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool',
     'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool' },
-  far: { 'compact+gripper': 'reach', 'compact+suction': 'reach', 'long+gripper': 'ok', 'long+suction': 'tool', 'compact+magnet': 'reach', 'long+magnet': 'ok', 'compact+wide': 'reach', 'long+wide': 'tool',
+  far: { 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'reach', 'compact+suction': 'reach', 'long+gripper': 'ok', 'long+suction': 'tool', 'compact+magnet': 'reach', 'long+magnet': 'ok', 'compact+wide': 'reach', 'long+wide': 'tool',
     'heavyduty+gripper': 'reach', 'heavyduty+suction': 'reach', 'heavyduty+magnet': 'reach', 'heavyduty+wide': 'reach',
     'compact+scoop': 'reach', 'long+scoop': 'tool', 'heavyduty+scoop': 'reach' },
-  heavy: { 'compact+gripper': 'ok', 'compact+suction': 'tool', 'long+gripper': 'heavy', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'heavy', 'compact+wide': 'tool', 'long+wide': 'tool',
+  heavy: { 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'ok', 'compact+suction': 'tool', 'long+gripper': 'heavy', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'heavy', 'compact+wide': 'tool', 'long+wide': 'tool',
     'heavyduty+gripper': 'ok', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'ok', 'heavyduty+wide': 'tool',
     'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool' },
-  washer: { 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'ok', 'compact+wide': 'tool', 'long+wide': 'tool',
+  washer: { 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'ok', 'compact+wide': 'tool', 'long+wide': 'tool',
     'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'ok', 'heavyduty+wide': 'tool',
     'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool' },
-  crate: { 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'tool', 'long+magnet': 'tool', 'compact+wide': 'ok', 'long+wide': 'heavy',
+  crate: { 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'tool', 'long+magnet': 'tool', 'compact+wide': 'ok', 'long+wide': 'heavy',
     'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'ok',
     'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool' },
 };
@@ -174,6 +174,12 @@ describe('grab rules', () => {
     expect(grabCheck(ITEMS.marbles, { arm: 'long', tool: 'scoop' })).toBeNull();
   });
 
+  it('tall base: shoulder 0.3 m higher; reaches high up but not down to the table', () => {
+    expect(shoulderPoint(linksFor('tall'))[1]).toBeCloseTo(shoulderPoint()[1] + WORKSHOP.tallRise, 12);
+    expect(workspaceFor('tall').max[1]).toBeGreaterThan(Math.max(...ARM_KINDS.filter((k) => k !== 'tall').map((k) => workspaceFor(k).max[1])));
+    expect(workspaceFor('tall').min[1]).toBeGreaterThan(ITEMS.pot.restY + 0.05);
+  });
+
   it('original labels', () => {
     expect(grabCheck(ITEMS.pot, { arm: 'long', tool: 'gripper' })?.text).toBe('Too heavy for this arm');
     expect(grabCheck(ITEMS.plate, STANDARD_ROBOT)?.text).toBe("Can't grip a flat plate");
@@ -190,8 +196,8 @@ describe('grab rules', () => {
       }
   });
 
-  it('cubes are not tagged: every robot grabs them, so the standard challenges are unaffected', () => {
-    for (const r of ROBOTS) {
+  it('cubes are not tagged: every robot that reaches the table grabs them, so the standard challenges are unaffected', () => {
+    for (const r of ROBOTS.filter((q) => workspaceFor(q.arm).min[1] < 0.8)) {
       const env = new TaskEnv(3, 'place', r);
       const cube = env.state().cubes.red!;
       const s = pickPlace(env, cube, BIN_POS.red);

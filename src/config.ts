@@ -119,13 +119,16 @@ export const FACTORY = { seedBase: 1000, worldEvery: 20, stubSettleMs: 1700 };
 // ---- Switches: delete one word to turn a Workshop part or challenge off ----
 // The standard robot (compact + gripper) and Reach/Place/Sort always exist outside the Workshop: the expert,
 // datasets, training and Robot's turn depend on them. Turning compact or gripper off only hides them here.
-export const ENABLED_PARTS: string[] = ['compact', 'long', 'heavyduty', 'gripper', 'suction', 'magnet', 'wide', 'scoop'];
+export const ENABLED_PARTS: string[] = ['compact', 'long', 'heavyduty', 'tall', 'gripper', 'suction', 'magnet', 'wide', 'scoop'];
 export const ENABLED_CHALLENGES: string[] = ['plate', 'far', 'heavy', 'washer', 'crate', 'anvil', 'marbles'];
 
 // ---- Robot Workshop (additive; the standard robot is Compact + Gripper and uses the values above) ----
 export const WORKSHOP = {
   longScale: 1.35, // Long arm links are this much longer than L1/L2
-  payload: { compact: 2, long: 1, heavyduty: 3 },
+  payload: { compact: 2, long: 1, heavyduty: 3, tall: 2 },
+  // Tall base: shoulder 0.3 m higher; reaches high shelves but its tip can't come down to the table
+  tallRise: 0.3,
+  tallWorkspace: { min: [-0.35, 0.9, -0.95] as Vec3, max: [0.35, 1.45, -0.6] as Vec3 },
   heavyScale: 0.8, // Heavy-duty links are this much shorter (and drawn thicker)
   // Heavy-duty reach: about the middle of the table only (its full stretch is 0.63 m)
   heavyWorkspace: { min: [-0.3, 0.76, -0.92] as Vec3, max: [0.3, 1.05, -0.58] as Vec3 },
