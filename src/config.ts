@@ -115,6 +115,12 @@ export const MULTIPLY_SETTLE_S = 4;
 // worldEvery: spec start value 10; 20 halves the live world switches (~8-27 s of Orbis each) to fit the time budget.
 export const FACTORY = { seedBase: 1000, worldEvery: 20, stubSettleMs: 1700 };
 
+// ---- Switches: delete one word to turn a Workshop part or challenge off ----
+// The standard robot (compact + gripper) and Reach/Place/Sort always exist outside the Workshop: the expert,
+// datasets, training and Robot's turn depend on them. Turning compact or gripper off only hides them here.
+export const ENABLED_PARTS: string[] = ['compact', 'long', 'gripper', 'suction'];
+export const ENABLED_CHALLENGES: string[] = ['plate', 'far', 'heavy'];
+
 // ---- Robot Workshop (additive; the standard robot is Compact + Gripper and uses the values above) ----
 export const WORKSHOP = {
   longScale: 1.35, // Long arm links are this much longer than L1/L2

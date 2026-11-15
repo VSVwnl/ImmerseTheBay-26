@@ -2,7 +2,8 @@
 // Deterministic: same seed + same actions + same dt values => same result. No Math.random, no clocks.
 import { solveIK, type Joints } from '../arm/ik';
 import { COLORS, findGrab, restsIn, settle, type CubeColor } from '../arm/grasp';
-import { findItem, grabRule, inGoal, isItem, ITEMS, outOfReachItem, settleItem, type GrabFailReason, type ItemId } from '../arm/items';
+import { findItem, grabCheck, isItem, ITEMS, OUT_OF_REACH, outOfReachItem, type GrabFailReason, type ItemId } from '../arm/items';
+import { isWorkshopLayout, onGoal, settleOn, WORKSHOP_TASKS, type WorkshopLayout } from './workshop';
 import { linksFor, STANDARD_ROBOT, workspaceFor, type RobotParts, type Workspace } from '../arm/parts';
 import {
   CUBE_SIZE,
@@ -12,23 +13,23 @@ import {
   REACH_HEIGHT,
   REACH_SUCCESS_DIST,
   TABLE,
-  WORKSHOP,
   WORKSPACE,
   type Vec3,
 } from '../config';
 import { mulberry32, type Rng } from './rng';
 
 export type StandardLayout = 'reach' | 'place' | 'sort';
-/** Robot Workshop challenges: each needs particular parts. */
-export type WorkshopLayout = 'plate' | 'far' | 'heavy';
+/** Robot Workshop challenges (data in ./workshop.ts): each needs particular parts. */
+export type { WorkshopLayout } from './workshop';
+export { WORKSHOP_LAYOUTS, isWorkshopLayout } from './workshop';
 export type Layout = StandardLayout | WorkshopLayout;
-export const WORKSHOP_LAYOUTS: WorkshopLayout[] = ['plate', 'far', 'heavy'];
-export const isWorkshopLayout = (l: string): l is WorkshopLayout => (WORKSHOP_LAYOUTS as string[]).includes(l);
 export type HeldId = CubeColor | ItemId;
 export type Items = Partial<Record<ItemId, Vec3>>;
 export interface GrabFail {
   reason: GrabFailReason;
   item: ItemId | null;
+  /** the label shown to the user */
+  text: string;
   at: Vec3;
   step: number;
 }
@@ -72,13 +73,10 @@ export function clampToWorkspace(t: Vec3, ws: Workspace = WORKSPACE): Vec3 {
   return [clamp(t[0], ws.min[0], ws.max[0]), clamp(t[1], ws.min[1], ws.max[1]), clamp(t[2], ws.min[2], ws.max[2])];
 }
 
-const between = (rng: Rng, [lo, hi]: [number, number]) => lo + rng() * (hi - lo);
-
 function workshopItems(rng: Rng, layout: WorkshopLayout): Items {
-  const W = WORKSHOP;
-  if (layout === 'plate') return { plate: [between(rng, W.plate.spawnX), ITEMS.plate.restY, between(rng, W.plate.spawnZ)] };
-  if (layout === 'far') return { can: [W.can.x, ITEMS.can.restY, between(rng, W.can.spawnZ)] };
-  return { pot: [between(rng, W.pot.spawnX), ITEMS.pot.restY, between(rng, W.pot.spawnZ)] };
+  const items: Items = {};
+  for (const step of WORKSHOP_TASKS[layout].steps) items[step.item] = step.spawn(rng);
+  return items;
 }
 
 function spawnCube(rng: Rng, others: Vec3[]): Vec3 {
@@ -107,7 +105,9 @@ function reachTargets(rng: Rng): Vec3[] {
   return cols.map(([lo, hi]) => [lo + rng() * (hi - lo), TABLE.top + REACH_HEIGHT, -0.85 + rng() * 0.33] as Vec3);
 }
 
-const itemDone = (s: Pick<EnvState, 'items' | 'held'>, id: ItemId) => !!s.items[id] && s.held !== id && inGoal(id, s.items[id]!);
+/** A Workshop challenge is done when every step's object rests (not held) on its goal. */
+const workshopDone = (s: Pick<EnvState, 'items' | 'held'>, layout: WorkshopLayout) =>
+  WORKSHOP_TASKS[layout].steps.every((st) => !!s.items[st.item] && s.held !== st.item && onGoal(st, s.items[st.item]!));
 
 export function successOf(s: Pick<EnvState, 'layout' | 'cubes' | 'held' | 'reachIndex' | 'reachTargets' | 'items'>): boolean {
   switch (s.layout) {
@@ -117,12 +117,8 @@ export function successOf(s: Pick<EnvState, 'layout' | 'cubes' | 'held' | 'reach
       return !!s.cubes.red && restsIn(s.cubes.red, 'red', s.held === 'red');
     case 'sort':
       return COLORS.every((c) => !!s.cubes[c] && restsIn(s.cubes[c]!, c, s.held === c));
-    case 'plate':
-      return itemDone(s, 'plate');
-    case 'far':
-      return itemDone(s, 'can');
-    case 'heavy':
-      return itemDone(s, 'pot');
+    default:
+      return isWorkshopLayout(s.layout) ? workshopDone(s, s.layout) : false;
   }
 }
 
@@ -198,7 +194,7 @@ export class TaskEnv implements Env {
     } else if (g === 0 && s.grip === 1 && isItem(s.held)) {
       const id = s.held;
       s.held = null;
-      const rest = settleItem(id, s.tip);
+      const rest = isWorkshopLayout(s.layout) ? settleOn(s.layout, id, s.tip) : { pos: s.tip, goal: false, offTable: true };
       s.items[id] = rest.offTable ? [...s.itemSpawn[id]!] : rest.pos;
       if (!rest.goal) s.drops++;
     } else if (g === 0 && s.grip === 1 && s.held) {
@@ -229,15 +225,15 @@ export class TaskEnv implements Env {
   private tryGrabItem(ws: Workspace): ItemId | null {
     const s = this.s;
     const id = findItem(s.tip, s.items);
-    let reason: GrabFailReason | null = null;
+    let fail: { reason: GrabFailReason; text: string } | null = null;
     let item: ItemId | null = id;
-    if (id) reason = grabRule(ITEMS[id], s.robot);
+    if (id) fail = grabCheck(ITEMS[id], s.robot);
     else {
       item = outOfReachItem(s.tip, s.items, ws);
-      if (item) reason = 'reach';
+      if (item) fail = { reason: 'reach', text: OUT_OF_REACH };
     }
-    if (!reason) return id;
-    s.grabFail = { reason, item, at: [s.tip[0], s.tip[1], s.tip[2]], step: s.steps };
+    if (!fail) return id;
+    s.grabFail = { reason: fail.reason, item, text: fail.text, at: [s.tip[0], s.tip[1], s.tip[2]], step: s.steps };
     s.grabFails++;
     return null;
   }

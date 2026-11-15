@@ -5,9 +5,8 @@ import { createStage, markDataset } from './scene/stage';
 import { ArmModel } from './arm/arm';
 import { solveIK } from './arm/ik';
 import { linksFor, sameParts, type RobotParts } from './arm/parts';
-import { ITEM_IDS, type ItemId } from './arm/items';
+import { ITEM_IDS, ITEMS, type ItemId } from './arm/items';
 import { WorkshopProps } from './scene/workshop';
-import { WORKSHOP } from './config';
 import { StreamLight } from './scene/streamlight';
 import { WorldManager } from './world/manager';
 import type { EnvState } from './env/env';
@@ -102,8 +101,8 @@ export function createCore() {
       if (curr.held === id) {
         p = lerp3(prev.items?.[id] ?? b, b, alpha);
         disp[id] = { y: p[1], v: 0 };
-        // a plate hangs under the suction pad instead of being centered on it
-        if (id === 'plate') p = [p[0], p[1] - WORKSHOP.plate.thick / 2, p[2]];
+        // e.g. a plate hangs under the suction pad instead of being centered on it
+        p = [p[0], p[1] - (ITEMS[id].holdDrop ?? 0), p[2]];
       } else if (d && d.y > b[1]) {
         d.v += 9.8 * dt;
         d.y = Math.max(b[1], d.y - d.v * dt);

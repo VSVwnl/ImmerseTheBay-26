@@ -2,7 +2,8 @@
 // Owns the fixed-step env loop for the human app: env.step(action, 1/SIM_HZ) per tick.
 import { CHALLENGE_LIMIT_S, COUNTDOWN_S, SIM_DT, SIM_HZ } from '../config';
 import { TaskEnv, type Action, type EnvState, type GrabFail, type Layout } from '../env/env';
-import { sameParts, STANDARD_ROBOT, type RobotParts } from '../arm/parts';
+import { sameParts, STANDARD_ROBOT, workshopStartParts, type RobotParts } from '../arm/parts';
+import { enabledWorkshopLayouts, WORKSHOP_TASKS } from '../env/workshop';
 import { Recorder, type AttemptRecord, type InputKind } from './recorder';
 
 export interface ChallengeDef {
@@ -17,12 +18,10 @@ export const CHALLENGES: ChallengeDef[] = [
   { layout: 'sort', name: 'Sort', hint: 'Each cube into its own-colored bin' },
 ];
 
-/** Robot Workshop: each challenge needs particular parts (see WORKSHOP_NEEDS). */
-export const WORKSHOP_CHALLENGES: ChallengeDef[] = [
-  { layout: 'plate', name: 'Plate', hint: 'Put the plate on the rack' },
-  { layout: 'far', name: 'Far', hint: 'Put the can in the green bin' },
-  { layout: 'heavy', name: 'Heavy', hint: 'Put the pot on the glowing zone' },
-];
+/** Robot Workshop challenges switched on in config (ENABLED_CHALLENGES), in registry order. */
+export function workshopChallenges(): ChallengeDef[] {
+  return enabledWorkshopLayouts().map((l) => ({ layout: l, name: WORKSHOP_TASKS[l].name, hint: WORKSHOP_TASKS[l].hint }));
+}
 export const WORKSHOP_HINT = 'Pick the right parts for the job';
 
 export type Phase = 'idle' | 'countdown' | 'running' | 'between' | 'results';
@@ -83,23 +82,25 @@ export class Challenges {
   }
 
   get list(): ChallengeDef[] {
-    return this.workshop ? WORKSHOP_CHALLENGES : CHALLENGES;
+    return this.workshop ? workshopChallenges() : CHALLENGES;
   }
 
   get current(): ChallengeDef {
     return this.list[this.index] ?? this.list[0];
   }
 
-  /** Enter or leave Workshop mode. Leaving always puts the standard robot back. Goes to the idle screen. */
+  /** Enter or leave Workshop mode. Leaving always puts the standard robot back. Goes to the idle screen.
+   *  Entering does nothing when every Workshop challenge is switched off. */
   setWorkshop(on: boolean): void {
     if (on === this.workshop) return;
+    if (on && !workshopChallenges().length) return;
     this.recorder.abort();
     this.workshop = on;
-    this.robot = { ...STANDARD_ROBOT };
+    this.robot = on ? workshopStartParts() : { ...STANDARD_ROBOT };
     this.phase = 'idle';
     this.index = 0;
     this.results = [];
-    this.env.reset(this.deps.seed(), on ? WORKSHOP_CHALLENGES[0].layout : 'place', this.robot);
+    this.env.reset(this.deps.seed(), on ? workshopChallenges()[0].layout : 'place', this.robot);
     this.syncSnapshots();
     this.deps.onEvent({ type: 'parts', robot: { ...this.robot } });
   }

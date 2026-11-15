@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { TABLE, WORKSHOP, type Vec3 } from '../config';
 import type { EnvState } from '../env/env';
 import { ITEM_IDS, type ItemId } from '../arm/items';
+import { WORKSHOP_LAYOUTS, WORKSHOP_TASKS, type Goal, type GoalKind, type WorkshopLayout } from '../env/workshop';
 import { makeBin, markDataset } from './stage';
 
 const ORANGE = 0xf28a1e;
@@ -58,9 +59,9 @@ function makePot(): THREE.Group {
   return g;
 }
 
-function makeRack(): THREE.Group {
+function makeRack(g0: Goal): THREE.Group {
   const g = new THREE.Group();
-  const { w, d, h } = WORKSHOP.rack;
+  const { w, d, h } = g0;
   const steel = new THREE.MeshStandardMaterial({ color: 0xb8bcc2, roughness: 0.3, metalness: 0.8 });
   const accent = new THREE.MeshStandardMaterial({ color: ORANGE, roughness: 0.45 });
   for (const sx of [-1, 1])
@@ -82,15 +83,31 @@ function makeRack(): THREE.Group {
   return g;
 }
 
-function makeZone(): THREE.Mesh {
-  const s = WORKSHOP.zone.size;
+function makeZone(g0: Goal): THREE.Object3D {
   const m = new THREE.Mesh(
-    new THREE.PlaneGeometry(s, s),
-    new THREE.MeshStandardMaterial({ color: 0xffd34d, emissive: 0x8a6a00, transparent: true, opacity: 0.55, roughness: 0.8 }),
+    new THREE.PlaneGeometry(g0.w, g0.d),
+    new THREE.MeshStandardMaterial({ color: g0.color, emissive: new THREE.Color(g0.color).multiplyScalar(0.45), transparent: true, opacity: 0.55, roughness: 0.8 }),
   );
   m.rotation.x = -Math.PI / 2;
-  return m;
+  m.position.y = 0.001;
+  const g = new THREE.Group();
+  g.add(m);
+  return g;
 }
+
+/** Goal meshes by kind. To add a goal kind, add a builder here. */
+const GOAL_MESHES: Record<GoalKind, (g: Goal) => THREE.Object3D> = {
+  rack: makeRack,
+  bin: (g) => makeBin(g.color),
+  zone: makeZone,
+};
+
+/** Object meshes. To add an object, add a builder here (simple primitives only). */
+const ITEM_MESHES: Record<ItemId, () => THREE.Group> = {
+  plate: makePlate,
+  can: makeCan,
+  pot: makePot,
+};
 
 /** A label that floats up and fades out. Not on the dataset layer. */
 class FloatLabel {
@@ -144,19 +161,25 @@ class FloatLabel {
 export class WorkshopProps {
   readonly root = new THREE.Group();
   readonly items: Record<ItemId, THREE.Group>;
-  private rack = makeRack();
-  private bin = makeBin(0x2f9e5b);
-  private zone = makeZone();
+  /** goal meshes per challenge, shown only during that challenge */
+  private goals = new Map<WorkshopLayout, THREE.Object3D[]>();
   private label = new FloatLabel();
   /** the last failed-grab text shown (for tests) */
   lastLabel: string | null = null;
 
   constructor() {
-    this.items = { plate: makePlate(), can: makeCan(), pot: makePot() };
-    this.rack.position.set(...WORKSHOP.rack.pos);
-    this.bin.position.set(...WORKSHOP.canBin.pos);
-    this.zone.position.set(WORKSHOP.zone.pos[0], TABLE.top + 0.001, WORKSHOP.zone.pos[2]);
-    this.root.add(this.rack, this.bin, this.zone, ...Object.values(this.items));
+    this.items = Object.fromEntries(ITEM_IDS.map((id) => [id, ITEM_MESHES[id]()])) as Record<ItemId, THREE.Group>;
+    this.root.add(...Object.values(this.items));
+    for (const layout of WORKSHOP_LAYOUTS) {
+      const meshes = WORKSHOP_TASKS[layout].steps.map((st) => {
+        const m = GOAL_MESHES[st.goal.kind](st.goal);
+        m.position.set(st.goal.pos[0], TABLE.top, st.goal.pos[2]);
+        m.visible = false;
+        this.root.add(m);
+        return m;
+      });
+      this.goals.set(layout, meshes);
+    }
     markDataset(this.root);
     this.root.add(this.label.sprite);
   }
@@ -176,9 +199,7 @@ export class WorkshopProps {
       this.items[id].visible = !!p;
       if (p) this.items[id].position.set(p[0], p[1], p[2]);
     }
-    this.rack.visible = s.layout === 'plate';
-    this.bin.visible = s.layout === 'far';
-    this.zone.visible = s.layout === 'heavy';
+    for (const [layout, meshes] of this.goals) for (const m of meshes) m.visible = s.layout === layout;
     this.label.update(dt);
   }
 }

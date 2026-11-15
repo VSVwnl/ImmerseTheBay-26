@@ -4,6 +4,32 @@ Updated: Sat Nov 14, 4:45 PM PST
 
 ## Current milestone: M1-M5 done with real Orbis data and a real evaluation. Remaining: headset checks (you)
 
+### Autonomous Workshop run (Sun 03:10-06:30 PST, branch `modular`, tag `safe-start` = 9e3ca17)
+Goal: "pick the right robot for the job". One addition per commit; modular tests only per addition
+(`npm run test:modular`, `npm run e2e:modular`); the whole suite once at 06:00.
+
+Decisions (made without asking):
+- `ENABLED_PARTS` / `ENABLED_CHALLENGES` in `src/config.ts` list only Workshop items. Reach/Place/Sort and the
+  standard robot are always on outside the Workshop (expert, datasets, training, Robot's turn need them).
+  Switching off `compact` or `gripper` only hides them in the Workshop, which then starts on the first enabled
+  parts. With every challenge off, the Robot Workshop button disappears.
+- Random world per attempt: only in Workshop mode, picked from the six button worlds, never the one already on
+  the wall; picked at each countdown (a part change restarts the countdown, so it re-picks). Recorded in the
+  attempt file's `world` as before.
+- Grab rules are now per tool, reading object tags (material, shape, size, weight); labels come from the rule.
+  Challenges are data (`src/env/workshop.ts`): a list of steps (object, spawn, goal), so two-step challenges need
+  no new code.
+
+Additions:
+1. Groundwork: switches, part/challenge registries, random world per attempt, modular test folders.
+   Interesting because every later part or challenge is one data entry plus one row of expected outcomes, and
+   the tests check every robot against every challenge automatically.
+
+Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base checks in `docs/WORKSHOP.md`):
+- [ ] 1 Groundwork (NOT YET TESTED ON HEADSET): in the Workshop, each countdown switches the wall to a different
+      world; with the live key the new world shows within a few seconds; the parts panel lines (part + strength /
+      weakness) are readable.
+
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with
   slip + buzz + floating reason label; Plate / Far / Heavy challenges; arm + tool + grabFails in every attempt

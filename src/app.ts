@@ -4,9 +4,9 @@ import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { PANELS, SUCCESS_NUDGES, WORLD_DEFAULT_MODE, type Vec3 } from './config';
 import { DesktopInput } from './input/desktop';
 import { XRInput } from './input/xr';
-import { Challenges, WORKSHOP_HINT, type ChallengeResult } from './tasks/challenges';
-import { ARM_KINDS, ARM_LABEL, payloadOf, TOOL_KINDS, TOOL_LABEL, workspaceFor, type ArmKind, type ToolKind } from './arm/parts';
-import { failText } from './arm/items';
+import { Challenges, WORKSHOP_HINT, workshopChallenges, type ChallengeResult } from './tasks/challenges';
+import { ARMS, enabledArms, enabledTools, payloadOf, TOOLS, workspaceFor, type ArmKind, type ToolKind } from './arm/parts';
+import { pickAttemptWorld } from './tasks/worldpick';
 import { newSessionId, type AttemptRecord, type InputKind } from './tasks/recorder';
 import { Panel, type PanelContent } from './ui/panels';
 import { sfx, unlockAudio } from './ui/sound';
@@ -111,6 +111,11 @@ export function startApp(core: Core) {
       switch (e.type) {
         case 'countdown':
           if (e.n === 3) desktop.grip = 0; // every challenge starts with the gripper open
+          // Workshop: a random world on the wall for every attempt (recorded in the attempt file)
+          if (e.n === 3 && challenges.workshop) {
+            const w = pickAttemptWorld(BUTTON_WORLDS, world.current()?.id, Math.random);
+            if (w) selectWorld(w);
+          }
           sfx.tick();
           break;
         case 'go':
@@ -140,7 +145,7 @@ export function startApp(core: Core) {
         case 'grabfail':
           sfx.slip();
           core.arm.slip();
-          core.workshop.showFail(failText(e.fail.reason, e.fail.item), e.fail.at);
+          core.workshop.showFail(e.fail.text, e.fail.at);
           break;
         case 'parts':
           desktop.setWorkspace(workspaceFor(e.robot.arm));
@@ -348,7 +353,7 @@ export function startApp(core: Core) {
           : [
               ...(bestPlace() ? [{ id: 'multiply', label: 'Multiply my Place demo', wide: true }] : []),
               { id: 'again', label: 'Run again', wide: true },
-              { id: 'workshop', label: 'Robot Workshop', wide: true },
+              ...(workshopChallenges().length ? [{ id: 'workshop', label: 'Robot Workshop', wide: true }] : []),
             ],
       };
     } else if (ph === 'idle') {
@@ -365,7 +370,7 @@ export function startApp(core: Core) {
             ]
           : [
               { id: 'start', label: 'Start', wide: true },
-              { id: 'workshop', label: 'Robot Workshop', wide: true },
+              ...(workshopChallenges().length ? [{ id: 'workshop', label: 'Robot Workshop', wide: true }] : []),
             ],
       };
     } else {
@@ -436,13 +441,13 @@ export function startApp(core: Core) {
       panels.workshop.set({
         title: 'Workshop: parts',
         lines: [
-          { text: `Arm: ${ARM_LABEL[r.arm]} (payload ${payloadOf(r.arm)})`, size: 22, bold: true },
-          { text: `Tool: ${TOOL_LABEL[r.tool]}`, size: 22, bold: true },
-          { text: 'Changing a part restarts the challenge', size: 17, color: '#9fb3c8' },
+          { text: `Arm: ${ARMS[r.arm].label} (payload ${payloadOf(r.arm)}): ${ARMS[r.arm].blurb}`, size: 18, bold: true },
+          { text: `Tool: ${TOOLS[r.tool].label}: ${TOOLS[r.tool].blurb}`, size: 18, bold: true },
+          { text: 'Changing a part restarts the challenge', size: 16, color: '#9fb3c8' },
         ],
         buttons: [
-          ...ARM_KINDS.map((a) => ({ id: `arm:${a}`, label: `${ARM_LABEL[a]} arm`, active: r.arm === a })),
-          ...TOOL_KINDS.map((t) => ({ id: `tool:${t}`, label: TOOL_LABEL[t], active: r.tool === t })),
+          ...enabledArms().map((a) => ({ id: `arm:${a}`, label: `${ARMS[a].label} arm`, active: r.arm === a })),
+          ...enabledTools().map((t) => ({ id: `tool:${t}`, label: TOOLS[t].label, active: r.tool === t })),
         ],
         cols: 2,
       });

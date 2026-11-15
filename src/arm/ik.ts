@@ -1,7 +1,7 @@
 // Closed-form IK/FK for the 4-joint arm. The tool always points straight down.
 // Pure math, no three.js, so env and tests can use it anywhere.
 import { ARM_BASE, L1, L2, SHOULDER_H, TOOL_LEN, type Vec3 } from '../config';
-import type { Links } from './parts';
+import { shoulderHeight, type Links } from './parts';
 
 const STD_LINKS: Links = { l1: L1, l2: L2 };
 
@@ -20,8 +20,8 @@ export function maxReach(links: Links = STD_LINKS): number {
   return links.l1 + links.l2 - 0.01;
 }
 
-export function shoulderPoint(): Vec3 {
-  return [ARM_BASE[0], ARM_BASE[1] + SHOULDER_H, ARM_BASE[2]];
+export function shoulderPoint(links?: Links): Vec3 {
+  return [ARM_BASE[0], ARM_BASE[1] + (links ? shoulderHeight(links) : SHOULDER_H), ARM_BASE[2]];
 }
 
 /**
@@ -32,7 +32,7 @@ export function shoulderPoint(): Vec3 {
  */
 export function solveIK(target: Vec3, links: Links = STD_LINKS): IKResult {
   const { l1: L1, l2: L2 } = links;
-  const S = shoulderPoint();
+  const S = shoulderPoint(links);
   const W: Vec3 = [target[0], target[1] + TOOL_LEN, target[2]];
   const dx = W[0] - S[0];
   const dz = W[2] - S[2];
@@ -62,7 +62,7 @@ export interface FKResult {
 export function forwardKinematics(j: Joints, links: Links = STD_LINKS): FKResult {
   const { l1: L1, l2: L2 } = links;
   const [yaw, sh, el, wp] = j;
-  const S = shoulderPoint();
+  const S = shoulderPoint(links);
   const hx = Math.sin(yaw);
   const hz = Math.cos(yaw);
   const a1 = sh;

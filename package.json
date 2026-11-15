@@ -9,7 +9,9 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "test:modular": "tsc --noEmit && vitest run tests/modular",
+    "e2e:modular": "playwright test e2e/modular"
   },
   "dependencies": {
     "@reactor-team/js-sdk": "^3.4.0",

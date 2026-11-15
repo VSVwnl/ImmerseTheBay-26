@@ -3,7 +3,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { moveTo, pickAndPlace, state, toggleGrip, waitPhase, type V3 } from './helpers';
+import { moveTo, pickAndPlace, state, toggleGrip, waitPhase, type V3 } from '../helpers';
 
 const SHOTS = 'e2e-shots';
 const RACK: V3 = [0.3, 0.75, -0.56];
@@ -102,6 +102,10 @@ test('Workshop: wrong parts fail with a reason, right parts solve plate, far and
     ['far', 'long', 'gripper', true],
     ['heavy', 'compact', 'gripper', true],
   ]);
+  // a random world on the wall for every attempt, recorded in the file
+  const worldIds = recs.map((r) => r.world?.id);
+  expect(worldIds.every((w) => typeof w === 'string')).toBe(true);
+  expect(new Set(worldIds).size).toBeGreaterThan(1);
   await page.waitForTimeout(500);
   const dir = path.join('data', 'sessions', sessionId);
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
