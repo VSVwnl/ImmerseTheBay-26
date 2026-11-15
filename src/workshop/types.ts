@@ -87,6 +87,10 @@ export interface ItemSpec {
   suctionText?: string;
   /** a hard grip would break it */
   fragile?: boolean;
+  /** has a carrying handle on top (a hook can lift it) */
+  handle?: boolean;
+  /** squeezing its sides would spill what's inside */
+  spills?: boolean;
   /** simple primitive meshes, centered on the item's position */
   mesh: () => THREE.Object3D;
 }

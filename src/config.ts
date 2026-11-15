@@ -119,7 +119,7 @@ export const FACTORY = { seedBase: 1000, worldEvery: 20, stubSettleMs: 1700 };
 // ---- Switches: delete one word to turn a Workshop part or challenge off ----
 // The standard robot (compact + gripper) and Reach/Place/Sort always exist outside the Workshop: the expert,
 // datasets, training and Robot's turn depend on them. Turning compact or gripper off only hides them here.
-export const ENABLED_PARTS: string[] = ['compact', 'long', 'heavyduty', 'tall', 'xlong', 'gripper', 'suction', 'magnet', 'wide', 'scoop', 'soft'];
+export const ENABLED_PARTS: string[] = ['compact', 'long', 'heavyduty', 'tall', 'xlong', 'gripper', 'suction', 'magnet', 'wide', 'scoop', 'soft', 'hook'];
 export const ENABLED_CHALLENGES: string[] = ['plate', 'far', 'heavy', 'washer', 'crate', 'anvil', 'marbles', 'shelf', 'cart', 'dinner', 'egg', 'scrap', 'restock'];
 
 // ---- Robot Workshop (additive; the standard robot is Compact + Gripper and uses the values above) ----

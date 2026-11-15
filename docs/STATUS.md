@@ -47,7 +47,8 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Soft gripper | part (tool) | 07d57c2 | | |
 | Egg | challenge | 2e4927d | Soft gripper + any arm that reaches the table | Compact+Soft, Long+Soft, Heavy-duty+Soft, Extra-long+Soft |
 | Scrap (2 steps, one robot) | challenge | ef6c4ca | Long + Magnet | Long+Magnet |
-| Restock (2 steps, swap arms) | challenge | RESTOCK_COMMIT | Extra-long, then Heavy-duty | no single robot; step 1: Extra-long+Gripper/Suction/Soft, then step 2: Heavy-duty+Gripper/Magnet |
+| Restock (2 steps, swap arms) | challenge | 1c78b26 | Extra-long, then Heavy-duty | no single robot; step 1: Extra-long+Gripper/Suction/Soft, then step 2: Heavy-duty+Gripper/Magnet |
+| Hook | part (tool) | HOOK_COMMIT | | |
 | Dinner (2 steps, swap) | challenge | 03d29e7 | Suction, then Gripper or Magnet on Compact/Heavy-duty | no single robot; step 1: Compact/Long/Heavy-duty+Suction, then step 2: Compact/Heavy-duty+Gripper/Magnet |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
@@ -118,6 +119,9 @@ Additions:
    from the side cart -> outbox (only the Extra-long reaches it), then the anvil -> red zone (only the Heavy-duty
    lifts it). Interesting because the two extremes of the reach/strength trade are needed back to back. The
    generic swap tests now run for every swap challenge (each step's robots, every pair solves it with one swap).
+15. ADD part: hook (`src/workshop/parts/hook.ts`): a steel J-hook. Interesting because its rule ignores size,
+   shape and material: it lifts anything with a carrying handle (however big) and nothing without one ("Nothing to
+   hook onto: no handle"). The Workshop side panel was also compacted so 13+ challenges fit the headset panel.
 
 Live Orbis check of the Workshop (Sun ~03:55 PST, `scripts/workshop-live-check.mjs`, 2 sessions, 0.6 min):
 - First try stayed on the stub: the dev server's pre-bundled Orbis SDK was stale ("reactor-wasm failed to load:
@@ -168,6 +172,8 @@ Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base check
 - [ ] 14 Restock (NOT YET TESTED ON HEADSET): start with Extra-long + Gripper, bring the parcel from the side cart
       to the outbox, poke Heavy-duty (the arm rebuilds, the timer keeps running), move the anvil to the red zone.
       Does the arm rebuild mid-run feel OK (the tip may jump to the new arm's reach)?
+- [ ] 15 Hook (NOT YET TESTED ON HEADSET): the hook is small: is it visible enough at the arm tip? Any non-handle
+      object says "Nothing to hook onto: no handle". Also check the compact side panel (names three per line).
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with
