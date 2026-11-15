@@ -343,7 +343,50 @@ export function startApp(core: Core) {
     if (!robot && !multiplying()) panels.status.set(status);
 
     let side: PanelContent;
-    if (ph === 'results') {
+    // Workshop: compact lines so a dozen challenges fit the headset panel (names, three per line)
+    const rows = <T,>(xs: T[], n: number): T[][] => xs.reduce<T[][]>((a, x, i) => (i % n ? a[a.length - 1].push(x) : a.push([x]), a), []);
+    const wsNames = (mark: (i: number) => string) =>
+      rows(challenges.list.map((c, i) => `${mark(i)}${c.name}`), 3).map((r) => ({ text: r.join('   '), size: 18, mono: true }));
+    if (ph === 'results' && ws) {
+      const ok = challenges.results.filter((r) => r.success).length;
+      side = {
+        title: 'Workshop results',
+        lines: [
+          { text: `${ok} of ${challenges.results.length} solved`, size: 24, bold: true, color: '#5fe08f' },
+          ...wsNames((i) => (challenges.results[i]?.success ? '+' : '-')),
+          { text: `${challenges.results.length} attempts saved`, size: 18, color: '#9fb3c8' },
+        ],
+        buttons: [
+          { id: 'multiply', label: `Multiply, Robot's turn: ${WORKSHOP_OFF}`, wide: true, disabled: true },
+          { id: 'again', label: 'Run again', wide: true },
+          { id: 'standard', label: 'Back to the standard robot', wide: true },
+        ],
+      };
+    } else if (ph === 'idle' && ws) {
+      side = {
+        title: 'Robot Workshop',
+        lines: [
+          { text: WORKSHOP_HINT, size: 20, bold: true, color: '#ffb347' },
+          { text: `${challenges.list.length} challenges, parts panel on the left:`, size: 18, color: '#9fb3c8' },
+          ...wsNames(() => ''),
+        ],
+        buttons: [
+          { id: 'start', label: 'Start', wide: true },
+          { id: 'standard', label: 'Back to the standard robot', wide: true },
+        ],
+      };
+    } else if (ws) {
+      const ok = challenges.results.filter((r) => r.success).length;
+      side = {
+        title: 'Robot Workshop',
+        lines: [
+          { text: `Challenge ${challenges.index + 1} of ${challenges.list.length}: ${ch.name}`, size: 22, bold: true, color: '#ffd34d' },
+          { text: `${ok} solved, ${challenges.results.length - ok} missed so far`, size: 18, color: '#9fb3c8' },
+          ...wsNames((i) => (challenges.results[i] ? (challenges.results[i].success ? '+' : '-') : i === challenges.index ? '>' : ' ')),
+        ],
+        buttons: [{ id: 'stop', label: 'Stop', wide: true }],
+      };
+    } else if (ph === 'results') {
       side = {
         title: 'Results',
         lines: [

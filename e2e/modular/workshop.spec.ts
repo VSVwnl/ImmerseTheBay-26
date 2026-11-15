@@ -93,7 +93,8 @@ test('Workshop: wrong parts fail with a reason, right parts solve plate, far and
   const mult = page.locator('.panel-side button[data-id="multiply"]');
   await expect(mult).toBeDisabled();
   await expect(mult).toContainText('off in Workshop');
-  await expect(page.locator('.panel-side button[data-id="robot"]')).toBeDisabled();
+  await expect(mult).toContainText("Robot's turn");
+  await expect(page.locator('.panel-side button[data-id="robot"]')).toHaveCount(0);
 
   // attempt files: parts and success; restarted attempts are not saved
   const recs: any[] = await page.evaluate(() => (window as any).__backlot.records);

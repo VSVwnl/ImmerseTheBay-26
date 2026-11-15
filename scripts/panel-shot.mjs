@@ -7,7 +7,7 @@ const b = await chromium.launch({ args: ['--use-angle=d3d11'] });
 const p = await b.newPage({ viewport: { width: 1280, height: 800 } });
 await p.goto(`http://localhost:5173/?orbis=0&${query}`);
 await p.mouse.click(640, 600);
-if (name === 'workshop') await p.locator('.panel-side button[data-id="workshop"]').click();
+if (name === 'workshop' || process.env.WORKSHOP) await p.locator('.panel-side button[data-id="workshop"]').click();
 await p.waitForTimeout(300);
 const url = await p.evaluate((n) => {
   const w = window.__backlot.panels[n];
