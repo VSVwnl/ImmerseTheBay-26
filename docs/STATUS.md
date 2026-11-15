@@ -72,6 +72,17 @@ both policies on the same seeds; all 160 episodes ran on a live wall. Run once; 
   multi: 8 worlds, 240-260 episodes each, world changes every 20 episodes (~100 generations). single: lab only.
 - Training: 15 min each, 140 epochs, best val 0.022 (multi) and 0.029 (single). Overfit check passes (0.00016).
 
+### First headset test (Sat ~6:10 PM, recorded with `adb shell screenrecord`, page logged with `scripts/quest-watch.mjs`)
+- Hand tracking works: right hand drives the arm, pinch grabs; all three challenges completed in ~35 s.
+- Bug found and fixed: one fingertip poke on Stop also pressed Start (the button under the finger changes to
+  Start in the same place), so the countdown restarted ("the scene refreshes"). A panel now ignores presses until
+  the fingertip has left it (`src/ui/poke.ts`, unit tested).
+- The side and world panels sat at 1.05 m, where the right hand works while driving the arm; Stop/Start/Multiply
+  were poked by accident. Panels with buttons moved up to 1.55 m and slightly out. **Not yet re-tested in the headset.**
+- Also fixed: dev server listens on 127.0.0.1 (adb reverse could not reach it on ::1); `?Orbis=0` now means
+  `orbis=0` (a capital O had opened a paid session: ~2.5 min).
+- Desktop: the Multiply counter covered "Run again" when Robot's turn was shown; it now sits under the status panel.
+
 ### Live Orbis (key added Sat 3:15 PM)
 - `node scripts/live-check.mjs`: connects, live in ~11 s, switches one world, disconnects. Works.
 - Stream is 2560x1440 at 18 fps ("2k"); our 1080p request is only sent when offered.
@@ -134,7 +145,7 @@ both policies on the same seeds; all 160 episodes ran on a live wall. Run once; 
 - Multiply in the headset not tried; dataset-camera render in XR (second pass at replay midpoints) unverified.
 
 ### Orbis minutes used
-- **46 min over 11 sessions** (Sat 3:15-4:40 PM), by our own log (`curl http://localhost:5173/api/usage`):
+- **48.5 min over 12 sessions** (Sat 3:15-6:00 PM; +2.5 min from the accidental `?Orbis=0` headset tab), by our own log (`curl http://localhost:5173/api/usage`):
   testing and debugging ~12 min (live check, trials, probe, two stalled trials ~7 min, one aborted multi build
   2.2 min), `multi` dataset ~25 min, `single` ~7 min, evaluation 3 min. The Reactor dashboard is authoritative.
 

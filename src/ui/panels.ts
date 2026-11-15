@@ -1,6 +1,7 @@
 // In-world panels (canvas textures) with poke buttons, mirrored as plain HTML on desktop.
 import * as THREE from 'three';
-import { PANEL_FACE_POINT, PANEL_PX_PER_M, POKE_DEBOUNCE_MS, POKE_DEPTH, type Vec3 } from '../config';
+import { PANEL_FACE_POINT, PANEL_PX_PER_M, POKE_DEPTH, type Vec3 } from '../config';
+import { PokeLatch } from './poke';
 
 export interface PanelButton {
   id: string;
@@ -50,8 +51,7 @@ export class Panel {
   private content: PanelContent = {};
   private key = '';
   private rects: ButtonRect[] = [];
-  private lastFire = new Map<string, number>();
-  private inside = new Set<string>();
+  private latch = new PokeLatch();
 
   constructor(
     readonly name: string,
@@ -244,15 +244,8 @@ export class Panel {
         if (Math.abs(local.x - r.x) <= r.w / 2 && Math.abs(local.y - r.y) <= r.h / 2) nowInside.add(r.id);
       }
     }
-    for (const id of nowInside) {
-      if (this.inside.has(id)) continue;
-      const last = this.lastFire.get(id) ?? -Infinity;
-      if (nowMs - last >= POKE_DEBOUNCE_MS) {
-        this.lastFire.set(id, nowMs);
-        this.onPress(this.name, id);
-      }
-    }
-    this.inside = nowInside;
+    const fired = this.latch.update(nowInside, nowMs);
+    if (fired) this.onPress(this.name, fired);
   }
 
   /** World position of a button's center (tests use it to poke). */

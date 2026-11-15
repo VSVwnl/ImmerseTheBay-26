@@ -72,10 +72,12 @@ export const POKE_DEBOUNCE_MS = 400;
 export const POKE_DEPTH = 0.025; // m in front/behind panel surface that counts as inside the button box
 export const PANEL_PX_PER_M = 900;
 export const PANELS = {
-  world: { pos: [-0.62, 1.05, -0.3] as Vec3, w: 0.32, h: 0.46 },
+  // Panels with buttons sit above the hand's working height while driving the arm (about 0.8-1.25 m, up to
+  // ~0.5 m to each side); at 1.05 m the right hand poked Start/Stop by accident in the headset test.
+  world: { pos: [-0.72, 1.55, -0.4] as Vec3, w: 0.32, h: 0.46 },
   status: { pos: [0, 1.62, -1.15] as Vec3, w: 0.6, h: 0.19 },
-  side: { pos: [0.62, 1.05, -0.3] as Vec3, w: 0.36, h: 0.44 },
-  counter: { pos: [0.62, 1.36, -0.3] as Vec3, w: 0.36, h: 0.09 },
+  side: { pos: [0.72, 1.55, -0.4] as Vec3, w: 0.36, h: 0.44 },
+  counter: { pos: [0.72, 1.24, -0.4] as Vec3, w: 0.36, h: 0.09 }, // no buttons, so it may sit lower
   thumbs: { pos: [0.95, 1.55, -0.95] as Vec3, w: 0.72, h: 0 },
 };
 export const PANEL_FACE_POINT: Vec3 = [0, 1.4, 0]; // panels turn to face this point

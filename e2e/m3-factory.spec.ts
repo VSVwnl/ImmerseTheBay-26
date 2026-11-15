@@ -31,10 +31,13 @@ test('M3 factory: 10 smoke episodes on the stub wall become 10 npz files', async
 });
 
 test('M3 factory refuses a real dataset on the stub wall', async ({ page }) => {
+  // the real multi dataset may exist (built on the live wall): nothing may be added to it
+  const dir = path.join('data', 'datasets', 'multi');
+  const before = fs.existsSync(dir) ? fs.readdirSync(dir).sort() : [];
   await page.goto('/?mode=factory&dataset=multi&episodes=2&humans=0&port=8766&orbis=0');
   await page.click('#f-start');
   await page.waitForFunction(() => (window as any).__backlot.stats.phase === 'error', null, { timeout: 20_000 });
   const stats = await page.evaluate(() => (window as any).__backlot.stats);
   expect(stats.error).toMatch(/needs a live Orbis wall/);
-  expect(fs.existsSync(path.join('data', 'datasets', 'multi'))).toBe(false);
+  expect(fs.existsSync(dir) ? fs.readdirSync(dir).sort() : []).toEqual(before);
 });
