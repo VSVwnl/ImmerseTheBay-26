@@ -1,9 +1,10 @@
 // The human app: challenges, panels, inputs, Multiply. Runs on the shared core.
 import * as THREE from 'three';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
-import { ENABLED_CHALLENGES, PANELS, SUCCESS_NUDGES, WORLD_DEFAULT_MODE, type Vec3 } from './config';
+import { ENABLED_CHALLENGES, PANELS, SUCCESS_NUDGES, WORLD_DEFAULT_MODE, XR_EYE_Y, type Vec3 } from './config';
 import { DesktopInput } from './input/desktop';
 import { XRInput } from './input/xr';
+import { eyeLevelOffset, headReady } from './input/eyelevel';
 import { Challenges, WORKSHOP_HINT, workshopChallenges, type ChallengeResult } from './tasks/challenges';
 import { ARMS, enabledArms, enabledTools, payloadOf, TOOLS, workspaceFor, type ArmKind, type ToolKind } from './arm/parts';
 import { pickAttemptWorld } from './tasks/worldpick';
@@ -576,7 +577,24 @@ export function startApp(core: Core) {
 
   // ---------- XR session ----------
   document.body.appendChild(VRButton.createButton(renderer, { optionalFeatures: ['hand-tracking'] }));
+  // eye level: once the head is tracked, move the scene so the eyes sit at XR_EYE_Y, centred on the user
+  const eyeY = Number(params.get('eye')) || XR_EYE_Y;
+  let baseSpace: XRReferenceSpace | null = null;
+  let eyeLevelled = false;
+  function levelToEyes() {
+    if (eyeLevelled || !renderer.xr.isPresenting) return;
+    baseSpace ??= renderer.xr.getReferenceSpace();
+    const p = renderer.xr.getCamera().position;
+    const head: Vec3 = [p.x, p.y, p.z];
+    if (!baseSpace || !headReady(head)) return;
+    const [x, y, z] = eyeLevelOffset(head, eyeY);
+    renderer.xr.setReferenceSpace(baseSpace.getOffsetReferenceSpace(new XRRigidTransform({ x, y, z })));
+    eyeLevelled = true;
+    console.info('[xr] eye level', head.map((v) => v.toFixed(2)).join(','), '-> eyes at', eyeY);
+  }
   renderer.xr.addEventListener('sessionstart', () => {
+    baseSpace = null;
+    eyeLevelled = false;
     document.body.classList.add('xr');
     onGesture();
     void world.getVideo().play().catch(() => {});
@@ -588,7 +606,10 @@ export function startApp(core: Core) {
   renderer.setAnimationLoop(() => {
     const dt = Math.min(clock.getDelta(), 0.1);
     const now = performance.now();
-    if (xr.presenting) xr.update(dt);
+    if (xr.presenting) {
+      levelToEyes();
+      xr.update(dt);
+    }
     desktop.update(dt);
     if (robot) robot.update(dt);
     else if (multiplying()) {

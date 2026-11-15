@@ -54,6 +54,10 @@ export const COUNTDOWN_S = 3;
 export const CHALLENGE_LIMIT_S = 60;
 
 // ---- Desktop input ----
+// Headset: on Enter VR the scene is moved so the user's eyes sit at this height in scene coordinates and the
+// scene is centred under them (table top 0.75, button panels ~1.55). Works standing or seated, any body height.
+// ?eye=1.3 in the URL overrides it for tuning.
+export const XR_EYE_Y = 1.4;
 export const DESKTOP_CAMERA = { pos: [0, 1.55, 0.05] as Vec3, lookAt: [0, 0.97, -1.0] as Vec3, fov: 60 };
 export const WHEEL_STEP = 0.0006; // m per wheel delta unit
 export const KEY_RAISE_SPEED = 0.3; // m/s for W/S
