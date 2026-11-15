@@ -11,6 +11,7 @@ export const SUCTION: ToolDef = {
   label: 'Suction',
   blurb: 'lifts flat smooth things',
   rule: (it) => {
+    if ((it.shape === 'flat' || it.smoothTop) && it.size === 'big') return 'Pad too small for something this big';
     if (it.shape === 'flat' || it.smoothTop) return null;
     if (it.suctionText) return it.suctionText;
     if (it.shape === 'ring') return 'Air leaks through the hole';

@@ -51,6 +51,7 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Hook | part (tool) | d53f22b | | |
 | Bucket | challenge | ba2aad1 | Hook + Compact or Heavy-duty | Compact+Hook, Heavy-duty+Hook |
 | Cleanup (3 steps, 2 swaps) | challenge | 04e7642 | Magnet, then Scoop, then Soft gripper | no single robot; Magnet + Compact/Long/Heavy-duty, then Scoop + Compact/Long/Heavy-duty, then Soft + Compact/Long/Heavy-duty/Extra-long |
+| Big suction | part (tool) | BIGS_COMMIT | | |
 | Dinner (2 steps, swap) | challenge | 03d29e7 | Suction, then Gripper or Magnet on Compact/Heavy-duty | no single robot; step 1: Compact/Long/Heavy-duty+Suction, then step 2: Compact/Heavy-duty+Gripper/Magnet |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
@@ -133,6 +134,10 @@ Additions:
    idea in one run: three objects on one table that each defeat the previous tool. The generic swap test now
    tries every combination of per-step robots for any number of steps. (Also: a part swap now frees the old
    arm's materials as well as its geometry.)
+18. ADD part: big suction (`src/workshop/parts/bigsuction.ts`): two wide pads on a crossbar. Interesting because it
+   splits suction by size: it holds big flat smooth things the normal pad can't ("Pad too small for something this
+   big"), but nothing small ("Pad too big for something this small"). No existing object is big and flat, so
+   nothing else changed.
 
 Live Orbis check of the Workshop (Sun ~03:55 PST, `scripts/workshop-live-check.mjs`, 2 sessions, 0.6 min):
 - First try stayed on the stub: the dev server's pre-bundled Orbis SDK was stale ("reactor-wasm failed to load:
@@ -189,6 +194,8 @@ Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base check
       Hook on Long: "Too heavy for this arm"; Compact + Hook carries it to the sandy zone, hanging under the hook.
 - [ ] 17 Cleanup (NOT YET TESTED ON HEADSET): Magnet: washer to the tray; poke Scoop (no restart): marbles to the
       bowl; poke Soft gripper: egg to the carton. Three swaps on the left panel mid-run: comfortable? Under 60 s?
+- [ ] 18 Big suction (NOT YET TESTED ON HEADSET): two pads on a crossbar at the tip; with the plate it says "Pad
+      too big for something this small".
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with

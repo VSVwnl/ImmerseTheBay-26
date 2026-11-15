@@ -14,6 +14,7 @@ import { WIDE } from './parts/wide';
 import { SCOOP } from './parts/scoop';
 import { SOFT } from './parts/soft';
 import { HOOK } from './parts/hook';
+import { BIGSUCTION } from './parts/bigsuction';
 import { PLATE } from './challenges/plate';
 import { FAR } from './challenges/far';
 import { HEAVY } from './challenges/heavy';
@@ -31,7 +32,7 @@ import { BUCKET } from './challenges/bucket';
 import { CLEANUP } from './challenges/cleanup';
 
 export const ARM_DEFS: ArmDef[] = [COMPACT, LONG, HEAVYDUTY, TALL, XLONG];
-export const TOOL_DEFS: ToolDef[] = [GRIPPER, SUCTION, MAGNET, WIDE, SCOOP, SOFT, HOOK];
+export const TOOL_DEFS: ToolDef[] = [GRIPPER, SUCTION, MAGNET, WIDE, SCOOP, SOFT, HOOK, BIGSUCTION];
 export const CHALLENGE_DEFS: ChallengeDef[] = [PLATE, FAR, HEAVY, WASHER, CRATE, ANVIL, MARBLES, SHELF, CART, DINNER, EGG, SCRAP, RESTOCK, BUCKET, CLEANUP];
 
 const byId = <T extends { id: string }>(xs: T[]) => Object.fromEntries(xs.map((x) => [x.id, x])) as Record<string, T>;
