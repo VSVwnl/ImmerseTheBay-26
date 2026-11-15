@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/media/backlot-logo.svg" alt="Backlot: teach a robot once, test it in a hundred worlds" width="640"></p>
+<p align="center"><img src="docs/media/backlot-logo.png" alt="Backlot: teach robots in generated worlds" width="640"></p>
 
 # Backlot
 
