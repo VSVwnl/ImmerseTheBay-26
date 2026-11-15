@@ -67,6 +67,24 @@ export const PINCH_OPEN = 0.04;
 export const HAND_SMOOTH = 0.35; // blend per frame at 72 Hz
 export const HAND_SMOOTH_REF_HZ = 72;
 
+// ---- Hologram control (branch `hologram`, on with ?holo=1) ----
+// A small hologram of the arm stands on the left palm (desktop: on a fixed pedestal). Pinch its tip and drag; the
+// real arm follows. A short pinch without dragging toggles the gripper.
+export const HOLO = {
+  scale: 0.3, // hologram size / real arm size in the headset
+  desktopScale: 0.5,
+  desktopAnchor: [-0.5, 0.8, -0.52] as Vec3, // where the hologram's arm base stands on desktop
+  grabRadius: 0.03, // m around the hologram tip where a pinch starts a grab
+  desktopGrabRadius: 0.045,
+  dragStart: 0.006, // m of hand movement (hologram space) before a pinch becomes a drag
+  tapMaxS: 0.45, // a pinch released sooner than this without dragging toggles the gripper
+  palmUpMin: 0.5, // dot(palm normal, world up) to show the hologram
+  palmLift: 0.04, // m from palm center up to the hologram base
+  hideAfterS: 0.3, // keep the hologram this long after the palm stops facing up
+  anchorSmooth: 0.25, // blend per frame at 72 Hz for the anchor position
+  palmHand: 'left' as 'left' | 'right',
+};
+
 // ---- Panels ----
 export const POKE_DEBOUNCE_MS = 400;
 export const POKE_DEPTH = 0.025; // m in front/behind panel surface that counts as inside the button box
