@@ -52,7 +52,7 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Bucket | challenge | ba2aad1 | Hook + Compact or Heavy-duty | Compact+Hook, Heavy-duty+Hook |
 | Cleanup (3 steps, 2 swaps) | challenge | 04e7642 | Magnet, then Scoop, then Soft gripper | no single robot; Magnet + Compact/Long/Heavy-duty, then Scoop + Compact/Long/Heavy-duty, then Soft + Compact/Long/Heavy-duty/Extra-long |
 | Big suction | part (tool) | 83cf7c5 | | |
-| Pane | challenge | PANE_COMMIT | Big suction + Compact, Long or Heavy-duty | Compact+Big suction, Long+Big suction, Heavy-duty+Big suction |
+| Pane | challenge | b434a45 | Big suction + Compact, Long or Heavy-duty | Compact+Big suction, Long+Big suction, Heavy-duty+Big suction |
 | Dinner (2 steps, swap) | challenge | 03d29e7 | Suction, then Gripper or Magnet on Compact/Heavy-duty | no single robot; step 1: Compact/Long/Heavy-duty+Suction, then step 2: Compact/Heavy-duty+Gripper/Magnet |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
@@ -63,6 +63,9 @@ Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
   switching each part off in turn).
 - Tall base + Shelf were working but not committed when the new rules arrived; set aside and re-added as two
   separate `ADD` commits after the restructure.
+
+- 12:05 UTC: stopped starting new additions (quality over count: 9 new parts, 15 Workshop challenges, each checked
+  against every robot). The rest of the window is kept for the 14:00 UTC full-suite run and fixes.
 
 Additions:
 1. Groundwork: switches, part/challenge registries, random world per attempt, modular test folders.
