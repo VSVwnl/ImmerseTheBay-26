@@ -517,6 +517,7 @@ export function startApp(core: Core) {
     panels,
     sessionId,
     holo,
+    xr,
     /** screen position (CSS px) of a world point, for driving the mouse in tests */
     project(p: Vec3) {
       const v = new THREE.Vector3(...p).project(camera);
