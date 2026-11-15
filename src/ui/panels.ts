@@ -9,6 +9,7 @@ export interface PanelButton {
   active?: boolean; // highlighted (e.g. current world)
   disabled?: boolean;
   wide?: boolean; // spans the full row
+  newRow?: boolean; // starts a new row (e.g. tools below arms)
 }
 
 export interface PanelLine {
@@ -102,6 +103,10 @@ export class Panel {
     const rows: PanelButton[][] = [];
     let row: PanelButton[] = [];
     for (const b of btns) {
+      if (b.newRow && row.length) {
+        rows.push(row);
+        row = [];
+      }
       if (b.wide) {
         if (row.length) rows.push(row);
         rows.push([b]);
@@ -216,6 +221,7 @@ export class Panel {
       btn.disabled = !!b.disabled;
       if (b.active) btn.classList.add('active');
       if (b.wide) btn.style.gridColumn = '1 / -1';
+      else if (b.newRow) btn.style.gridColumnStart = '1';
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.onPress(this.name, b.id);

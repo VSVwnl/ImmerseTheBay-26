@@ -452,7 +452,7 @@ export function startApp(core: Core) {
         ],
         buttons: [
           ...enabledArms().map((a) => ({ id: `arm:${a}`, label: `${ARMS[a].label} arm`, active: r.arm === a })),
-          ...enabledTools().map((t) => ({ id: `tool:${t}`, label: TOOLS[t].label, active: r.tool === t })),
+          ...enabledTools().map((t, i) => ({ id: `tool:${t}`, label: TOOLS[t].label, active: r.tool === t, newRow: i === 0 })),
         ],
         cols: 2,
       });
