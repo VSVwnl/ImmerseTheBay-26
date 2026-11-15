@@ -38,8 +38,11 @@ export function createCore() {
   function setRobot(parts: RobotParts) {
     if (sameParts(parts, arm.parts)) return;
     scene.remove(arm.root);
+    // free the old arm's GPU buffers (part swaps can happen many times in a session)
     arm.root.traverse((o) => {
-      if (o instanceof THREE.Mesh) o.geometry.dispose();
+      if (!(o instanceof THREE.Mesh)) return;
+      o.geometry.dispose();
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.dispose();
     });
     arm = new ArmModel(parts);
     markDataset(arm.root);
