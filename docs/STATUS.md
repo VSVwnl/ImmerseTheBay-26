@@ -1,8 +1,8 @@
 # Status
 
-Updated: Sat Nov 14, 4:00 PM PST
+Updated: Sat Nov 14, 4:45 PM PST
 
-## Current milestone: key in; live wall verified on desktop. Next: real datasets (needs your OK on Orbis minutes)
+## Current milestone: M1-M5 done with real Orbis data and a real evaluation. Remaining: headset checks (you)
 
 ### Done
 - **M1** (desktop checks pass): deterministic env, closed-form IK, snap grasp, 30 Hz fixed-step loop + recorder,
@@ -55,6 +55,23 @@ Updated: Sat Nov 14, 4:00 PM PST
   policy port listens, so a plain `npm run dev` without the policy server shows no console errors.
 - MIT license; `/api/log` hardened (no dot/traversal ids, no overwrite, JSON + same-origin only).
 
+### Real result (M4, live Orbis walls, run 2026-11-15T00-39-44-104Z, `data/results/summary.json`)
+
+| policy | lab | subway* | forest* | desert* | held-out* |
+|---|---|---|---|---|---|
+| single (trained on lab only) | 8/20 (40%) | 7/20 (35%) | 8/20 (40%) | 0/20 (0%) | 15/60 (25%) |
+| multi (trained on 8 worlds) | 10/20 (50%) | 9/20 (45%) | 10/20 (50%) | 8/20 (40%) | 27/60 (45%) |
+
+\* never seen in training. Fixed protocol: Place, 200 steps, seeds 9000-9019, a fresh live generation per world,
+both policies on the same seeds; all 160 episodes ran on a live wall. Run once; nothing tuned on it.
+- What it says: in unseen generated worlds the many-world policy placed the cube 27/60 times, the one-world policy
+  15/60. Same seed and world compared: multi alone succeeded 20 times, single alone 8 (exact McNemar p = 0.036).
+- Limits: 20 seeds per world, one run. Neither policy is reliable even in the lab (40-50%). Simulated kinematic arm
+  with snap grasping; says nothing about a real robot. The image head was chosen on smoke (stub) data.
+- Datasets: `multi` and `single`, 2,000 scripted-expert episodes each, all frames from a live wall, `humans=0`.
+  multi: 8 worlds, 240-260 episodes each, world changes every 20 episodes (~100 generations). single: lab only.
+- Training: 15 min each, 140 epochs, best val 0.022 (multi) and 0.029 (single). Overfit check passes (0.00016).
+
 ### Live Orbis (key added Sat 3:15 PM)
 - `node scripts/live-check.mjs`: connects, live in ~11 s, switches one world, disconnects. Works.
 - Stream is 2560x1440 at 18 fps ("2k"); our 1080p request is only sent when offered.
@@ -74,7 +91,8 @@ Updated: Sat Nov 14, 4:00 PM PST
   Real datasets use `humans=0` unless you record real Place demos first (the smoke sets included the bot ones).
 
 ### Next
-- Build real `single` and `multi` (2,000 episodes each, `humans=0`), train, run the protocol, report.
+- Headset checklist below (M1-M5), now with the live wall and the real policies.
+- For Robot's turn: `.venv\Scripts\python py\serve.py --ckpt single=data/ckpt/single.pt --ckpt multi=data/ckpt/multi.pt`
 - Waiting on you: headset checklist below.
 
 ### M4 debugging (honest record)
@@ -111,13 +129,14 @@ Updated: Sat Nov 14, 4:00 PM PST
 - Headset: nothing tested in a Quest yet.
 - Voice in Quest Browser: unknown whether speech recognition exists there.
 - **M3 real datasets not built**: `single` and `multi` need the live Orbis wall. Only `smoke-*` (stub walls) exist.
-- **M4/M5 real results do not exist yet**: all numbers are smoke (stub walls). Do not present them as Orbis results.
+- The smoke numbers further down are stub walls; the real result is the table at the top.
 - Robot's turn in the headset untested (needs `adb reverse tcp:8765 tcp:8765`).
 - Multiply in the headset not tried; dataset-camera render in XR (second pass at replay midpoints) unverified.
 
 ### Orbis minutes used
-- 9.5 min over 7 sessions (Sat 3:15-4:00 PM): live check, three factory trials, one switch probe, plus two stalled
-  trials before fixes 2 and 4 (about 7 min). `curl http://localhost:5173/api/usage` for the running total.
+- **46 min over 11 sessions** (Sat 3:15-4:40 PM), by our own log (`curl http://localhost:5173/api/usage`):
+  testing and debugging ~12 min (live check, trials, probe, two stalled trials ~7 min, one aborted multi build
+  2.2 min), `multi` dataset ~25 min, `single` ~7 min, evaluation 3 min. The Reactor dashboard is authoritative.
 
 ### Open questions for the developer
 1. Orbis key: put `REACTOR_API_KEY=rk_...` in `.env` (repo root). Default until then: stub; M3/M4 use a `smoke` dataset only.
