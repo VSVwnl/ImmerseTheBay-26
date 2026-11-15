@@ -368,7 +368,9 @@ both policies on the same seeds; all 160 episodes ran on a live wall. Run once; 
 - Multiply in the headset not tried; dataset-camera render in XR (second pass at replay midpoints) unverified.
 
 ### Orbis minutes used
-- **55.2 min over 16 sessions** by 06:15 PST (+6.1 min, 2 sessions: the developer's headset voice test, Sun ~06:00 PST). 49.1 min over 14 sessions after the Workshop live check (+0.6 min, 2 sessions, Sun ~03:55 PST). Before that: **48.5 min over 12 sessions** (Sat 3:15-6:00 PM; +2.5 min from the accidental `?Orbis=0` headset tab), by our own log (`curl http://localhost:5173/api/usage`):
+- **70.7 min over 18 sessions** by 07:38 PST (+15.5 min, 2 sessions: headset smoke test of the `codex/backlot-recovery`
+  branch, Sun 07:20:53-07:26:01 and 07:27:36-07:38:02 PST by the Quest console; the second was left running after the
+  test and closed by reloading the tab with `?orbis=0`). 55.2 min over 16 sessions by 06:15 PST (+6.1 min, 2 sessions: the developer's headset voice test, Sun ~06:00 PST). 49.1 min over 14 sessions after the Workshop live check (+0.6 min, 2 sessions, Sun ~03:55 PST). Before that: **48.5 min over 12 sessions** (Sat 3:15-6:00 PM; +2.5 min from the accidental `?Orbis=0` headset tab), by our own log (`curl http://localhost:5173/api/usage`):
   testing and debugging ~12 min (live check, trials, probe, two stalled trials ~7 min, one aborted multi build
   2.2 min), `multi` dataset ~25 min, `single` ~7 min, evaluation 3 min. The Reactor dashboard is authoritative.
 
