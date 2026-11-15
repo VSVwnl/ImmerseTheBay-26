@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/media/backlot-logo.svg" alt="Backlot: teach a robot once, test it in a hundred worlds" width="640"></p>
+
 # Backlot
 
 Teach a robot a task once in VR, let a live world model show it that task in a hundred different
