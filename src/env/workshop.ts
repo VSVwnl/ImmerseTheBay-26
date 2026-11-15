@@ -5,9 +5,9 @@ import { BIN, ENABLED_CHALLENGES, TABLE, WORKSHOP, type Vec3 } from '../config';
 import { ITEMS, type ItemId } from '../arm/items';
 import type { Rng } from './rng';
 
-export type WorkshopLayout = 'plate' | 'far' | 'heavy' | 'washer' | 'crate' | 'anvil';
+export type WorkshopLayout = 'plate' | 'far' | 'heavy' | 'washer' | 'crate' | 'anvil' | 'marbles';
 
-export type GoalKind = 'rack' | 'pallet' | 'bin' | 'zone';
+export type GoalKind = 'rack' | 'pallet' | 'bin' | 'zone' | 'bowl';
 export interface Goal {
   kind: GoalKind;
   pos: Vec3; // center on the table top
@@ -40,6 +40,7 @@ export const GOALS = {
   zone: { kind: 'zone', pos: W.zone.pos, w: W.zone.size, d: W.zone.size, h: 0, color: 0xffd34d } as Goal,
   tray: { kind: 'bin', pos: W.tray.pos, w: BIN.w, d: BIN.d, h: BIN.h, color: 0x4a6f96 } as Goal,
   dropZone: { kind: 'zone', pos: W.dropZone.pos, w: W.dropZone.size, d: W.dropZone.size, h: 0, color: 0xff7b6b } as Goal,
+  bowl: { kind: 'bowl', pos: W.bowl.pos, w: W.bowl.r * 1.6, d: W.bowl.r * 1.6, h: W.bowl.h, color: 0x2a6fd6 } as Goal,
   pallet: { kind: 'pallet', pos: W.pallet.pos, w: W.pallet.w, d: W.pallet.d, h: W.pallet.h, color: 0x9a6b3c } as Goal,
 };
 
@@ -85,6 +86,13 @@ export const WORKSHOP_TASKS: Record<WorkshopLayout, WorkshopTask> = {
     hint: 'Move the anvil onto the red zone',
     solvedBy: 'Heavy-duty + Gripper or Magnet',
     steps: [{ item: 'anvil', goal: GOALS.dropZone, spawn: (r) => [between(r, W.anvil.spawnX), ITEMS.anvil.restY, between(r, W.anvil.spawnZ)] }],
+  },
+  marbles: {
+    layout: 'marbles',
+    name: 'Marbles',
+    hint: 'Pour the marbles into the blue bowl',
+    solvedBy: 'Scoop, any arm',
+    steps: [{ item: 'marbles', goal: GOALS.bowl, spawn: (r) => [between(r, W.marbles.spawnX), ITEMS.marbles.restY, between(r, W.marbles.spawnZ)] }],
   },
 };
 

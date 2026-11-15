@@ -34,17 +34,28 @@ const EXPECT: Record<WorkshopLayout, Record<string, 'ok' | 'tool' | 'heavy' | 'r
     'compact+gripper': 'heavy', 'compact+suction': 'tool', 'compact+magnet': 'heavy', 'compact+wide': 'tool',
     'long+gripper': 'heavy', 'long+suction': 'tool', 'long+magnet': 'heavy', 'long+wide': 'tool',
     'heavyduty+gripper': 'ok', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'ok', 'heavyduty+wide': 'tool',
+    'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool',
+  },
+  marbles: {
+    'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'tool', 'compact+wide': 'tool', 'compact+scoop': 'ok',
+    'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'tool', 'long+wide': 'tool', 'long+scoop': 'ok',
+    'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'ok',
   },
   plate: { 'compact+gripper': 'tool', 'compact+suction': 'ok', 'long+gripper': 'tool', 'long+suction': 'ok', 'compact+magnet': 'tool', 'long+magnet': 'tool', 'compact+wide': 'tool', 'long+wide': 'tool',
-    'heavyduty+gripper': 'tool', 'heavyduty+suction': 'ok', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool' },
+    'heavyduty+gripper': 'tool', 'heavyduty+suction': 'ok', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool',
+    'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool' },
   far: { 'compact+gripper': 'reach', 'compact+suction': 'reach', 'long+gripper': 'ok', 'long+suction': 'tool', 'compact+magnet': 'reach', 'long+magnet': 'ok', 'compact+wide': 'reach', 'long+wide': 'tool',
-    'heavyduty+gripper': 'reach', 'heavyduty+suction': 'reach', 'heavyduty+magnet': 'reach', 'heavyduty+wide': 'reach' },
+    'heavyduty+gripper': 'reach', 'heavyduty+suction': 'reach', 'heavyduty+magnet': 'reach', 'heavyduty+wide': 'reach',
+    'compact+scoop': 'reach', 'long+scoop': 'tool', 'heavyduty+scoop': 'reach' },
   heavy: { 'compact+gripper': 'ok', 'compact+suction': 'tool', 'long+gripper': 'heavy', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'heavy', 'compact+wide': 'tool', 'long+wide': 'tool',
-    'heavyduty+gripper': 'ok', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'ok', 'heavyduty+wide': 'tool' },
+    'heavyduty+gripper': 'ok', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'ok', 'heavyduty+wide': 'tool',
+    'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool' },
   washer: { 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'ok', 'compact+wide': 'tool', 'long+wide': 'tool',
-    'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'ok', 'heavyduty+wide': 'tool' },
+    'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'ok', 'heavyduty+wide': 'tool',
+    'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool' },
   crate: { 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'tool', 'long+magnet': 'tool', 'compact+wide': 'ok', 'long+wide': 'heavy',
-    'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'ok' },
+    'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'ok',
+    'compact+scoop': 'tool', 'long+scoop': 'tool', 'heavyduty+scoop': 'tool' },
 };
 
 function grid(ws: { min: Vec3; max: Vec3 }, n: number): Vec3[] {
@@ -153,6 +164,14 @@ describe('grab rules', () => {
     expect(grabCheck(ITEMS.crate, { arm: 'compact', tool: 'magnet' })?.text).toBe('Magnet only lifts metal');
     expect(grabCheck(ITEMS.crate, { arm: 'long', tool: 'wide' })?.text).toBe('Too heavy for this arm');
     expect(grabCheck(ITEMS.crate, { arm: 'compact', tool: 'wide' })).toBeNull();
+  });
+
+  it('scoop: loose bits only; marbles: only the scoop', () => {
+    expect(grabCheck(ITEMS.marbles, STANDARD_ROBOT)?.text).toBe('Loose bits slip through the fingers');
+    expect(grabCheck(ITEMS.marbles, { arm: 'compact', tool: 'suction' })?.text).toBe("Suction can't hold loose bits");
+    expect(grabCheck(ITEMS.marbles, { arm: 'compact', tool: 'magnet' })?.text).toBe('Magnet only lifts metal');
+    expect(grabCheck(ITEMS.can, { arm: 'long', tool: 'scoop' })?.text).toBe("Can't scoop up a can");
+    expect(grabCheck(ITEMS.marbles, { arm: 'long', tool: 'scoop' })).toBeNull();
   });
 
   it('original labels', () => {

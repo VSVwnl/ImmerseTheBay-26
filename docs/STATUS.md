@@ -39,6 +39,9 @@ Additions:
    arms: the anvil is "Too heavy" for Compact and Long, while Heavy-duty can't get near the far can ("Out of
    reach"). Heavy-duty also lifts the crate with the wide gripper. (Out-of-reach hint radius 0.20 -> 0.25 m so
    the short arm still explains itself at the far can.)
+5. Scoop tool + Marbles challenge (a handful of glass marbles -> blue bowl). Interesting because a "thing" that is
+   really many small loose bits defeats every grasping idea at once (fingers: slip through; suction: loose;
+   magnet: glass; wide: loose), and the scoop, which can't pick up anything solid, is the only answer with any arm.
 
 Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base checks in `docs/WORKSHOP.md`):
 - [ ] 1 Groundwork (NOT YET TESTED ON HEADSET): in the Workshop, each countdown switches the wall to a different
@@ -53,6 +56,9 @@ Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base check
 - [ ] 4 Heavy-duty + Anvil (NOT YET TESTED ON HEADSET): the Heavy-duty arm looks short and thick; with Compact the
       anvil says "Too heavy for this arm"; Heavy-duty + Gripper (or Magnet) moves it to the red zone; in the Far
       challenge Heavy-duty stops short and says "Out of reach". Does the hand target feel cramped (smaller reach)?
+- [ ] 5 Scoop + Marbles (NOT YET TESTED ON HEADSET): with the Gripper the marbles say "Loose bits slip through the
+      fingers"; with the Scoop they sit in the orange-walled tray and land in the blue bowl; the marbles are small:
+      visible enough? Frame rate with 7 marble spheres fine?
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with

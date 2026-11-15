@@ -44,6 +44,23 @@ function stem(tool: THREE.Group, m: Mats, r = 0.012): void {
 
 const TOOL_BUILDERS: Record<ToolKind, (tool: THREE.Group, m: Mats) => ToolRig> = {
   gripper: (tool, m) => fingerRig(tool, m, 0.11, FINGER_GAP_OPEN, FINGER_GAP_CLOSED),
+  scoop: (tool, m) => {
+    // stem to a shallow open tray at the tip: a flat bottom with low walls on three sides
+    stem(tool, m);
+    const bottom = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.065, 0.004), m.steel);
+    bottom.position.z = TOOL_LEN;
+    tool.add(bottom);
+    for (const [w, h, x, y] of [
+      [0.075, 0.004, 0, 0.0305],
+      [0.004, 0.065, 0.0355, 0],
+      [0.004, 0.065, -0.0355, 0],
+    ] as [number, number, number, number][]) {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.02), m.orange);
+      wall.position.set(x, y, TOOL_LEN - 0.01);
+      tool.add(wall);
+    }
+    return { fingers: [], gapOpen: 0, gapClosed: 0, pad: null };
+  },
   wide: (tool, m) => {
     const rig = fingerRig(tool, m, WIDE.open + 0.05, WIDE.open, WIDE.closed, 0.1);
     for (const f of rig.fingers) f.position.z = TOOL_LEN - 0.03; // longer fingers reach down the crate's sides

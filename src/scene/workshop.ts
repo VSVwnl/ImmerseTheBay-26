@@ -95,6 +95,22 @@ function makeZone(g0: Goal): THREE.Object3D {
   return g;
 }
 
+function makeBowl(g0: Goal): THREE.Group {
+  const g = new THREE.Group();
+  const { r, h } = WORKSHOP.bowl;
+  const mat = new THREE.MeshStandardMaterial({ color: g0.color, roughness: 0.4, side: THREE.DoubleSide });
+  const wall = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.7, h, 32, 1, true), mat);
+  wall.position.y = h / 2;
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(r * 0.7, 32), mat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = 0.002;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(r, 0.004, 8, 32), new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: 0.4 }));
+  rim.rotation.x = Math.PI / 2;
+  rim.position.y = h;
+  g.add(wall, floor, rim);
+  return g;
+}
+
 function makePallet(g0: Goal): THREE.Group {
   const g = new THREE.Group();
   const wood = new THREE.MeshStandardMaterial({ color: g0.color, roughness: 0.9 });
@@ -116,6 +132,7 @@ function makePallet(g0: Goal): THREE.Group {
 const GOAL_MESHES: Record<GoalKind, (g: Goal) => THREE.Object3D> = {
   rack: makeRack,
   pallet: makePallet,
+  bowl: makeBowl,
   bin: (g) => makeBin(g.color),
   zone: makeZone,
 };
@@ -175,6 +192,21 @@ function makeAnvil(): THREE.Group {
   return g;
 }
 
+function makeMarbles(): THREE.Group {
+  const g = new THREE.Group();
+  const { r, spread } = WORKSHOP.marbles;
+  const colors = [0x3fb6e8, 0xe84f8b, 0x6fd36b, 0xf2c94c, 0x9b7bf2, 0xf28a1e, 0x4fd1c5];
+  const geo = new THREE.SphereGeometry(r, 12, 8);
+  colors.forEach((c, i) => {
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: c, roughness: 0.15, metalness: 0.1 }));
+    const a = (i / colors.length) * Math.PI * 2;
+    const rr = i === 0 ? 0 : spread * (0.55 + 0.45 * ((i * 37) % 7) / 7);
+    m.position.set(Math.cos(a) * rr, 0, Math.sin(a) * rr);
+    g.add(m);
+  });
+  return g;
+}
+
 /** Object meshes. To add an object, add a builder here (simple primitives only). */
 const ITEM_MESHES: Record<ItemId, () => THREE.Group> = {
   plate: makePlate,
@@ -183,6 +215,7 @@ const ITEM_MESHES: Record<ItemId, () => THREE.Group> = {
   washer: makeWasher,
   crate: makeCrate,
   anvil: makeAnvil,
+  marbles: makeMarbles,
 };
 
 /** A label that floats up and fades out. Not on the dataset layer. */

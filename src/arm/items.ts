@@ -5,7 +5,7 @@
 import { GRAB_RADIUS, TABLE, WORKSHOP, type Vec3 } from '../config';
 import { payloadOf, type RobotParts, type ToolKind, type Workspace } from './parts';
 
-export type ItemId = 'plate' | 'can' | 'pot' | 'washer' | 'crate' | 'anvil';
+export type ItemId = 'plate' | 'can' | 'pot' | 'washer' | 'crate' | 'anvil' | 'marbles';
 export type Material = 'ceramic' | 'metal' | 'wood' | 'glass' | 'plastic';
 /** flat: no sides to grip; cylinder/box/pot: has sides; ring: flat with a hole; loose: many small bits */
 export type Shape = 'flat' | 'cylinder' | 'box' | 'pot' | 'ring' | 'loose';
@@ -57,6 +57,10 @@ export const ITEMS: Record<ItemId, ItemSpec> = {
     id: 'anvil', name: 'anvil', material: 'metal', shape: 'box', size: 'normal', weight: 3,
     restY: TABLE.top + WORKSHOP.anvil.h / 2, radius: WORKSHOP.anvil.w / 2, suctionText: "Suction can't seal on rough iron",
   },
+  marbles: {
+    id: 'marbles', name: 'marbles', material: 'glass', shape: 'loose', size: 'small', weight: 1,
+    restY: TABLE.top + WORKSHOP.marbles.r, radius: WORKSHOP.marbles.spread + WORKSHOP.marbles.r, holdDrop: -0.012,
+  },
 };
 export const ITEM_IDS = Object.keys(ITEMS) as ItemId[];
 
@@ -85,6 +89,7 @@ export const TOOL_RULES: Record<ToolKind, (it: ItemSpec) => string | null> = {
     if (it.size !== 'big') return 'Too small for the wide gripper';
     return null;
   },
+  scoop: (it) => (it.shape === 'loose' ? null : `Can't scoop up a ${it.name}`),
 };
 
 /** Why this robot can't hold this object: tool first, then weight. Null when it can. */
