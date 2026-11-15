@@ -17,6 +17,7 @@ import { ThumbWall } from './ui/thumbs';
 import { listenOnce, voiceSupported } from './ui/voice';
 import type { Action } from './env/env';
 import type { Core } from './core';
+import { HoloControl } from './holo/control';
 
 export function startApp(core: Core) {
   const { canvas, renderer, scene, camera, marker, world, streamLight, renderState } = core;
@@ -67,8 +68,25 @@ export function startApp(core: Core) {
   const xr = new XRInput(renderer);
   scene.add(xr.group);
 
+  // ---------- hologram control (?holo=1) ----------
+  // A small hologram of the arm: drag its tip and the real arm follows. It writes into the desktop input's
+  // target/grip, so the challenges, recording and replay see an ordinary action.
+  const holo = params.get('holo') === '1' ? new HoloControl(scene, canvas, camera, desktop, xr) : null;
+  if (holo) {
+    desktop.holoMode = true;
+    holo.onEvent = (e) => {
+      if (e === 'grab' || e === 'tap') sfx.click();
+    };
+    const help = document.getElementById('help');
+    if (help) help.textContent = 'Drag the hologram tip: move arm · wheel or W/S: up/down · click the tip or Space: grip · 1–6: world';
+  }
+
   let inputKind: InputKind = 'mouse';
   function currentAction(): Action {
+    if (holo) {
+      inputKind = holo.inputKind;
+      return desktop.action();
+    }
     if (xr.presenting) {
       const a = xr.action();
       if (a) {
@@ -461,16 +479,23 @@ export function startApp(core: Core) {
     const src = robot ?? (multiplying() ? multiply! : challenges);
     const alpha = robot ? robot.alpha : src.acc * 30;
     renderState(src.prev, src.curr, Math.min(1, Math.max(0, alpha)), dt);
+    if (holo) {
+      const k = Math.min(1, Math.max(0, alpha));
+      const p = src.prev.tip;
+      const c = src.curr.tip;
+      holo.interactive = !robot && !multiplying();
+      holo.update(dt, [p[0] + (c[0] - p[0]) * k, p[1] + (c[1] - p[1]) * k, p[2] + (c[2] - p[2]) * k], src.curr);
+    }
     if (pendingSnap) {
       dcam.capture(renderer, scene);
       thumbs.add(dcam.toCanvas(document.createElement('canvas')), pendingSnap);
       pendingSnap = null;
     }
 
-    const a = xr.presenting ? xr.action() ?? desktop.action() : desktop.action();
+    const a = holo ? desktop.action() : xr.presenting ? xr.action() ?? desktop.action() : desktop.action();
     marker.position.set(...a.target);
     marker.visible = !robot && !multiplying();
-    const active = xr.presenting ? xr.active : desktop.engaged;
+    const active = holo ? true : xr.presenting ? xr.active : desktop.engaged;
     (marker.material as THREE.MeshBasicMaterial).color.setHex(active ? 0xffb347 : 0x555b66);
     (marker.material as THREE.MeshBasicMaterial).opacity = active ? 0.95 : 0.5;
 
@@ -491,6 +516,7 @@ export function startApp(core: Core) {
     world,
     panels,
     sessionId,
+    holo,
     /** screen position (CSS px) of a world point, for driving the mouse in tests */
     project(p: Vec3) {
       const v = new THREE.Vector3(...p).project(camera);

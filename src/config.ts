@@ -72,8 +72,8 @@ export const HAND_SMOOTH_REF_HZ = 72;
 // real arm follows. A short pinch without dragging toggles the gripper.
 export const HOLO = {
   scale: 0.3, // hologram size / real arm size in the headset
-  desktopScale: 0.5,
-  desktopAnchor: [-0.5, 0.8, -0.52] as Vec3, // where the hologram's arm base stands on desktop
+  desktopScale: 0.35,
+  desktopAnchor: [-0.74, 0.85, -1.0] as Vec3, // arm base of the desktop hologram: left of the table, clear of the panels
   grabRadius: 0.03, // m around the hologram tip where a pinch starts a grab
   desktopGrabRadius: 0.045,
   dragStart: 0.006, // m of hand movement (hologram space) before a pinch becomes a drag

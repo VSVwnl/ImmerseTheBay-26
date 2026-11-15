@@ -164,3 +164,52 @@ export class AnchorFilter {
     return this.anchor;
   }
 }
+
+/** What the headset reports for one hand, in world space (see XRInput.handData). */
+export interface HandData {
+  thumb: Vec3;
+  index: Vec3;
+  palm: Vec3; // palm center
+  wristQuat: [number, number, number, number];
+}
+/** One controller: its grip position, a point a few cm ahead of it (the "fingertip"), and the trigger. */
+export interface ControllerData {
+  grip: Vec3;
+  point: Vec3;
+  trigger: number;
+}
+export interface XRHoloFrame {
+  palm: Vec3 | null; // where the hologram should stand this frame, or null
+  grabber: Grabber | null;
+  kind: 'hand' | 'controller' | null; // what the grabbing side is
+}
+
+/**
+ * Picks the hologram's palm and the grabbing pinch from the two sides. The palm side (HOLO.palmHand) shows the
+ * hologram when its palm faces up (a controller there always does); the other side pinches (or pulls the trigger).
+ * `prev` carries the pinch/trigger hysteresis between frames.
+ */
+export function xrHoloFrame(
+  side: { palmHand: HandData | null; palmCtrl: ControllerData | null; grabHand: HandData | null; grabCtrl: ControllerData | null },
+  prev: { closed: boolean },
+): XRHoloFrame {
+  let palm: Vec3 | null = null;
+  if (side.palmHand) {
+    if (palmUpDot(side.palmHand.wristQuat) >= HOLO.palmUpMin) palm = side.palmHand.palm;
+  } else if (side.palmCtrl) palm = side.palmCtrl.grip;
+
+  let grabber: Grabber | null = null;
+  let kind: XRHoloFrame['kind'] = null;
+  if (side.grabHand) {
+    const { thumb: a, index: b } = side.grabHand;
+    const closed = pinchClosed(prev.closed, dist(a, b));
+    grabber = { point: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2], closed };
+    kind = 'hand';
+  } else if (side.grabCtrl) {
+    const t = side.grabCtrl.trigger;
+    grabber = { point: side.grabCtrl.point, closed: prev.closed ? t > 0.3 : t > 0.6 };
+    kind = 'controller';
+  }
+  prev.closed = grabber?.closed ?? false;
+  return { palm, grabber, kind };
+}

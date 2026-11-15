@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AnchorFilter, HoloLink, clampWorkspace, fromHolo, palmUpDot, pinchClosed, toHolo, type Anchor, type ArmStore } from '../src/holo/link';
+import { AnchorFilter, HoloLink, clampWorkspace, fromHolo, palmUpDot, pinchClosed, toHolo, xrHoloFrame, type Anchor, type ArmStore } from '../src/holo/link';
 import { ARM_BASE, HOLO, HOME_TIP, WORKSPACE, type Vec3 } from '../src/config';
 
 const A: Anchor = { pos: [-0.2, 1.1, -0.3], scale: 0.3 };
@@ -157,5 +157,46 @@ describe('palm and anchor', () => {
     // while held it never disappears
     f.update([0, 1, -0.3], false, DT);
     for (let i = 0; i < 500; i++) expect(f.update(null, true, DT)).not.toBe(null);
+  });
+});
+
+describe('xrHoloFrame', () => {
+  const up: [number, number, number, number] = [0, 0, 1, 0]; // palm up
+  const down: [number, number, number, number] = [0, 0, 0, 1];
+  const hand = (palmQ: [number, number, number, number], gap: number) => ({
+    thumb: [0.1 - gap / 2, 1.1, -0.3] as Vec3,
+    index: [0.1 + gap / 2, 1.1, -0.3] as Vec3,
+    palm: [-0.2, 1.0, -0.3] as Vec3,
+    wristQuat: palmQ,
+  });
+
+  it('palm up shows the hologram at the palm; palm down hides it', () => {
+    const prev = { closed: false };
+    expect(xrHoloFrame({ palmHand: hand(up, 0.08), palmCtrl: null, grabHand: null, grabCtrl: null }, prev).palm).toEqual([-0.2, 1.0, -0.3]);
+    expect(xrHoloFrame({ palmHand: hand(down, 0.08), palmCtrl: null, grabHand: null, grabCtrl: null }, prev).palm).toBe(null);
+  });
+
+  it('the other hand pinches with hysteresis; pinch point is between thumb and index', () => {
+    const prev = { closed: false };
+    const f = (gap: number) => xrHoloFrame({ palmHand: hand(up, 0.08), palmCtrl: null, grabHand: hand(down, gap), grabCtrl: null }, prev);
+    expect(f(0.03).grabber!.closed).toBe(false);
+    const g = f(0.02);
+    expect(g.grabber!.closed).toBe(true);
+    expect(g.grabber!.point[0]).toBeCloseTo(0.1, 12);
+    expect(g.kind).toBe('hand');
+    expect(f(0.035).grabber!.closed).toBe(true);
+    expect(f(0.05).grabber!.closed).toBe(false);
+  });
+
+  it('controllers: left grip always shows the hologram, right trigger grabs', () => {
+    const prev = { closed: false };
+    const ctrl = (trigger: number) => ({ grip: [-0.2, 1, -0.3] as Vec3, point: [0.1, 1.1, -0.35] as Vec3, trigger });
+    const f = (t: number) => xrHoloFrame({ palmHand: null, palmCtrl: ctrl(0), grabHand: null, grabCtrl: ctrl(t) }, prev);
+    expect(f(0).palm).toEqual([-0.2, 1, -0.3]);
+    expect(f(0.5).grabber!.closed).toBe(false);
+    expect(f(0.7).grabber!.closed).toBe(true);
+    expect(f(0.5).grabber!.closed).toBe(true);
+    expect(f(0.2).grabber!.closed).toBe(false);
+    expect(f(0).kind).toBe('controller');
   });
 });

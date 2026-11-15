@@ -5,8 +5,9 @@ import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerM
 import type { Action } from '../env/env';
 import type { Vec3 } from '../config';
 import { ControllerControl, PinchControl } from './handlogic';
+import type { ControllerData, HandData } from '../holo/link';
 
-type Side = 'left' | 'right';
+export type Side = 'left' | 'right';
 
 interface HandSlot {
   hand: THREE.Group & { joints?: Record<string, THREE.Object3D> };
@@ -97,6 +98,34 @@ export class XRInput {
     if (this.mode === 'hand') return { target: [...this.pinch.target], grip: this.pinch.grip };
     if (this.mode === 'controller') return { target: [...this.ctrl.target], grip: this.ctrl.grip };
     return null;
+  }
+
+  /** Raw hand joints for the hologram (?holo=1): pinch tips, palm center, wrist orientation. */
+  handData(side: Side): HandData | null {
+    const s = this.slot(side, 'hand');
+    if (!s) return null;
+    const t = this.joint(s, 'thumb-tip');
+    const i = this.joint(s, 'index-finger-tip');
+    const w = this.joint(s, 'wrist');
+    const k = this.joint(s, 'middle-finger-phalanx-proximal');
+    if (!t || !i || !w || !k) return null;
+    const q = w.getWorldQuaternion(new THREE.Quaternion());
+    const wp = toVec(w);
+    const kp = toVec(k);
+    return {
+      thumb: toVec(t),
+      index: toVec(i),
+      palm: [(wp[0] + kp[0]) / 2, (wp[1] + kp[1]) / 2, (wp[2] + kp[2]) / 2],
+      wristQuat: [q.x, q.y, q.z, q.w],
+    };
+  }
+
+  /** Controller grip position, a point 5 cm ahead of its ray origin, and the trigger, for the hologram. */
+  controllerData(side: Side): ControllerData | null {
+    const s = this.slot(side, 'controller');
+    if (!s) return null;
+    const p = new THREE.Vector3(0, 0, -0.05).applyMatrix4(s.controller.matrixWorld);
+    return { grip: toVec(s.grip), point: [p.x, p.y, p.z], trigger: s.source?.gamepad?.buttons[0]?.value ?? 0 };
   }
 
   /** Fingertips (both index tips, or controller ray origins) for poking panels. */

@@ -16,6 +16,8 @@ export class DesktopInput {
   private plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private hit = new THREE.Vector3();
   enabled = true;
+  /** ?holo=1: the mouse drives the arm through the hologram, so moving it or clicking does not move/grip here */
+  holoMode = false;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -32,7 +34,7 @@ export class DesktopInput {
   }
 
   private onMove = (e: PointerEvent) => {
-    if (!this.enabled) return;
+    if (!this.enabled || this.holoMode) return;
     const r = this.canvas.getBoundingClientRect();
     this.ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     this.ray.setFromCamera(this.ndc, this.camera);
@@ -47,7 +49,7 @@ export class DesktopInput {
   private onDown = (e: PointerEvent) => {
     this.onGesture();
     if (!this.enabled) return;
-    if (e.button === 0) this.toggleGrip();
+    if (e.button === 0 && !this.holoMode) this.toggleGrip();
   };
 
   private onWheel = (e: WheelEvent) => {
