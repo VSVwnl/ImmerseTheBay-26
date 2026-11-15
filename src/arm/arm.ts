@@ -4,6 +4,7 @@
 // To add a tool look, add a builder to TOOL_BUILDERS (simple primitives only).
 import * as THREE from 'three';
 import { ARM_BASE, FINGER_ANIM_S, FINGER_GAP_CLOSED, FINGER_GAP_OPEN, TOOL_LEN, WORKSHOP } from '../config';
+const WIDE = WORKSHOP.wideGap;
 import type { Joints } from './ik';
 import { linksFor, shoulderHeight, STANDARD_ROBOT, type RobotParts, type ToolKind } from './parts';
 
@@ -43,6 +44,11 @@ function stem(tool: THREE.Group, m: Mats, r = 0.012): void {
 
 const TOOL_BUILDERS: Record<ToolKind, (tool: THREE.Group, m: Mats) => ToolRig> = {
   gripper: (tool, m) => fingerRig(tool, m, 0.11, FINGER_GAP_OPEN, FINGER_GAP_CLOSED),
+  wide: (tool, m) => {
+    const rig = fingerRig(tool, m, WIDE.open + 0.05, WIDE.open, WIDE.closed, 0.1);
+    for (const f of rig.fingers) f.position.z = TOOL_LEN - 0.03; // longer fingers reach down the crate's sides
+    return rig;
+  },
   suction: (tool, m) => {
     // stem down to a flat round rubber pad whose face is at the tip point
     stem(tool, m);

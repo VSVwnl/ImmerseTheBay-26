@@ -30,6 +30,10 @@ Additions:
    Magnet) and Heavy (Compact + Magnet), so the old one-answer challenges now have two.
    Also: `?challenges=washer` limits the Workshop to the listed challenges for quick testing;
    `scripts/panel-shot.mjs` renders a headset panel to a PNG; the parts panel is taller/wider in the headset.
+3. Wide gripper tool + Crate challenge (big slatted wooden crate, weight 2 -> wooden pallet). Interesting
+   because it needs a two-part answer: only the wide gripper takes something that big (gripper: too big; suction:
+   air leaks through the slats; magnet: wood), and only the Compact arm can lift it (Long: too heavy). The wide
+   gripper's weakness: it can't hold anything that isn't big, so it fails every other challenge.
 
 Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base checks in `docs/WORKSHOP.md`):
 - [ ] 1 Groundwork (NOT YET TESTED ON HEADSET): in the Workshop, each countdown switches the wall to a different
@@ -38,6 +42,9 @@ Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base check
 - [ ] 2 Magnet + Washer (NOT YET TESTED ON HEADSET): the parts panel (left) shows Magnet; with Suction, pinching the
       washer says "Air leaks through the hole"; with Magnet the washer sticks under the red puck and drops into the
       blue tray; the magnet refuses the plate ("Magnet only lifts metal"). The washer is small: is it easy to see?
+- [ ] 3 Wide gripper + Crate (NOT YET TESTED ON HEADSET): Long + Wide says "Too heavy for this arm"; Compact + Wide
+      carries the crate onto the pallet; the wide fingers open and close visibly; the crate reads as "big and
+      heavy"; with the wide gripper the can says "Too small for the wide gripper".
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with

@@ -5,7 +5,7 @@
 import { GRAB_RADIUS, TABLE, WORKSHOP, type Vec3 } from '../config';
 import { payloadOf, type RobotParts, type ToolKind, type Workspace } from './parts';
 
-export type ItemId = 'plate' | 'can' | 'pot' | 'washer';
+export type ItemId = 'plate' | 'can' | 'pot' | 'washer' | 'crate';
 export type Material = 'ceramic' | 'metal' | 'wood' | 'glass' | 'plastic';
 /** flat: no sides to grip; cylinder/box/pot: has sides; ring: flat with a hole; loose: many small bits */
 export type Shape = 'flat' | 'cylinder' | 'box' | 'pot' | 'ring' | 'loose';
@@ -28,6 +28,8 @@ export interface ItemSpec {
   smoothTop?: boolean;
   /** render offset while held (e.g. a plate hangs under the pad) */
   holdDrop?: number;
+  /** why suction fails on it, when the generic text doesn't fit */
+  suctionText?: string;
 }
 
 export const ITEMS: Record<ItemId, ItemSpec> = {
@@ -47,6 +49,10 @@ export const ITEMS: Record<ItemId, ItemSpec> = {
     id: 'washer', name: 'washer', material: 'metal', shape: 'ring', size: 'small', weight: 1,
     restY: TABLE.top + WORKSHOP.washer.thick / 2, radius: WORKSHOP.washer.radius, holdDrop: WORKSHOP.washer.thick / 2,
   },
+  crate: {
+    id: 'crate', name: 'crate', material: 'wood', shape: 'box', size: 'big', weight: 2,
+    restY: TABLE.top + WORKSHOP.crate.size / 2, radius: WORKSHOP.crate.size / 2, suctionText: 'Air leaks through the slats',
+  },
 };
 export const ITEM_IDS = Object.keys(ITEMS) as ItemId[];
 
@@ -62,12 +68,19 @@ export const TOOL_RULES: Record<ToolKind, (it: ItemSpec) => string | null> = {
   },
   suction: (it) => {
     if (it.shape === 'flat' || it.smoothTop) return null;
+    if (it.suctionText) return it.suctionText;
     if (it.shape === 'ring') return 'Air leaks through the hole';
     if (it.shape === 'loose') return "Suction can't hold loose bits";
     if (it.shape === 'cylinder') return `Suction can't seal on a ${it.name}`;
     return `Suction can't hold a ${it.name}`;
   },
   magnet: (it) => (it.material === 'metal' ? null : 'Magnet only lifts metal'),
+  wide: (it) => {
+    if (it.shape === 'flat' || it.shape === 'ring') return `Can't grip a flat ${it.name}`;
+    if (it.shape === 'loose') return 'Loose bits slip through the fingers';
+    if (it.size !== 'big') return 'Too small for the wide gripper';
+    return null;
+  },
 };
 
 /** Why this robot can't hold this object: tool first, then weight. Null when it can. */

@@ -5,9 +5,9 @@ import { BIN, ENABLED_CHALLENGES, TABLE, WORKSHOP, type Vec3 } from '../config';
 import { ITEMS, type ItemId } from '../arm/items';
 import type { Rng } from './rng';
 
-export type WorkshopLayout = 'plate' | 'far' | 'heavy' | 'washer';
+export type WorkshopLayout = 'plate' | 'far' | 'heavy' | 'washer' | 'crate';
 
-export type GoalKind = 'rack' | 'bin' | 'zone';
+export type GoalKind = 'rack' | 'pallet' | 'bin' | 'zone';
 export interface Goal {
   kind: GoalKind;
   pos: Vec3; // center on the table top
@@ -39,6 +39,7 @@ export const GOALS = {
   greenBin: { kind: 'bin', pos: W.canBin.pos, w: BIN.w, d: BIN.d, h: BIN.h, color: 0x2f9e5b } as Goal,
   zone: { kind: 'zone', pos: W.zone.pos, w: W.zone.size, d: W.zone.size, h: 0, color: 0xffd34d } as Goal,
   tray: { kind: 'bin', pos: W.tray.pos, w: BIN.w, d: BIN.d, h: BIN.h, color: 0x4a6f96 } as Goal,
+  pallet: { kind: 'pallet', pos: W.pallet.pos, w: W.pallet.w, d: W.pallet.d, h: W.pallet.h, color: 0x9a6b3c } as Goal,
 };
 
 export const WORKSHOP_TASKS: Record<WorkshopLayout, WorkshopTask> = {
@@ -70,6 +71,13 @@ export const WORKSHOP_TASKS: Record<WorkshopLayout, WorkshopTask> = {
     solvedBy: 'Magnet, any arm',
     steps: [{ item: 'washer', goal: GOALS.tray, spawn: (r) => [between(r, W.washer.spawnX), ITEMS.washer.restY, between(r, W.washer.spawnZ)] }],
   },
+  crate: {
+    layout: 'crate',
+    name: 'Crate',
+    hint: 'Put the big crate on the pallet',
+    solvedBy: 'Compact + Wide gripper',
+    steps: [{ item: 'crate', goal: GOALS.pallet, spawn: (r) => [between(r, W.crate.spawnX), ITEMS.crate.restY, between(r, W.crate.spawnZ)] }],
+  },
 };
 
 export const WORKSHOP_LAYOUTS = Object.keys(WORKSHOP_TASKS) as WorkshopLayout[];
@@ -99,7 +107,7 @@ export function settleOn(layout: WorkshopLayout, item: ItemId, p: Vec3): { pos: 
     const g = s.goal;
     if (!over(p, g)) continue;
     const mine = s === own;
-    if (g.kind === 'rack') return { pos: [p[0], spec.restY + g.h, p[2]], goal: mine, offTable: false };
+    if (g.kind === 'rack' || g.kind === 'pallet') return { pos: [p[0], spec.restY + g.h, p[2]], goal: mine, offTable: false };
     if (g.kind === 'bin') {
       const mx = Math.max(0, g.w / 2 - BIN.wall - spec.radius);
       const mz = Math.max(0, g.d / 2 - BIN.wall - spec.radius);

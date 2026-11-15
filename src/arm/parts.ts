@@ -4,7 +4,7 @@
 import { ENABLED_PARTS, L1, L2, SHOULDER_H, WORKSHOP, WORKSPACE, type Vec3 } from '../config';
 
 export type ArmKind = 'compact' | 'long';
-export type ToolKind = 'gripper' | 'suction' | 'magnet';
+export type ToolKind = 'gripper' | 'suction' | 'magnet' | 'wide';
 export interface RobotParts {
   arm: ArmKind;
   tool: ToolKind;
@@ -48,6 +48,7 @@ export const TOOLS: Record<ToolKind, ToolSpec> = {
   gripper: { id: 'gripper', label: 'Gripper', blurb: 'grips things with sides' },
   suction: { id: 'suction', label: 'Suction', blurb: 'lifts flat smooth things' },
   magnet: { id: 'magnet', label: 'Magnet', blurb: 'any metal, nothing else' },
+  wide: { id: 'wide', label: 'Wide gripper', blurb: 'big things only' },
 };
 
 export const STANDARD_ROBOT: Readonly<RobotParts> = Object.freeze({ arm: 'compact', tool: 'gripper' });

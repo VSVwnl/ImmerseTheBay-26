@@ -30,10 +30,11 @@ const key = (r: RobotParts) => `${r.arm}+${r.tool}`;
 /** Expected outcome of each Workshop challenge for each robot: 'ok' or the failure reason.
  *  Robots not listed must fail (any reason). */
 const EXPECT: Record<WorkshopLayout, Record<string, 'ok' | 'tool' | 'heavy' | 'reach'>> = {
-  plate: { 'compact+gripper': 'tool', 'compact+suction': 'ok', 'long+gripper': 'tool', 'long+suction': 'ok', 'compact+magnet': 'tool', 'long+magnet': 'tool' },
-  far: { 'compact+gripper': 'reach', 'compact+suction': 'reach', 'long+gripper': 'ok', 'long+suction': 'tool', 'compact+magnet': 'reach', 'long+magnet': 'ok' },
-  heavy: { 'compact+gripper': 'ok', 'compact+suction': 'tool', 'long+gripper': 'heavy', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'heavy' },
-  washer: { 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'ok' },
+  plate: { 'compact+gripper': 'tool', 'compact+suction': 'ok', 'long+gripper': 'tool', 'long+suction': 'ok', 'compact+magnet': 'tool', 'long+magnet': 'tool', 'compact+wide': 'tool', 'long+wide': 'tool' },
+  far: { 'compact+gripper': 'reach', 'compact+suction': 'reach', 'long+gripper': 'ok', 'long+suction': 'tool', 'compact+magnet': 'reach', 'long+magnet': 'ok', 'compact+wide': 'reach', 'long+wide': 'tool' },
+  heavy: { 'compact+gripper': 'ok', 'compact+suction': 'tool', 'long+gripper': 'heavy', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'heavy', 'compact+wide': 'tool', 'long+wide': 'tool' },
+  washer: { 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'ok', 'long+magnet': 'ok', 'compact+wide': 'tool', 'long+wide': 'tool' },
+  crate: { 'compact+gripper': 'tool', 'compact+suction': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'compact+magnet': 'tool', 'long+magnet': 'tool', 'compact+wide': 'ok', 'long+wide': 'heavy' },
 };
 
 function grid(ws: { min: Vec3; max: Vec3 }, n: number): Vec3[] {
@@ -133,6 +134,15 @@ describe('grab rules', () => {
     expect(grabCheck(ITEMS.washer, { arm: 'compact', tool: 'gripper' })?.text).toBe("Can't grip a flat washer");
     expect(grabCheck(ITEMS.washer, { arm: 'compact', tool: 'suction' })?.text).toBe('Air leaks through the hole');
     expect(grabCheck(ITEMS.washer, { arm: 'long', tool: 'magnet' })).toBeNull();
+  });
+
+  it('wide gripper: big things only; crate: only the wide gripper', () => {
+    expect(grabCheck(ITEMS.can, { arm: 'long', tool: 'wide' })?.text).toBe('Too small for the wide gripper');
+    expect(grabCheck(ITEMS.crate, STANDARD_ROBOT)?.text).toBe('Too big for this gripper');
+    expect(grabCheck(ITEMS.crate, { arm: 'compact', tool: 'suction' })?.text).toBe('Air leaks through the slats');
+    expect(grabCheck(ITEMS.crate, { arm: 'compact', tool: 'magnet' })?.text).toBe('Magnet only lifts metal');
+    expect(grabCheck(ITEMS.crate, { arm: 'long', tool: 'wide' })?.text).toBe('Too heavy for this arm');
+    expect(grabCheck(ITEMS.crate, { arm: 'compact', tool: 'wide' })).toBeNull();
   });
 
   it('original labels', () => {

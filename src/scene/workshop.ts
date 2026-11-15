@@ -95,9 +95,27 @@ function makeZone(g0: Goal): THREE.Object3D {
   return g;
 }
 
+function makePallet(g0: Goal): THREE.Group {
+  const g = new THREE.Group();
+  const wood = new THREE.MeshStandardMaterial({ color: g0.color, roughness: 0.9 });
+  const board = 0.006;
+  for (const sx of [-1, 0, 1]) {
+    const runner = new THREE.Mesh(new THREE.BoxGeometry(0.02, g0.h - board, g0.d), wood);
+    runner.position.set((sx * (g0.w - 0.02)) / 2, (g0.h - board) / 2, 0);
+    g.add(runner);
+  }
+  for (let i = 0; i < 5; i++) {
+    const top = new THREE.Mesh(new THREE.BoxGeometry(g0.w, board, g0.d / 5 - 0.008), wood);
+    top.position.set(0, g0.h - board / 2, -g0.d / 2 + (g0.d / 5) * (i + 0.5));
+    g.add(top);
+  }
+  return g;
+}
+
 /** Goal meshes by kind. To add a goal kind, add a builder here. */
 const GOAL_MESHES: Record<GoalKind, (g: Goal) => THREE.Object3D> = {
   rack: makeRack,
+  pallet: makePallet,
   bin: (g) => makeBin(g.color),
   zone: makeZone,
 };
@@ -113,12 +131,38 @@ function makeWasher(): THREE.Group {
   return g;
 }
 
+function makeCrate(): THREE.Group {
+  const g = new THREE.Group();
+  const s = WORKSHOP.crate.size;
+  const wood = new THREE.MeshStandardMaterial({ color: 0xb07a42, roughness: 0.85 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x7a5129, roughness: 0.9 });
+  const core = new THREE.Mesh(new THREE.BoxGeometry(s * 0.94, s * 0.94, s * 0.94), dark);
+  g.add(core);
+  // slats on four sides and the top (the gaps are why suction fails)
+  for (let i = 0; i < 3; i++) {
+    const off = (i - 1) * s * 0.33;
+    for (const [w, h, d, x, y, z] of [
+      [s, s * 0.22, 0.008, 0, off, s / 2],
+      [s, s * 0.22, 0.008, 0, off, -s / 2],
+      [0.008, s * 0.22, s, s / 2, off, 0],
+      [0.008, s * 0.22, s, -s / 2, off, 0],
+      [s, 0.008, s * 0.22, 0, s / 2, off],
+    ] as [number, number, number, number, number, number][]) {
+      const slat = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wood);
+      slat.position.set(x, y, z);
+      g.add(slat);
+    }
+  }
+  return g;
+}
+
 /** Object meshes. To add an object, add a builder here (simple primitives only). */
 const ITEM_MESHES: Record<ItemId, () => THREE.Group> = {
   plate: makePlate,
   can: makeCan,
   pot: makePot,
   washer: makeWasher,
+  crate: makeCrate,
 };
 
 /** A label that floats up and fades out. Not on the dataset layer. */
