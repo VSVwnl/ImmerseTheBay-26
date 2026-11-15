@@ -16,7 +16,7 @@ import { RobotTurn } from './policy/robot';
 import { Multiply } from './factory/multiply';
 import { DatasetCamera } from './factory/camera';
 import { ThumbWall } from './ui/thumbs';
-import { listenOnce, voiceSupported } from './ui/voice';
+import { listenOnce, stopListening, voiceErrorText, voiceSupported } from './ui/voice';
 import type { Action } from './env/env';
 import type { Core } from './core';
 
@@ -34,8 +34,16 @@ export function startApp(core: Core) {
         const label = text.length > 22 ? text.slice(0, 21) + '…' : text;
         selectWorld({ id: 'custom', label, prompt: `${PROMPT_PREFIX} ${text}` });
       },
-      (on) => {
+      (on, err) => {
         listening = on;
+        const msg = voiceErrorText(err);
+        if (msg) {
+          console.warn('[voice]', err);
+          sfx.slip();
+          // shown just under the Worlds panel, where the button is
+          const p = PANELS.world.pos;
+          core.workshop.showFail(msg, [p[0], p[1] - 0.45, p[2]]);
+        }
       },
     );
   }
@@ -66,7 +74,9 @@ export function startApp(core: Core) {
     canvas,
     camera,
     (i) => {
-      if (BUTTON_WORLDS[i]) selectWorld(BUTTON_WORLDS[i]);
+      if (!BUTTON_WORLDS[i]) return;
+      stopListening(); // a preset replaces a pending spoken world
+      selectWorld(BUTTON_WORLDS[i]);
     },
     onGesture,
   );
@@ -170,7 +180,8 @@ export function startApp(core: Core) {
     sfx.click();
     onGesture();
     if (panel === 'world') {
-      if (id === 'voice') return speakWorld();
+      if (id === 'voice') return speakWorld(); // pressing it again while listening cancels
+      stopListening(); // a preset replaces a pending spoken world
       const def = (robot ? ROBOT_WORLDS : BUTTON_WORLDS).find((w) => w.id === id);
       if (def) selectWorld(def);
       if (def && robot) robot.reset(); // fresh seed in the new world

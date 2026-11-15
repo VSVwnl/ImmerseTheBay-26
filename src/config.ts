@@ -69,6 +69,8 @@ export const HAND_SMOOTH_REF_HZ = 72;
 
 // ---- Panels ----
 export const POKE_DEBOUNCE_MS = 400;
+// "Say a world": stop listening after this long without a phrase (the Quest Browser can hang in "listening")
+export const VOICE_TIMEOUT_MS = 8000;
 export const POKE_DEPTH = 0.025; // m in front/behind panel surface that counts as inside the button box
 export const PANEL_PX_PER_M = 900;
 export const PANELS = {
