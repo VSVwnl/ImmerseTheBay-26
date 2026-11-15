@@ -36,7 +36,7 @@ test('Workshop: wrong parts fail with a reason, right parts solve plate, far and
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => m.type() === 'error' && !/Failed to load resource/.test(m.text()) && errors.push(m.text()));
 
-  await page.goto('/?orbis=0'); // never open a paid Orbis session in tests
+  await page.goto('/?orbis=0&challenges=plate,far,heavy'); // never open a paid Orbis session in tests
   await page.mouse.click(640, 600);
   await expect(page.locator('.panel-workshop')).toBeHidden();
   await page.locator('.panel-side button[data-id="workshop"]').click();
