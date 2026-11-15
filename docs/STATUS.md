@@ -45,7 +45,8 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Extra-long arm | part (arm) | e52e4f0 | | |
 | Cart | challenge | 386319d | Extra-long + Gripper, Suction or Soft gripper | Extra-long+Gripper, Extra-long+Suction, Extra-long+Soft |
 | Soft gripper | part (tool) | 07d57c2 | | |
-| Egg | challenge | EGG_COMMIT | Soft gripper + any arm that reaches the table | Compact+Soft, Long+Soft, Heavy-duty+Soft, Extra-long+Soft |
+| Egg | challenge | 2e4927d | Soft gripper + any arm that reaches the table | Compact+Soft, Long+Soft, Heavy-duty+Soft, Extra-long+Soft |
+| Scrap (2 steps, one robot) | challenge | SCRAP_COMMIT | Long + Magnet | Long+Magnet |
 | Dinner (2 steps, swap) | challenge | 03d29e7 | Suction, then Gripper or Magnet on Compact/Heavy-duty | no single robot; step 1: Compact/Long/Heavy-duty+Suction, then step 2: Compact/Heavy-duty+Gripper/Magnet |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
@@ -107,6 +108,11 @@ Additions:
    standard gripper, the answer to so many jobs, is the wrong tool for once ("Too hard a grip: it would crack the
    egg"), and every other tool fails for its own reason; only the soft gripper works (on any arm that reaches,
    even the weak Extra-long, since the egg is light). Labels now use "an" before vowels ("an egg", "an anvil").
+13. ADD challenge: scrap (`src/workshop/challenges/scrap.ts`): two steps, one robot, no swapping (a part change
+   restarts it): a steel washer near the robot -> blue tray, a can at the far right edge -> green bin. Interesting
+   because it's the counterpart to Dinner: the washer needs the magnet and the can needs the Long arm's reach, so
+   the player has to combine two parts' strengths in one robot. Only Long + Magnet. (Also fixed: an object over
+   its own goal now always counts even if another step's goal overlaps it.)
 
 Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base checks in `docs/WORKSHOP.md`):
 - [ ] 1 Groundwork (NOT YET TESTED ON HEADSET): in the Workshop, each countdown switches the wall to a different
@@ -142,6 +148,8 @@ Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base check
       to hit? Soft gripper shows chunky blue fingers; in Heavy it says "Too heavy for the soft fingers".
 - [ ] 12 Egg (NOT YET TESTED ON HEADSET): with the Gripper, pinching the egg says "Too hard a grip: it would crack
       the egg"; with the Soft gripper it goes into the carton. Is the egg big enough to aim at?
+- [ ] 13 Scrap (NOT YET TESTED ON HEADSET): with Compact + Magnet the washer goes in but the can says "Out of reach";
+      changing parts restarts the run; Long + Magnet does both. Is the "one robot" idea clear from the hint?
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with

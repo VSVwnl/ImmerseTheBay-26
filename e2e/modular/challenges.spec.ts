@@ -11,6 +11,10 @@ interface Case {
   goal: V3;
   wrong: { arm: string; tool: string; label: string };
   right: { arm: string; tool: string };
+  /** the object the wrong-parts attempt reaches for (default: item) */
+  wrongItem?: string;
+  /** more steps after the first, done with the same robot */
+  more?: { item: string; goal: V3 }[];
 }
 const CASES: Case[] = [
   {
@@ -62,6 +66,15 @@ const CASES: Case[] = [
     wrong: { arm: 'compact', tool: 'gripper', label: 'Too hard a grip: it would crack the egg' },
     right: { arm: 'compact', tool: 'soft' },
   },
+  {
+    layout: 'scrap',
+    item: 'washer',
+    goal: [0.3, 0.75, -0.56],
+    more: [{ item: 'can', goal: [-0.3, 0.75, -0.56] }],
+    wrongItem: 'can',
+    wrong: { arm: 'compact', tool: 'magnet', label: 'Out of reach' },
+    right: { arm: 'long', tool: 'magnet' },
+  },
 ];
 const only = process.env.CASE;
 
@@ -108,7 +121,7 @@ for (const c of CASES.filter((k) => !only || k.layout === only)) {
     expect((await state(page)).layout).toBe(c.layout);
 
     // wrong parts: as close as this arm gets, close the tool: nothing held, the reason shows
-    const obj = (await items(page))[c.item];
+    const obj = (await items(page))[c.wrongItem ?? c.item];
     const ws = await workspace(page);
     const at = clampTo(ws, [obj[0], Math.max(0.775, obj[1] - 0.01), obj[2]]);
     await moveTo(page, [at[0], Math.min(ws.max[1], at[1] + 0.1), at[2]]);
@@ -123,6 +136,7 @@ for (const c of CASES.filter((k) => !only || k.layout === only)) {
     await setParts(page, c.right.arm, c.right.tool);
     await waitPhase(page, 'running');
     await pickPlace(page, (await items(page))[c.item], c.goal);
+    for (const m of c.more ?? []) await pickPlace(page, (await items(page))[m.item], m.goal);
     await page.waitForTimeout(150);
     await page.screenshot({ path: `e2e-shots/ch-${c.layout}-done.png` });
     await waitPhase(page, 'results', 10000);

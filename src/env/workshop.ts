@@ -31,7 +31,9 @@ export function settleOn(layout: WorkshopLayout, item: ItemId, p: Vec3): { pos: 
   const onTable = Math.abs(p[0] - TABLE.cx) <= TABLE.width / 2 && Math.abs(p[2] - TABLE.cz) <= TABLE.depth / 2;
   if (!onTable) return { pos: p, goal: false, offTable: true };
   const own = stepFor(layout, item);
-  for (const s of WORKSHOP_TASKS[layout].steps) {
+  const steps = WORKSHOP_TASKS[layout].steps;
+  // its own goal first, so an overlapping goal of another step can't steal it
+  for (const s of own ? [own, ...steps.filter((x) => x !== own)] : steps) {
     const g = s.goal;
     if (!over(p, g)) continue;
     const mine = s === own;

@@ -71,6 +71,10 @@ const EXPECT: Record<WorkshopLayout, Record<string, 'ok' | 'tool' | 'heavy' | 'r
   egg: {
     'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'tool', 'compact+wide': 'tool', 'compact+scoop': 'tool', 'compact+soft': 'ok', 'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'tool', 'long+wide': 'tool', 'long+scoop': 'tool', 'long+soft': 'ok', 'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'tool', 'heavyduty+soft': 'ok', 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'xlong+soft': 'ok', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'tall+soft': 'reach',
   },
+  // two steps, one robot: the washer needs the magnet, the can needs the Long arm
+  scrap: {
+    'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'reach', 'compact+wide': 'tool', 'compact+scoop': 'tool', 'compact+soft': 'tool', 'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'reach', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'tool', 'heavyduty+soft': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'ok', 'long+wide': 'tool', 'long+scoop': 'tool', 'long+soft': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'tall+soft': 'reach', 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'heavy', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'xlong+soft': 'tool',
+  },
 };
 
 function grid(ws: { min: Vec3; max: Vec3 }, n: number): Vec3[] {
@@ -381,6 +385,19 @@ describe('Workshop challenges: every robot', () => {
     expect(s.success).toBe(false);
     expect(s.drops).toBe(1);
     expect(s.items.plate![1]).toBe(ITEMS.plate.restY);
+  });
+});
+
+describe('one-robot multi-step challenges (scrap)', () => {
+  it('is two steps and not a swap challenge: a part change restarts it', () => {
+    const t = WORKSHOP_TASKS.scrap;
+    expect(t.steps.length).toBe(2);
+    expect(t.swap).toBeFalsy();
+  });
+  it('an object over its own goal counts even when another goal overlaps', () => {
+    const env = new TaskEnv(1, 'scrap', { arm: 'long', tool: 'magnet' });
+    for (const st of WORKSHOP_TASKS.scrap.steps) pickPlace(env, env.state().items[st.item]!, st.goal.pos);
+    expect(env.state().success).toBe(true);
   });
 });
 
