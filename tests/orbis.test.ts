@@ -112,6 +112,7 @@ describe('OrbisWorld', () => {
     frame(); // still the old run: no generation_started yet
     expect(o.status()).toBe('loading');
     gen();
+    vi.advanceTimersByTime(1100);
     frame();
     expect(o.status()).toBe('live');
   });
@@ -151,6 +152,7 @@ describe('OrbisWorld', () => {
     const o = await connected();
     vi.advanceTimersByTime(600);
     gen();
+    vi.advanceTimersByTime(1100);
     frame();
     expect(o.status()).toBe('live');
     sent.length = 0;
@@ -168,6 +170,9 @@ describe('OrbisWorld', () => {
     frame(); // old world still streaming (bright), before generation_started: must not count
     expect(o.status()).toBe('loading');
     gen();
+    frame(); // right after generation_started: can still be an old frame
+    expect(o.status()).toBe('loading');
+    vi.advanceTimersByTime(1100);
     frame();
     expect(o.status()).toBe('live');
   });
@@ -182,6 +187,7 @@ describe('OrbisWorld', () => {
     expect(o.status()).toBe('loading');
     vi.advanceTimersByTime(600);
     gen();
+    vi.advanceTimersByTime(1100);
     frame();
     expect(o.status()).toBe('live');
   });

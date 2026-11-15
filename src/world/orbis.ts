@@ -1,6 +1,6 @@
 // Live Visko Orbis wall. The only file that imports the Reactor SDK.
 import { Reactor, type ReactorError, type ReactorMessage, type ReactorStatus } from '@reactor-team/js-sdk';
-import { ORBIS_BLANK_LUMA, ORBIS_MODEL, SESSION_REFRESH_S, TOKEN_REFRESH_MARGIN_S, WORLD_MIN_INTERVAL_S } from '../config';
+import { ORBIS_BLANK_LUMA, ORBIS_GEN_SETTLE_MS, ORBIS_MODEL, SESSION_REFRESH_S, TOKEN_REFRESH_MARGIN_S, WORLD_MIN_INTERVAL_S } from '../config';
 import type { World, WorldDef, WorldStatus } from './world';
 
 // ---- token: cached in memory, reused until shortly before expiry ----
@@ -187,6 +187,7 @@ export class OrbisWorld implements World {
         break;
       case 'generation_started':
         this.awaitingGen = false;
+        this.framesAfterMs = Math.max(this.framesAfterMs, performance.now() + ORBIS_GEN_SETTLE_MS);
         this.runStartedMs = performance.now();
         log('generation_started', d.width, d.height, d.fps, d.resolution);
         break;

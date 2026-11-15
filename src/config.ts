@@ -88,6 +88,8 @@ export const ORBIS_MODEL = 'reactor/visko-orbis-stable';
 // After a reset Orbis streams black frames until the new world renders. The wall counts as live only once a
 // 16x9 sample of the video has a mean brightness (0-255) above this.
 export const ORBIS_BLANK_LUMA = 12;
+// Frames in the first moment after generation_started can still be the old world; ignore them for this long.
+export const ORBIS_GEN_SETTLE_MS = 1000;
 export const TOKEN_REFRESH_MARGIN_S = 300;
 
 // ---- Polish ----
@@ -106,4 +108,5 @@ export const DATASET_CAMERA = { pos: [0, 1.35, 0.15] as Vec3, lookAt: [0, 0.85, 
 export const MULTIPLY_SETTLE_S = 4;
 
 // ---- Factory (M3 Part B) ----
-export const FACTORY = { seedBase: 1000, worldEvery: 10, stubSettleMs: 1700 };
+// worldEvery: spec start value 10; 20 halves the live world switches (~8-27 s of Orbis each) to fit the time budget.
+export const FACTORY = { seedBase: 1000, worldEvery: 20, stubSettleMs: 1700 };
