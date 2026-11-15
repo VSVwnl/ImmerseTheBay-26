@@ -45,6 +45,7 @@ export type ChallengeEvent =
   | { type: 'results'; results: ChallengeResult[] }
   | { type: 'grabfail'; fail: GrabFail }
   | { type: 'parts'; robot: RobotParts } // the robot was rebuilt
+  | { type: 'notice'; text: string } // e.g. a refused part swap
   | { type: 'attempt'; record: AttemptRecord };
 
 export interface ChallengeDeps {
@@ -111,6 +112,19 @@ export class Challenges {
     if (!this.workshop) return;
     const next: RobotParts = { arm: parts.arm ?? this.robot.arm, tool: parts.tool ?? this.robot.tool };
     if (sameParts(next, this.robot)) return;
+    // swap challenges: change parts in place, no restart (not while holding something)
+    if (this.swapNow()) {
+      if (!this.env.setRobot(next)) {
+        this.deps.onEvent({ type: 'notice', text: 'Put it down before changing parts' });
+        return;
+      }
+      this.robot = next;
+      if (this.phase === 'running') this.recorder.swap(next.arm, next.tool);
+      this.curr = this.env.snapshot();
+      this.prev = this.curr;
+      this.deps.onEvent({ type: 'parts', robot: { ...next } });
+      return;
+    }
     this.robot = next;
     this.deps.onEvent({ type: 'parts', robot: { ...next } });
     if (this.phase === 'countdown' || this.phase === 'running') {
@@ -202,6 +216,11 @@ export class Challenges {
         if (this.freePlay) this.fixedSteps(dt, action, false);
         return;
     }
+  }
+
+  /** True while a swap challenge is counting down or running: part changes don't restart it. */
+  swapNow(): boolean {
+    return (this.phase === 'countdown' || this.phase === 'running') && !!WORKSHOP_TASKS[this.current.layout]?.swap;
   }
 
   private nextChallenge(): void {

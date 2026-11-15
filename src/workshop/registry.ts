@@ -21,10 +21,11 @@ import { ANVIL } from './challenges/anvil';
 import { MARBLES } from './challenges/marbles';
 import { SHELF } from './challenges/shelf';
 import { CART } from './challenges/cart';
+import { DINNER } from './challenges/dinner';
 
 export const ARM_DEFS: ArmDef[] = [COMPACT, LONG, HEAVYDUTY, TALL, XLONG];
 export const TOOL_DEFS: ToolDef[] = [GRIPPER, SUCTION, MAGNET, WIDE, SCOOP];
-export const CHALLENGE_DEFS: ChallengeDef[] = [PLATE, FAR, HEAVY, WASHER, CRATE, ANVIL, MARBLES, SHELF, CART];
+export const CHALLENGE_DEFS: ChallengeDef[] = [PLATE, FAR, HEAVY, WASHER, CRATE, ANVIL, MARBLES, SHELF, CART, DINNER];
 
 const byId = <T extends { id: string }>(xs: T[]) => Object.fromEntries(xs.map((x) => [x.id, x])) as Record<string, T>;
 export const ARMS: Record<string, ArmDef> = byId(ARM_DEFS);
@@ -35,7 +36,12 @@ export const ITEMS: Record<string, ItemSpec> = byId(CHALLENGE_DEFS.flatMap((c) =
 
 export const partEnabled = (id: string): boolean => ENABLED_PARTS.includes(id) && (id in ARMS || id in TOOLS);
 
-/** On when listed in ENABLED_CHALLENGES and at least one robot that solves it can be built from enabled parts. */
+const buildable = (s: { arm: string; tool: string }) => partEnabled(s.arm) && partEnabled(s.tool);
+
+/** On when listed in ENABLED_CHALLENGES and solvable with enabled parts: some single robot solves it, or (for
+ *  swap challenges) every step has a robot that can do it. */
 export function challengeAvailable(c: ChallengeDef): boolean {
-  return ENABLED_CHALLENGES.includes(c.layout) && c.solutions.some((s) => partEnabled(s.arm) && partEnabled(s.tool));
+  if (!ENABLED_CHALLENGES.includes(c.layout)) return false;
+  if (c.solutions.some(buildable)) return true;
+  return !!c.swap && !!c.stepSolutions?.length && c.stepSolutions.every((rs) => rs.some(buildable));
 }

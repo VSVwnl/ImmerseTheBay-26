@@ -43,7 +43,8 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Tall base | part (arm) | f4f164e | | |
 | Shelf | challenge | d8a9cf2 | Tall base + Gripper | Tall base+Gripper |
 | Extra-long arm | part (arm) | e52e4f0 | | |
-| Cart | challenge | CART_COMMIT | Extra-long + Gripper or Suction | Extra-long+Gripper, Extra-long+Suction |
+| Cart | challenge | 386319d | Extra-long + Gripper or Suction | Extra-long+Gripper, Extra-long+Suction |
+| Dinner (2 steps, swap) | challenge | DINNER_COMMIT | Suction, then Gripper or Magnet on Compact/Heavy-duty | no single robot; step 1: Compact/Long/Heavy-duty+Suction, then step 2: Compact/Heavy-duty+Gripper/Magnet |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
 - Moved every part and challenge into its own file (registry in `src/workshop/registry.ts`). Numbers stay in
@@ -91,6 +92,11 @@ Additions:
    beside the table's back-right corner -> grey outbox. Interesting because it's the one job the weakest arm is
    best at: only the Extra-long reaches past the table, and the parcel is the only thing light enough for it.
    (Hint radius 0.45 -> 0.55 m so the short Heavy-duty arm also says "Out of reach" here.)
+10. ADD challenge: dinner (`src/workshop/challenges/dinner.ts`), the first harder one: two steps, plate onto the
+   rack and then the heavy pot onto the zone, with a tool swap in between. Interesting because no single robot can
+   do it, so "pick the right robot" becomes "pick the right robot for each step". In swap challenges a part change
+   does not restart the attempt (it is refused while holding something: "Put it down before changing parts");
+   swaps are saved in the attempt file (`swaps: [{at, arm, tool}]`) and replays apply them at the same step.
 
 Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base checks in `docs/WORKSHOP.md`):
 - [ ] 1 Groundwork (NOT YET TESTED ON HEADSET): in the Workshop, each countdown switches the wall to a different
@@ -118,6 +124,10 @@ Headset checks for the autonomous run (all NOT YET TESTED ON HEADSET; base check
 - [ ] 9 Cart (NOT YET TESTED ON HEADSET): the side cart stands beside the table's back-right corner; with Long the
       arm stops at the table edge and says "Out of reach"; Extra-long + Gripper (or Suction) carries the parcel
       to the outbox. Can you reach that far right with your hand comfortably (target ~0.7 m right of center)?
+- [ ] 10 Dinner (NOT YET TESTED ON HEADSET): the parts panel line turns orange: "Swap parts any time (hands
+      empty)"; with the gripper the plate says "Can't grip a flat plate"; poke Suction: the timer keeps running (no
+      countdown); while the plate is held, poking Gripper says "Put it down before changing parts"; plate on the
+      rack, poke Gripper, pot onto the yellow zone: success. Is poking the parts panel mid-task comfortable?
 
 ### Branch `modular`: Robot Workshop (Sun 2:20 AM, not merged; `main` untouched)
 - Additive: Compact/Long arm, Gripper/Suction tool, grab rules (needsTool, weight vs payload, out of reach) with

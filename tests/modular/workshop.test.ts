@@ -17,7 +17,7 @@ import {
 } from '../../src/arm/parts';
 import { ITEM_IDS, ITEMS, TOOL_RULES, grabCheck, grabRule, type ItemId } from '../../src/arm/items';
 import { TaskEnv, clampToWorkspace, type Action } from '../../src/env/env';
-import { WORKSHOP_LAYOUTS, WORKSHOP_TASKS, type WorkshopLayout } from '../../src/env/workshop';
+import { onGoal as onGoalCheck, WORKSHOP_LAYOUTS, WORKSHOP_TASKS, type WorkshopLayout } from '../../src/env/workshop';
 import { BIN_POS, ENABLED_CHALLENGES, ENABLED_PARTS, L1, L2, SIM_DT, WORKSHOP, WORKSPACE, type Vec3 } from '../../src/config';
 import { Recorder, replayRecord } from '../../src/tasks/recorder';
 import { Challenges, workshopChallenges } from '../../src/tasks/challenges';
@@ -63,6 +63,10 @@ const EXPECT: Record<WorkshopLayout, Record<string, 'ok' | 'tool' | 'heavy' | 'r
   cart: {
     'xlong+gripper': 'ok', 'xlong+suction': 'ok', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool',
     'compact+gripper': 'reach', 'compact+suction': 'reach', 'compact+magnet': 'reach', 'compact+wide': 'reach', 'compact+scoop': 'reach', 'long+gripper': 'reach', 'long+suction': 'reach', 'long+magnet': 'reach', 'long+wide': 'reach', 'long+scoop': 'reach', 'heavyduty+gripper': 'reach', 'heavyduty+suction': 'reach', 'heavyduty+magnet': 'reach', 'heavyduty+wide': 'reach', 'heavyduty+scoop': 'reach', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach',
+  },
+  // two steps: no single robot does both (with Suction the plate goes on, then the pot fails on the tool)
+  dinner: {
+    'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'tool', 'compact+wide': 'tool', 'compact+scoop': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'tool', 'long+wide': 'tool', 'long+scoop': 'tool', 'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'xlong+gripper': 'tool', 'xlong+suction': 'heavy', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool',
   },
 };
 
@@ -325,7 +329,9 @@ describe('Workshop challenges: every robot', () => {
         ENABLED_PARTS.splice(0, ENABLED_PARTS.length, ...saved.filter((p) => p !== part));
         const shown = workshopChallenges().map((c) => c.layout);
         for (const layout of WORKSHOP_LAYOUTS) {
-          const still = WORKSHOP_TASKS[layout].solutions.some((r) => r.arm !== part && r.tool !== part);
+          const t = WORKSHOP_TASKS[layout];
+          const ok = (r: RobotParts) => r.arm !== part && r.tool !== part;
+          const still = t.solutions.some(ok) || (!!t.swap && !!t.stepSolutions?.every((rs) => rs.some(ok)));
           expect(shown.includes(layout)).toBe(still);
         }
       }
@@ -337,8 +343,8 @@ describe('Workshop challenges: every robot', () => {
   it('every goal is on the table; objects spawn on the table unless the challenge brings scenery (shelf, cart)', () => {
     const onTable = (p: Vec3) => Math.abs(p[0]) < 0.6 && p[2] > -1.1 && p[2] < -0.4;
     for (const layout of WORKSHOP_LAYOUTS) {
-      expect(Object.values(EXPECT[layout])).toContain('ok');
       const task = WORKSHOP_TASKS[layout];
+      expect(Object.values(EXPECT[layout]).includes('ok') || !!task.stepSolutions?.length).toBe(true);
       for (const st of task.steps) {
         expect(onTable(st.goal.pos)).toBe(true);
         for (const seed of [1, 9, 99]) {
@@ -355,6 +361,102 @@ describe('Workshop challenges: every robot', () => {
     expect(s.success).toBe(false);
     expect(s.drops).toBe(1);
     expect(s.items.plate![1]).toBe(ITEMS.plate.restY);
+  });
+});
+
+describe('swap challenges (dinner): parts change mid-challenge', () => {
+  const task = WORKSHOP_TASKS.dinner;
+  it('is a two-step swap challenge with no single-robot solution', () => {
+    expect(task.swap).toBe(true);
+    expect(task.steps.length).toBe(2);
+    expect(task.solutions).toEqual([]);
+  });
+
+  it("each step's declared robots are exactly the ones that can do that step", () => {
+    task.steps.forEach((st, i) => {
+      const can: string[] = [];
+      for (const r of ROBOTS) {
+        const env = new TaskEnv(5, 'dinner', r);
+        pickPlace(env, env.state().items[st.item]!, st.goal.pos);
+        const s = env.state();
+        if (s.held !== st.item && s.grabFails === 0 && near(s.items[st.item]!, s.items[st.item]!, 1) && onGoalCheck(st, s.items[st.item]!)) can.push(key(r));
+      }
+      expect(can.sort()).toEqual(task.stepSolutions![i].map(key).sort());
+    });
+  });
+
+  it('every pair of step robots solves it with one swap between the steps', () => {
+    for (const r1 of task.stepSolutions![0])
+      for (const r2 of task.stepSolutions![1])
+        for (const seed of [2, 31]) {
+          const env = new TaskEnv(seed, 'dinner', r1);
+          pickPlace(env, env.state().items.plate!, task.steps[0].goal.pos);
+          expect(env.state().success).toBe(false);
+          expect(env.setRobot(r2)).toBe(true);
+          pickPlace(env, env.state().items.pot!, task.steps[1].goal.pos);
+          expect(env.state().success).toBe(true);
+          expect(env.state().grabFails).toBe(0);
+        }
+  });
+
+  it('parts cannot be swapped while holding something', () => {
+    const env = new TaskEnv(2, 'dinner', { arm: 'compact', tool: 'suction' });
+    const p = env.state().items.plate!;
+    goTo(env, [p[0], p[1], p[2]], 0);
+    goTo(env, [p[0], p[1], p[2]], 1);
+    expect(env.state().held).toBe('plate');
+    expect(env.setRobot({ arm: 'compact', tool: 'gripper' })).toBe(false);
+    expect(env.state().robot.tool).toBe('suction');
+  });
+
+  it('the attempt records the swap and the replay rebuilds it (without it, the replay fails)', () => {
+    const r1: RobotParts = { arm: 'compact', tool: 'suction' };
+    const r2: RobotParts = { arm: 'heavyduty', tool: 'magnet' };
+    const env = new TaskEnv(8, 'dinner', r1);
+    const rec = new Recorder();
+    rec.start({ sessionId: 's', attemptId: '0001', challenge: 'dinner', seed: 8, world: null, input: 'mouse', arm: r1.arm, tool: r1.tool });
+    const drive = (log: Action[]) => {
+      for (const a of log) {
+        rec.sample(env.state(), a);
+        env.step(a, SIM_DT);
+      }
+    };
+    const plan = new TaskEnv(8, 'dinner', r1);
+    const l1: Action[] = [];
+    pickPlace(plan, plan.state().items.plate!, task.steps[0].goal.pos, l1);
+    drive(l1);
+    expect(env.setRobot(r2)).toBe(true);
+    rec.swap(r2.arm, r2.tool);
+    plan.setRobot(r2);
+    const l2: Action[] = [];
+    pickPlace(plan, plan.state().items.pot!, task.steps[1].goal.pos, l2);
+    drive(l2);
+    const r = rec.finish(env.state())!;
+    expect(r.success).toBe(true);
+    expect(r.swaps).toEqual([{ at: l1.length, arm: 'heavyduty', tool: 'magnet' }]);
+    expect(replayRecord(JSON.parse(JSON.stringify(r))).success).toBe(true);
+    expect(replayRecord({ ...r, swaps: [] }).success).toBe(false);
+  });
+
+  it('Challenges: in a swap challenge a part change keeps the attempt running and is recorded', () => {
+    const saved = [...ENABLED_CHALLENGES];
+    try {
+      ENABLED_CHALLENGES.splice(0, ENABLED_CHALLENGES.length, 'dinner');
+      const recs: any[] = [];
+      const c = new Challenges({ sessionId: 's', world: () => null, input: () => 'mouse', seed: () => 7, onEvent: (e) => e.type === 'attempt' && recs.push(e.record) });
+      c.setWorkshop(true);
+      c.start();
+      for (let t = 0; t < 4; t += 0.05) c.update(0.05, () => ({ target: [0, 1, -0.65], grip: 0 }));
+      expect(c.phase).toBe('running');
+      const steps = c.env.state().steps;
+      c.setParts({ tool: 'suction' });
+      expect(c.phase).toBe('running');
+      expect(c.env.state().steps).toBe(steps);
+      expect(c.env.state().robot.tool).toBe('suction');
+      c.abort();
+    } finally {
+      ENABLED_CHALLENGES.splice(0, ENABLED_CHALLENGES.length, ...saved);
+    }
   });
 });
 

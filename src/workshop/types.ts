@@ -117,4 +117,8 @@ export interface ChallengeDef {
   solutions: RobotParts[];
   /** extra fixed scenery (e.g. a high shelf), positioned in world coordinates */
   scenery?: () => THREE.Object3D[];
+  /** Multi-step jobs where parts may be swapped mid-challenge (not while holding something) without a restart.
+   *  stepSolutions[i] lists the robots that can do step i; `solutions` (single robots) is then usually empty. */
+  swap?: boolean;
+  stepSolutions?: RobotParts[][];
 }

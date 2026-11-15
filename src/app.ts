@@ -145,6 +145,10 @@ export function startApp(core: Core) {
         case 'results':
           void probeRobot();
           break;
+        case 'notice':
+          sfx.slip();
+          core.workshop.showFail(e.text, challenges.env.state().tip);
+          break;
         case 'grabfail':
           sfx.slip();
           core.arm.slip();
@@ -448,7 +452,7 @@ export function startApp(core: Core) {
           { text: `   ${ARMS[r.arm].blurb}`, size: 17, color: '#c9d3dd' },
           { text: `Tool: ${TOOLS[r.tool].label}`, size: 21, bold: true },
           { text: `   ${TOOLS[r.tool].blurb}`, size: 17, color: '#c9d3dd' },
-          { text: 'Changing a part restarts the challenge', size: 16, color: '#9fb3c8' },
+          { text: challenges.swapNow() ? 'Swap parts any time (hands empty)' : 'Changing a part restarts the challenge', size: 16, color: challenges.swapNow() ? '#ffb347' : '#9fb3c8' },
         ],
         buttons: [
           ...enabledArms().map((a) => ({ id: `arm:${a}`, label: `${ARMS[a].label} arm`, active: r.arm === a })),

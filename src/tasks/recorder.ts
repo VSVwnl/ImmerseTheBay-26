@@ -29,6 +29,8 @@ export interface AttemptRecord {
   /** robot parts; replays rebuild this robot. Files without them were made with Compact + Gripper. */
   arm: ArmKind;
   tool: ToolKind;
+  /** swap challenges: part changes during the attempt, applied before sample `at` */
+  swaps?: { at: number; arm: ArmKind; tool: ToolKind }[];
   world: { id: string; prompt: string } | null;
   startedAt: string;
   durationMs: number;
@@ -140,15 +142,26 @@ export class Recorder {
     return rec;
   }
 
+  /** A mid-attempt part swap (swap challenges): replays apply it before the next sample. */
+  swap(arm: ArmKind, tool: ToolKind): void {
+    if (!this.rec) return;
+    (this.rec.swaps ??= []).push({ at: this.rec.samples.length, arm, tool });
+  }
+
   abort(): void {
     this.rec = null;
   }
 }
 
 /** Replay a record's actions through a fresh env from the same seed, with the same robot parts. */
-export function replayRecord(rec: Pick<AttemptRecord, 'seed' | 'challenge' | 'samples' | 'hz'> & { arm?: string; tool?: string }): EnvState {
+export function replayRecord(
+  rec: Pick<AttemptRecord, 'seed' | 'challenge' | 'samples' | 'hz'> & { arm?: string; tool?: string; swaps?: AttemptRecord['swaps'] },
+): EnvState {
   const env = new TaskEnv(rec.seed, rec.challenge, partsOf(rec));
   const dt = 1 / (rec.hz || SIM_HZ);
-  for (const s of rec.samples) env.step({ target: s.target, grip: s.grip }, dt);
+  rec.samples.forEach((s, i) => {
+    for (const w of rec.swaps ?? []) if (w.at === i) env.setRobot(partsOf(w));
+    env.step({ target: s.target, grip: s.grip }, dt);
+  });
   return env.snapshot();
 }

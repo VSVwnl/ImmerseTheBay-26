@@ -242,6 +242,19 @@ export class TaskEnv implements Env {
     return this.s;
   }
 
+  /** Swap parts mid-episode (swap challenges): only when nothing is held. Returns false if refused.
+   *  The tip stays where it is; the next step moves it within the new arm's reach. */
+  setRobot(parts: RobotParts): boolean {
+    const s = this.s;
+    if (s.held) return false;
+    this.robot = { arm: parts.arm, tool: parts.tool };
+    s.robot = { ...this.robot };
+    const ik = solveIK(s.tip, linksFor(s.robot.arm));
+    s.tip = ik.tip;
+    s.joints = ik.joints;
+    return true;
+  }
+
   /** Deep copy, safe to keep. */
   snapshot(): EnvState {
     return JSON.parse(JSON.stringify(this.s));
