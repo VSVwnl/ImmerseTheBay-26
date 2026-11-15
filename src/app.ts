@@ -1,7 +1,7 @@
 // The human app: challenges, panels, inputs, Multiply. Runs on the shared core.
 import * as THREE from 'three';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
-import { ENABLED_CHALLENGES, PANELS, SUCCESS_NUDGES, WORLD_DEFAULT_MODE, XR_EYE_Y, type Vec3 } from './config';
+import { ENABLED_CHALLENGES, PANELS, SUCCESS_NUDGES, WORLD_DEFAULT_MODE, XR_EYE_SETTLE_FRAMES, XR_EYE_Y, type Vec3 } from './config';
 import { DesktopInput } from './input/desktop';
 import { XRInput } from './input/xr';
 import { eyeLevelOffset, headReady } from './input/eyelevel';
@@ -581,12 +581,15 @@ export function startApp(core: Core) {
   const eyeY = Number(params.get('eye')) || XR_EYE_Y;
   let baseSpace: XRReferenceSpace | null = null;
   let eyeLevelled = false;
+  let trackedFrames = 0;
   function levelToEyes() {
     if (eyeLevelled || !renderer.xr.isPresenting) return;
     baseSpace ??= renderer.xr.getReferenceSpace();
     const p = renderer.xr.getCamera().position;
     const head: Vec3 = [p.x, p.y, p.z];
-    if (!baseSpace || !headReady(head)) return;
+    // wait for ~0.5 s of tracked head poses: right after Enter VR (or an automatic re-entry) the pose can still be settling
+    trackedFrames = baseSpace && headReady(head) ? trackedFrames + 1 : 0;
+    if (!baseSpace || trackedFrames < XR_EYE_SETTLE_FRAMES) return;
     const [x, y, z] = eyeLevelOffset(head, eyeY);
     renderer.xr.setReferenceSpace(baseSpace.getOffsetReferenceSpace(new XRRigidTransform({ x, y, z })));
     eyeLevelled = true;
@@ -595,6 +598,7 @@ export function startApp(core: Core) {
   renderer.xr.addEventListener('sessionstart', () => {
     baseSpace = null;
     eyeLevelled = false;
+    trackedFrames = 0;
     document.body.classList.add('xr');
     onGesture();
     void world.getVideo().play().catch(() => {});
