@@ -84,6 +84,28 @@ describe('HoloLink', () => {
     expect(s.grip).toBe(0);
   });
 
+  it('headset dead zone: a quick pinch that wobbles 1 cm is still a tap; moving past it drags', () => {
+    const s = store();
+    const l = new HoloLink(s, HOLO.grabRadius, HOLO.xrDragStart);
+    l.update({ point: holoTip, closed: true }, A, tip, DT);
+    for (let i = 0; i < 10; i++) l.update({ point: add(holoTip, [0.01 * Math.sin(i), 0.004, -0.003]), closed: true }, A, tip, DT);
+    expect(s.target).toEqual(HOME_TIP);
+    expect(l.update({ point: holoTip, closed: false }, A, tip, DT)).toBe('tap');
+    expect(s.grip).toBe(1);
+    expect(l.lastPress!.ev).toBe('tap');
+    expect(l.lastPress!.moved).toBeGreaterThan(0.009);
+    l.update({ point: holoTip, closed: true }, A, tip, DT);
+    const evs: string[] = [];
+    for (let i = 1; i <= 10; i++) {
+      const ev = l.update({ point: add(holoTip, [0.003 * i, 0, 0]), closed: true }, A, tip, DT);
+      if (ev) evs.push(ev);
+    }
+    expect(evs).toEqual(['drag']);
+    expect(s.target[0]).toBeCloseTo(HOME_TIP[0] + 0.1, 9); // the dead-zone movement is not lost
+    expect(l.update({ point: add(holoTip, [0.03, 0, 0]), closed: false }, A, tip, DT)).toBe('release');
+    expect(s.grip).toBe(1);
+  });
+
   it('a long still pinch is not a tap', () => {
     const s = store();
     const l = new HoloLink(s);

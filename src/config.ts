@@ -76,8 +76,11 @@ export const HOLO = {
   desktopAnchor: [-0.74, 0.85, -1.0] as Vec3, // arm base of the desktop hologram: left of the table, clear of the panels
   grabRadius: 0.03, // m around the hologram tip where a pinch starts a grab
   desktopGrabRadius: 0.045,
-  dragStart: 0.006, // m of hand movement (hologram space) before a pinch becomes a drag
-  tapMaxS: 0.45, // a pinch released sooner than this without dragging toggles the gripper
+  dragStart: 0.006, // m of mouse movement (hologram space) before a press becomes a drag
+  // Headset: tracking jitter and the pinch itself move the pinch point several mm, so a 6 mm dead zone turned
+  // every tap into a tiny drag (no gripper toggle) in the first headset test.
+  xrDragStart: 0.015,
+  tapMaxS: 0.7, // a pinch released sooner than this without dragging toggles the gripper
   palmUpMin: 0.5, // dot(palm normal, world up) to show the hologram
   palmLift: 0.04, // m from palm center up to the hologram base
   hideAfterS: 0.3, // keep the hologram this long after the palm stops facing up

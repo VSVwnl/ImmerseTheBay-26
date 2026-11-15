@@ -55,7 +55,7 @@ export type LinkEvent = 'grab' | 'drag' | 'release' | 'tap' | null;
 /**
  * Grab the hologram tip and drag it; the real target moves by the same amount divided by the hologram scale.
  * The target only moves once the hand has moved `dragStart` (so a tap does not nudge the arm), and a release
- * before that, within `tapMaxS`, toggles the gripper.
+ * before that, within `HOLO.tapMaxS`, toggles the gripper.
  */
 export class HoloLink {
   grabbing = false;
@@ -65,10 +65,14 @@ export class HoloLink {
   private startPoint: Vec3 = [0, 0, 0]; // hologram-space pinch point at grab
   private prevLocal: Vec3 = [0, 0, 0]; // real-space image of the pinch point last frame
   private heldS = 0;
+  private movedMax = 0;
+  /** the last finished press, for debugging in the headset: how long it was held and how far it moved (m) */
+  lastPress: { heldS: number; moved: number; ev: 'tap' | 'release' } | null = null;
 
   constructor(
     private store: ArmStore,
     public radius = HOLO.grabRadius,
+    public dragStart = HOLO.dragStart,
   ) {}
 
   /** tip: where the real arm tip is now (the hologram shows that pose). */
@@ -77,6 +81,7 @@ export class HoloLink {
       const was = this.grabbing;
       this.grabbing = this.dragging = this.hover = false;
       this.wasClosed = false;
+      if (was) this.lastPress = { heldS: this.heldS, moved: this.movedMax, ev: 'release' };
       return was ? 'release' : null;
     }
     const holoTip = toHolo(tip, a);
@@ -89,6 +94,7 @@ export class HoloLink {
       this.grabbing = true;
       this.dragging = false;
       this.heldS = 0;
+      this.movedMax = 0;
       this.startPoint = [...g.point];
       this.prevLocal = fromHolo(g.point, a);
       return 'grab';
@@ -97,7 +103,9 @@ export class HoloLink {
       this.heldS += dt;
       const local = fromHolo(g.point, a);
       let ev: LinkEvent = null;
-      if (!this.dragging && dist(g.point, this.startPoint) >= HOLO.dragStart) {
+      const moved = dist(g.point, this.startPoint);
+      this.movedMax = Math.max(this.movedMax, moved);
+      if (!this.dragging && moved >= this.dragStart) {
         this.dragging = true;
         ev = 'drag';
         // apply the movement made inside the dead zone too, so the arm does not lag the hand
@@ -119,7 +127,9 @@ export class HoloLink {
       this.grabbing = false;
       const wasDrag = this.dragging;
       this.dragging = false;
-      if (!wasDrag && this.heldS <= HOLO.tapMaxS) {
+      const tap = !wasDrag && this.heldS <= HOLO.tapMaxS;
+      this.lastPress = { heldS: this.heldS, moved: this.movedMax, ev: tap ? 'tap' : 'release' };
+      if (tap) {
         this.store.grip = this.store.grip ? 0 : 1;
         return 'tap';
       }

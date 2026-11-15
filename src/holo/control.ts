@@ -104,11 +104,13 @@ export class HoloControl {
       grabber = f.grabber;
       if (f.kind) this.inputKind = f.kind;
       this.link.radius = HOLO.grabRadius;
+      this.link.dragStart = HOLO.xrDragStart;
     } else {
       this.anchor = this.desktopAnchor;
       grabber = this.desktopGrabber(this.anchor, tip);
       this.inputKind = 'mouse';
       this.link.radius = HOLO.desktopGrabRadius;
+      this.link.dragStart = HOLO.dragStart;
     }
     this.pedestal.visible = !this.xr.presenting;
     const ev = this.link.update(this.interactive ? grabber : null, this.anchor, tip, dt);
