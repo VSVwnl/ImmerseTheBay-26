@@ -120,7 +120,7 @@ export const FACTORY = { seedBase: 1000, worldEvery: 20, stubSettleMs: 1700 };
 // The standard robot (compact + gripper) and Reach/Place/Sort always exist outside the Workshop: the expert,
 // datasets, training and Robot's turn depend on them. Turning compact or gripper off only hides them here.
 export const ENABLED_PARTS: string[] = ['compact', 'long', 'heavyduty', 'tall', 'xlong', 'gripper', 'suction', 'magnet', 'wide', 'scoop', 'soft'];
-export const ENABLED_CHALLENGES: string[] = ['plate', 'far', 'heavy', 'washer', 'crate', 'anvil', 'marbles', 'shelf', 'cart', 'dinner'];
+export const ENABLED_CHALLENGES: string[] = ['plate', 'far', 'heavy', 'washer', 'crate', 'anvil', 'marbles', 'shelf', 'cart', 'dinner', 'egg'];
 
 // ---- Robot Workshop (additive; the standard robot is Compact + Gripper and uses the values above) ----
 export const WORKSHOP = {
@@ -167,6 +167,8 @@ export const WORKSHOP = {
   cart: { pos: [0.72, 0.75, -0.92] as Vec3, w: 0.18, d: 0.2 },
   parcel: { size: 0.07, spawnX: [0.69, 0.75] as [number, number], spawnZ: [-0.94, -0.88] as [number, number] },
   outbox: { pos: [-0.05, 0.75, -0.55] as Vec3 },
+  egg: { r: 0.024, stretch: 1.3, weight: 0.3, spawnX: [-0.12, 0.12] as [number, number], spawnZ: [-0.86, -0.76] as [number, number] },
+  carton: { pos: [0.28, 0.75, -0.6] as Vec3, w: 0.16, d: 0.1, h: 0.03 },
   // Dinner (two steps, swap tools between): plate -> rack on the right, pot -> zone on the left
   dinner: {
     plateX: [-0.16, -0.08] as [number, number], potX: [0.08, 0.16] as [number, number], spawnZ: [-0.86, -0.76] as [number, number],

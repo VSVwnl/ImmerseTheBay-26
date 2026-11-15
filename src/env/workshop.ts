@@ -36,7 +36,7 @@ export function settleOn(layout: WorkshopLayout, item: ItemId, p: Vec3): { pos: 
     if (!over(p, g)) continue;
     const mine = s === own;
     if (g.kind === 'rack' || g.kind === 'pallet') return { pos: [p[0], spec.restY + g.h, p[2]], goal: mine, offTable: false };
-    if (g.kind === 'bin' || g.kind === 'basket') {
+    if (g.kind === 'bin' || g.kind === 'basket' || g.kind === 'carton') {
       const mx = Math.max(0, g.w / 2 - BIN.wall - spec.radius);
       const mz = Math.max(0, g.d / 2 - BIN.wall - spec.radius);
       return { pos: [clamp(p[0], g.pos[0] - mx, g.pos[0] + mx), spec.restY, clamp(p[2], g.pos[2] - mz, g.pos[2] + mz)], goal: mine, offTable: false };

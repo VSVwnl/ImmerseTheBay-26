@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { TOOL_LEN } from '../../config';
 import type { ToolDef } from '../types';
 import { noFingers, stem } from '../toolkit';
+import { an } from '../util';
 
 export const SUCTION: ToolDef = {
   kind: 'tool',
@@ -14,8 +15,8 @@ export const SUCTION: ToolDef = {
     if (it.suctionText) return it.suctionText;
     if (it.shape === 'ring') return 'Air leaks through the hole';
     if (it.shape === 'loose') return "Suction can't hold loose bits";
-    if (it.shape === 'cylinder') return `Suction can't seal on a ${it.name}`;
-    return `Suction can't hold a ${it.name}`;
+    if (it.shape === 'cylinder' || it.shape === 'round') return `Suction can't seal on ${an(it.name)}`;
+    return `Suction can't hold ${an(it.name)}`;
   },
   build: (tool, m) => {
     // stem down to a flat round rubber pad whose face is at the tip point

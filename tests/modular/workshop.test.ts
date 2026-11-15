@@ -68,6 +68,9 @@ const EXPECT: Record<WorkshopLayout, Record<string, 'ok' | 'tool' | 'heavy' | 'r
   dinner: { 'compact+soft': 'tool', 'long+soft': 'tool', 'heavyduty+soft': 'tool', 'tall+soft': 'reach', 'xlong+soft': 'tool',
     'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'tool', 'compact+wide': 'tool', 'compact+scoop': 'tool', 'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'tool', 'long+wide': 'tool', 'long+scoop': 'tool', 'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'tool', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'xlong+gripper': 'tool', 'xlong+suction': 'heavy', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool',
   },
+  egg: {
+    'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'tool', 'compact+wide': 'tool', 'compact+scoop': 'tool', 'compact+soft': 'ok', 'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'tool', 'long+wide': 'tool', 'long+scoop': 'tool', 'long+soft': 'ok', 'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'tool', 'heavyduty+soft': 'ok', 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'xlong+soft': 'ok', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'tall+soft': 'reach',
+  },
 };
 
 function grid(ws: { min: Vec3; max: Vec3 }, n: number): Vec3[] {
@@ -225,6 +228,14 @@ describe('grab rules', () => {
     expect(grabCheck(ITEMS.plate, soft)?.text).toBe("Can't grip a flat plate");
     expect(grabCheck({ ...ITEMS.can, fragile: true, name: 'egg' }, STANDARD_ROBOT)?.text).toBe('Too hard a grip: it would crack the egg');
     expect(grabCheck({ ...ITEMS.can, fragile: true, name: 'egg' }, soft)).toBeNull();
+  });
+
+  it('egg: fragile and round, so only the soft gripper; labels say why', () => {
+    expect(grabCheck(ITEMS.egg, STANDARD_ROBOT)?.text).toBe('Too hard a grip: it would crack the egg');
+    expect(grabCheck(ITEMS.egg, { arm: 'compact', tool: 'suction' })?.text).toBe("Suction can't seal on an egg");
+    expect(grabCheck(ITEMS.egg, { arm: 'compact', tool: 'scoop' })?.text).toBe("Can't scoop up an egg");
+    expect(grabCheck(ITEMS.egg, { arm: 'compact', tool: 'wide' })?.text).toBe('Too small for the wide gripper');
+    expect(grabCheck(ITEMS.anvil, { arm: 'heavyduty', tool: 'scoop' })?.text).toBe("Can't scoop up an anvil");
   });
 
   it('original labels', () => {

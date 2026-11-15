@@ -91,7 +91,7 @@ export interface ItemSpec {
   mesh: () => THREE.Object3D;
 }
 
-export type GoalKind = 'rack' | 'pallet' | 'bin' | 'zone' | 'bowl' | 'basket';
+export type GoalKind = 'rack' | 'pallet' | 'bin' | 'zone' | 'bowl' | 'basket' | 'carton';
 export interface Goal {
   kind: GoalKind;
   pos: Vec3; // center on the table top

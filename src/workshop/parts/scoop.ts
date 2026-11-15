@@ -3,13 +3,14 @@ import * as THREE from 'three';
 import { TOOL_LEN } from '../../config';
 import type { ToolDef } from '../types';
 import { noFingers, stem } from '../toolkit';
+import { an } from '../util';
 
 export const SCOOP: ToolDef = {
   kind: 'tool',
   id: 'scoop',
   label: 'Scoop',
   blurb: 'loose bits, nothing solid',
-  rule: (it) => (it.shape === 'loose' ? null : `Can't scoop up a ${it.name}`),
+  rule: (it) => (it.shape === 'loose' ? null : `Can't scoop up ${an(it.name)}`),
   build: (tool, m) => {
     // stem to a shallow open tray at the tip: a flat bottom with low walls on three sides
     stem(tool, m);

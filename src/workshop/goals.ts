@@ -101,6 +101,27 @@ function makeBasket(g0: Goal): THREE.Group {
   return g;
 }
 
+function makeCarton(g0: Goal): THREE.Group {
+  const g = new THREE.Group();
+  const card = new THREE.MeshStandardMaterial({ color: g0.color, roughness: 0.95 });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(g0.w, g0.h * 0.5, g0.d), card);
+  base.position.y = g0.h * 0.25;
+  g.add(base);
+  // six egg cups in two rows
+  const cupGeo = new THREE.CylinderGeometry(0.019, 0.013, g0.h, 12, 1, true);
+  for (let i = 0; i < 3; i++)
+    for (let j = 0; j < 2; j++) {
+      const cup = new THREE.Mesh(cupGeo, new THREE.MeshStandardMaterial({ color: g0.color, roughness: 0.95, side: THREE.DoubleSide }));
+      cup.position.set((i - 1) * (g0.w / 3), g0.h / 2, (j - 0.5) * (g0.d / 2));
+      g.add(cup);
+    }
+  const lid = new THREE.Mesh(new THREE.BoxGeometry(g0.w, 0.004, g0.d), card);
+  lid.position.set(0, g0.d / 2, -g0.d / 2 - 0.002);
+  lid.rotation.x = Math.PI / 2;
+  g.add(lid);
+  return g;
+}
+
 /** Goal meshes by kind, drawn with their base on the table top at the goal's x/z. */
 export const GOAL_MESHES: Record<GoalKind, (g: Goal) => THREE.Object3D> = {
   rack: makeRack,
@@ -109,4 +130,5 @@ export const GOAL_MESHES: Record<GoalKind, (g: Goal) => THREE.Object3D> = {
   zone: makeZone,
   bowl: makeBowl,
   basket: makeBasket,
+  carton: makeCarton,
 };
