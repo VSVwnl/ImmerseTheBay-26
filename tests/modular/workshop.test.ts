@@ -79,6 +79,9 @@ const EXPECT: Record<WorkshopLayout, Record<string, 'ok' | 'tool' | 'heavy' | 'r
   restock: { 'compact+hook': 'reach', 'long+hook': 'reach', 'heavyduty+hook': 'reach', 'tall+hook': 'reach', 'xlong+hook': 'tool',
     'compact+gripper': 'reach', 'compact+suction': 'reach', 'compact+magnet': 'reach', 'compact+wide': 'reach', 'compact+scoop': 'reach', 'compact+soft': 'reach', 'long+gripper': 'reach', 'long+suction': 'reach', 'long+magnet': 'reach', 'long+wide': 'reach', 'long+scoop': 'reach', 'long+soft': 'reach', 'heavyduty+gripper': 'reach', 'heavyduty+suction': 'reach', 'heavyduty+magnet': 'reach', 'heavyduty+wide': 'reach', 'heavyduty+scoop': 'reach', 'heavyduty+soft': 'reach', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'tall+soft': 'reach', 'xlong+gripper': 'heavy', 'xlong+suction': 'tool', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'xlong+soft': 'tool',
   },
+  bucket: {
+    'compact+gripper': 'tool', 'compact+suction': 'tool', 'compact+magnet': 'tool', 'compact+wide': 'tool', 'compact+scoop': 'tool', 'compact+soft': 'tool', 'compact+hook': 'ok', 'long+gripper': 'tool', 'long+suction': 'tool', 'long+magnet': 'tool', 'long+wide': 'tool', 'long+scoop': 'tool', 'long+soft': 'tool', 'long+hook': 'heavy', 'heavyduty+gripper': 'tool', 'heavyduty+suction': 'tool', 'heavyduty+magnet': 'tool', 'heavyduty+wide': 'tool', 'heavyduty+scoop': 'tool', 'heavyduty+soft': 'tool', 'heavyduty+hook': 'ok', 'xlong+gripper': 'tool', 'xlong+suction': 'tool', 'xlong+magnet': 'tool', 'xlong+wide': 'tool', 'xlong+scoop': 'tool', 'xlong+soft': 'tool', 'xlong+hook': 'heavy', 'tall+gripper': 'reach', 'tall+suction': 'reach', 'tall+magnet': 'reach', 'tall+wide': 'reach', 'tall+scoop': 'reach', 'tall+soft': 'reach', 'tall+hook': 'reach',
+  },
 };
 
 function grid(ws: { min: Vec3; max: Vec3 }, n: number): Vec3[] {
@@ -252,6 +255,14 @@ describe('grab rules', () => {
       if (ITEMS[id].handle) expect(r?.reason).not.toBe('tool');
       else expect(r?.text).toBe('Nothing to hook onto: no handle');
     }
+  });
+
+  it('bucket: big, handle, spills: only the hook on a strong arm', () => {
+    expect(grabCheck(ITEMS.bucket, STANDARD_ROBOT)?.text).toBe('Too big for this gripper');
+    expect(grabCheck(ITEMS.bucket, { arm: 'compact', tool: 'wide' })?.text).toBe('Squeezing it would spill the sand');
+    expect(grabCheck(ITEMS.bucket, { arm: 'compact', tool: 'magnet' })?.text).toBe('Magnet only lifts metal');
+    expect(grabCheck(ITEMS.bucket, { arm: 'long', tool: 'hook' })?.text).toBe('Too heavy for this arm');
+    expect(grabCheck(ITEMS.bucket, { arm: 'compact', tool: 'hook' })).toBeNull();
   });
 
   it('original labels', () => {

@@ -12,6 +12,7 @@ export const WIDE: ToolDef = {
     if (it.shape === 'flat' || it.shape === 'ring') return `Can't grip a flat ${it.name}`;
     if (it.shape === 'loose') return 'Loose bits slip through the fingers';
     if (it.size !== 'big') return 'Too small for the wide gripper';
+    if (it.spills) return 'Squeezing it would spill the sand';
     return null;
   },
   build: (tool, m) => {
