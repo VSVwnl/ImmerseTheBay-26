@@ -40,7 +40,7 @@ Items (commit = where it was added; later moved to one file each in `src/worksho
 | Anvil | challenge | c72c181 | Heavy-duty + Gripper or Magnet | Heavy-duty+Gripper, Heavy-duty+Magnet |
 | Scoop | part (tool) | 161dc39 | | |
 | Marbles | challenge | 161dc39 | Scoop | Compact+Scoop, Long+Scoop, Heavy-duty+Scoop |
-| Tall base | part (arm) | TALL_COMMIT | | |
+| Tall base | part (arm) | f4f164e | | |
 
 Decisions after the 03:30 rule update (`docs/AUTONOMOUS.md`):
 - Moved every part and challenge into its own file (registry in `src/workshop/registry.ts`). Numbers stay in
